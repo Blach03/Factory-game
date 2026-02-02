@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1c3cd71ddbae8441aa63b52d4f89973, type: 3}
+  m_Name: StatorRecipe
+  m_EditorClassIdentifier: 
+  recipeName: Stator Recipe
+  _techRequirementId: t15
+  primaryInput: {fileID: 11400000, guid: f35b3d74579041c499b78822419d6abe, type: 2}
+  primaryInputAmount: 10
+  secondaryInput: {fileID: 11400000, guid: 019195acccaa6974eb3f142c6c4d3162, type: 2}
+  secondaryInputAmount: 5
+  tertiaryInput: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+  tertiaryInputAmount: 3
+  outputItem: {fileID: 11400000, guid: 7ade40e580971b84884e858cfe79dd37, type: 2}
+  outputAmount: 1
+  assemblyTime: 20

@@ -1,0 +1,71 @@
+# ========================
+# Unity generated folders
+# ========================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# ========================
+# Visual Studio / Rider / VSCode
+# ========================
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# ========================
+# Unity cache / meta
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Unity crashes
+# ========================
+sysinfo.txt
+
+# ========================
+# Builds / exports
+# ========================
+*.apk
+*.aab
+*.exe
+*.app
+*.unitypackage
+
+# ========================
+# Addressables cache
+# ========================
+/Assets/AddressableAssetsData/*/*.bin*
+
+# ========================
+# Shader cache
+# ========================
+ShaderCache/
+
+# ========================
+# Crash reports
+# ========================
+crashlytics-build.properties
+
+# ========================
+# Logs
+# ========================
+*.log
+
+# ========================
+# StreamingAssets (opcjonalne)
+# USUŃ jeśli wrzucasz tam własne pliki
+# ========================
+# Assets/StreamingAssets/*

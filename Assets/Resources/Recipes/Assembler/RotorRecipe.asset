@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1c3cd71ddbae8441aa63b52d4f89973, type: 3}
+  m_Name: RotorRecipe
+  m_EditorClassIdentifier: 
+  recipeName: Rotor Recipe
+  _techRequirementId: t15
+  primaryInput: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
+  primaryInputAmount: 1
+  secondaryInput: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+  secondaryInputAmount: 3
+  tertiaryInput: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
+  tertiaryInputAmount: 2
+  outputItem: {fileID: 11400000, guid: b3a130aac82b17c47b6ee06528891326, type: 2}
+  outputAmount: 1
+  assemblyTime: 20
