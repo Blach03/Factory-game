@@ -13,6 +13,7 @@ public class PlacementManager : MonoBehaviour
     public GameObject overheadConveyorPrefab;
     public GameObject furnacePrefab;
     public GameObject assemblerPrefab;
+    public GameObject minerExtenderPrefab;
 
     [Header("State")]
     private GameObject selectedPrefab;
@@ -167,7 +168,13 @@ public class PlacementManager : MonoBehaviour
             ConveyorBelt beltComponent = previewObject.GetComponent<ConveyorBelt>();
             OverheadConveyor overheadComponent = previewObject.GetComponent<OverheadConveyor>();
             FurnaceBuilding furnaceComponent = previewObject.GetComponent<FurnaceBuilding>();
-            AssemblerBuilding assemblerComponent = previewObject.GetComponent<AssemblerBuilding>(); // <<< NOWE
+            AssemblerBuilding assemblerComponent = previewObject.GetComponent<AssemblerBuilding>();
+            MinerExtender extender = previewObject.GetComponent<MinerExtender>();
+
+            if (extender != null)
+            {
+                extender.RotateBuilding(GetNextDirection(extender.outputDirection));
+            }
 
             if (minerComponent != null)
             {
@@ -219,7 +226,12 @@ public class PlacementManager : MonoBehaviour
             ConveyorBelt belt = targetObject.GetComponent<ConveyorBelt>();
             OverheadConveyor overhead = targetObject.GetComponent<OverheadConveyor>();
             FurnaceBuilding furnace = targetObject.GetComponent<FurnaceBuilding>();
-            AssemblerBuilding assembler = targetObject.GetComponent<AssemblerBuilding>(); // <<< NOWE
+            AssemblerBuilding assembler = targetObject.GetComponent<AssemblerBuilding>();
+            MinerExtender extender = targetObject.GetComponent<MinerExtender>();
+            if (extender != null)
+            {
+                extender.RotateBuilding(GetNextDirection(extender.outputDirection));
+            }
 
             if (miner != null)
             {
@@ -315,6 +327,11 @@ public class PlacementManager : MonoBehaviour
         GameObject newBuildingObject = Instantiate(selectedPrefab, worldPosition, Quaternion.identity, buildingsContainer);
         GridObject gridObject = newBuildingObject.GetComponent<GridObject>();
 
+        if (newBuildingObject.GetComponent<MinerExtender>() != null || newBuildingObject.GetComponent<MinerBuilding>() != null)
+        {
+            foreach (var m in FindObjectsOfType<MinerBuilding>()) m.RecalculateBoost();
+        }
+
         if (gridObject != null)
         {
             gridObject.Initialize(gridPosition);
@@ -324,7 +341,12 @@ public class PlacementManager : MonoBehaviour
             ConveyorBelt belt = newBuildingObject.GetComponent<ConveyorBelt>();
             OverheadConveyor overhead = newBuildingObject.GetComponent<OverheadConveyor>();
             FurnaceBuilding furnace = newBuildingObject.GetComponent<FurnaceBuilding>();
-            AssemblerBuilding assembler = newBuildingObject.GetComponent<AssemblerBuilding>(); // <<< NOWE
+            AssemblerBuilding assembler = newBuildingObject.GetComponent<AssemblerBuilding>();
+            MinerExtender extender = newBuildingObject.GetComponent<MinerExtender>();
+            if (extender != null)
+            {
+                extender.SetupRotation((MinerBuilding.Direction)currentRotationIndex);
+            }
 
             if (miner != null)
             {
@@ -383,23 +405,56 @@ public class PlacementManager : MonoBehaviour
     {
         occupiedTiles = GetOccupiedGridPositions(gridPosition, prefabGridObject.size);
 
-        bool isPlacingBuilding = prefabGridObject.objectType == GridObjectType.Building;
-        bool isPlacingMiner = prefabGridObject.GetComponent<MinerBuilding>() != null;
-        bool isPlacingOverhead = prefabGridObject.GetComponent<OverheadConveyor>() != null;
-
         if (GridManager.Instance == null) return false;
+
+        // --- WALIDACJA SPECYFICZNA DLA TYPU BUDYNKU (Z£O¯A) ---
+
+        // Sprawdzamy co znajduje siê na g³ównym polu (gridPosition)
+        List<GridObject> objectsAtTile = GridManager.Instance.GetGridObjects(gridPosition);
+        ResourceDeposit deposit = objectsAtTile.OfType<ResourceDeposit>().FirstOrDefault();
+
+        // 1. Ograniczenie dla Pumpjacka (tylko na Oil)
+        if (prefabGridObject is PumpjackBuilding)
+        {
+            if (deposit == null || deposit.resourceData.resourceName != "Oil")
+            {
+                return false; // Nie mo¿na postawiæ poza z³o¿em Oil
+            }
+        }
+
+        // 2. Ograniczenie dla Minera i Extendera (tylko na surowcach sta³ych)
+        bool isMiner = prefabGridObject.GetComponent<MinerBuilding>() != null;
+        bool isExtender = prefabGridObject.GetComponent<MinerExtender>() != null;
+
+        if (isMiner || isExtender)
+        {
+            string[] validResources = { "Iron Ore", "Copper Ore", "Coal Ore", "Sulfur Ore" };
+
+            if (deposit == null || !validResources.Contains(deposit.resourceData.resourceName))
+            {
+                return false; // Nie mo¿na postawiæ poza wymienionymi surowcami
+            }
+        }
+
+        // --- STANDARDOWA LOGIKA KOLIZJI (Twoja istniej¹ca) ---
+        bool isPlacingMiner = isMiner;
+        bool isPlacingOverhead = prefabGridObject.GetComponent<OverheadConveyor>() != null;
 
         foreach (Vector2Int tile in occupiedTiles)
         {
+            // Jeœli pole jest zablokowane przez budynek/taœmê
             if (GridManager.Instance.IsPlacementBlocked(tile) && !isPlacingOverhead)
             {
                 GridObject existingObject = GridManager.Instance.GetGridObject(tile);
 
+                // Wyj¹tek: Miner mo¿e staæ na z³o¿u, Overhead na taœmie
                 if (existingObject != null && existingObject.objectType == GridObjectType.ResourceDeposit && isPlacingMiner)
                 {
+                    // To jest dopuszczalne
                 }
                 else if (existingObject != null && isPlacingOverhead && existingObject.objectType == GridObjectType.ConveyorBelt)
                 {
+                    // To jest dopuszczalne
                 }
                 else
                 {
@@ -407,23 +462,15 @@ public class PlacementManager : MonoBehaviour
                 }
             }
 
+            // Dodatkowe sprawdzenia nak³adania siê obiektów
             GridObject existingObjectCheck = GridManager.Instance.GetGridObject(tile);
-
             if (existingObjectCheck != null)
             {
-                if (isPlacingOverhead && existingObjectCheck.objectType == GridObjectType.ConveyorBelt)
-                {
-
-                }
-                else if (isPlacingMiner && existingObjectCheck.objectType == GridObjectType.ResourceDeposit)
-                {
-
-                }
-                else if (existingObjectCheck.objectType == GridObjectType.OverheadConveyor)
-                {
-                    return false;
-                }
-                else if (isPlacingBuilding && (existingObjectCheck.objectType == GridObjectType.ConveyorBelt || existingObjectCheck.objectType == GridObjectType.Building))
+                if (isPlacingOverhead && existingObjectCheck.objectType == GridObjectType.ConveyorBelt) { }
+                else if (isPlacingMiner && existingObjectCheck.objectType == GridObjectType.ResourceDeposit) { }
+                else if (existingObjectCheck.objectType == GridObjectType.OverheadConveyor) return false;
+                else if (prefabGridObject.objectType == GridObjectType.Building &&
+                        (existingObjectCheck.objectType == GridObjectType.ConveyorBelt || existingObjectCheck.objectType == GridObjectType.Building))
                 {
                     return false;
                 }

@@ -21,6 +21,10 @@ public class MinerBuilding : GridObject
     public Direction outputDirection = Direction.Right;
     public enum Direction { Right, Down, Left, Up }
 
+    [Header("Extender Settings")]
+    public float boostPerExtender = 1.0f; // 100% bonusu
+    private int activeExtendersCount = 0;
+
 
     protected override void Awake()
     {
@@ -38,6 +42,7 @@ public class MinerBuilding : GridObject
 
     void Start()
     {
+        RecalculateBoost();
         currentProductionSpeed = baseProductionSpeed;
         timer = outputInterval;
 
@@ -211,5 +216,80 @@ public class MinerBuilding : GridObject
         // Wywo³ujemy Twoj¹ istniej¹c¹ metodê wizualizacji
         RotateMiner(this.outputDirection);
 
+    }
+
+    public void RecalculateBoost()
+    {
+        // HashSet przechowuje unikalne pozycje, które ju¿ policzyliœmy
+        HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+        Vector2Int myPos = GetGridPosition();
+        visited.Add(myPos); // Nie licz minera jako extendera
+
+        // Rozpoczynamy rekurencjê od Minera
+        int totalExtenders = CountAllConnectedExtenders(myPos, visited);
+
+        // Limit 100 extenderów (zabezpieczenie wydajnoœciowe)
+        totalExtenders = Mathf.Min(totalExtenders, 100);
+
+        float multiplier = 1f + totalExtenders;
+        currentProductionSpeed = baseProductionSpeed * multiplier;
+        timer = Mathf.Min(timer, outputInterval);
+
+        Debug.Log($"[Miner {myPos}] Znaleziono ³¹cznie {totalExtenders} extenderów w sieci. Speed: {currentProductionSpeed}");
+    }
+
+    private int CountAllConnectedExtenders(Vector2Int currentPoint, HashSet<Vector2Int> visited)
+    {
+        if (visited.Count > 100) return 0; // Twardy limit rekurencji
+
+        int count = 0;
+        Vector2Int[] neighbors = {
+        currentPoint + Vector2Int.up,
+        currentPoint + Vector2Int.down,
+        currentPoint + Vector2Int.left,
+        currentPoint + Vector2Int.right
+    };
+
+        foreach (Vector2Int nPos in neighbors)
+        {
+            // Jeœli ju¿ tu byliœmy, skaczemy dalej
+            if (visited.Contains(nPos)) continue;
+
+            var objects = GridManager.Instance.GetGridObjects(nPos);
+            if (objects == null) continue;
+
+            MinerExtender extender = objects.OfType<MinerExtender>().FirstOrDefault();
+
+            // Sprawdzamy: czy to extender, czy celuje w currentPoint i czy jest na tym samym z³o¿u
+            if (extender != null && extender.GetTargetGridPosition() == currentPoint)
+            {
+                if (IsSameDepositType(nPos))
+                {
+                    visited.Add(nPos); // Oznaczamy jako odwiedzony
+                    count += 1 + CountAllConnectedExtenders(nPos, visited);
+                }
+                else
+                {
+                    Debug.Log($"[Miner] Extender na {nPos} jest na innym z³o¿u - ignorujê.");
+                }
+            }
+        }
+        return count;
+    }
+
+    private bool IsSameDepositType(Vector2Int pos)
+    {
+        // Pobieramy z³o¿e pod minerem
+        var myDeposit = GridManager.Instance.GetGridObjects(GetGridPosition())
+                        .OfType<ResourceDeposit>().FirstOrDefault();
+
+        // Pobieramy z³o¿e pod sprawdzanym polem
+        var targetDeposit = GridManager.Instance.GetGridObjects(pos)
+                            .OfType<ResourceDeposit>().FirstOrDefault();
+
+        if (myDeposit == null || targetDeposit == null) return false;
+
+        // Porównujemy nazwy surowców (np. "Coal" == "Coal")
+        return myDeposit.resourceData.resourceName == targetDeposit.resourceData.resourceName;
     }
 }

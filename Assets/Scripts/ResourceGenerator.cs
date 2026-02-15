@@ -5,16 +5,18 @@ public class ResourceGenerator : MonoBehaviour
     public GameObject ironOreDepositPrefab;
     public GameObject coalOreDepositPrefab;
     public GameObject copperOreDepositPrefab;
+    public GameObject OilDepositPrefab;
+    public GameObject SulfurDepositPrefab;
 
-    public int minDeposits = 10;
-    public int maxDeposits = 50;
+    public int minDeposits = 100;
+    public int maxDeposits = 200;
 
     public Transform depositsContainer;
 
-    private int minGridX = -10;
-    private int maxGridX = 10;
-    private int minGridY = -10;
-    private int maxGridY = 10;
+    private int minGridX = -20;
+    private int maxGridX = 20;
+    private int minGridY = -20;
+    private int maxGridY = 20;
 
     public void InitializeGenerator()
     {
@@ -69,7 +71,9 @@ public class ResourceGenerator : MonoBehaviour
             {
                 GameObject depositPrefabToUse;
                 float RandomValue = Random.value;
-                bool isCoal = RandomValue < 0.4f;
+                bool isCoal = RandomValue < 0.2f;
+                bool isOil = RandomValue > 0.2f && RandomValue < 0.3f;
+                bool isSulfur = RandomValue > 0.3f && RandomValue < 0.4f;
                 bool isCopper = RandomValue > 0.4f && RandomValue < 0.7f;
 
                 if (isCoal)
@@ -80,6 +84,16 @@ public class ResourceGenerator : MonoBehaviour
                 else if (isCopper)
                 {
                     depositPrefabToUse = copperOreDepositPrefab;
+                    copperCount++;
+                }
+                else if (isSulfur)
+                {
+                    depositPrefabToUse = SulfurDepositPrefab;
+                    copperCount++;
+                }
+                else if (isOil)
+                {
+                    depositPrefabToUse = OilDepositPrefab;
                     copperCount++;
                 }
                 else
