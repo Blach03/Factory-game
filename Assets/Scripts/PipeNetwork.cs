@@ -6,15 +6,40 @@ public class PipeNetwork
     public HashSet<PipeBuilding> Pipes = new HashSet<PipeBuilding>();
     public HashSet<PumpjackBuilding> ConnectedPumps = new HashSet<PumpjackBuilding>();
 
-    public float TotalProduction => ConnectedPumps.Count * 0.2f; // Przyk�adowa suma produkcji
+    public float TotalProduction => ConnectedPumps.Count * 0.2f;
 
     public void AddPipe(PipeBuilding pipe)
     {
+        if (pipe == null) return;
+        
         if (Pipes.Add(pipe))
         {
             pipe.CurrentNetwork = this;
             UpdatePumpsForPipe(pipe);
         }
+    }
+
+    // TA METODA NAPRAWI BŁĄD CS1061
+    public void Merge(PipeNetwork other)
+    {
+        if (other == null || other == this) return;
+
+        // Skopiuj wszystkie rury z tamtej sieci do tej
+        foreach (var pipe in other.Pipes)
+        {
+            pipe.CurrentNetwork = this;
+            Pipes.Add(pipe);
+        }
+
+        // Skopiuj pompy
+        foreach (var pump in other.ConnectedPumps)
+        {
+            ConnectedPumps.Add(pump);
+        }
+
+        // Wyczyść tamtą sieć, by nie wisiała w pamięci
+        other.Pipes.Clear();
+        other.ConnectedPumps.Clear();
     }
 
     private void UpdatePumpsForPipe(PipeBuilding pipe)
@@ -29,6 +54,8 @@ public class PipeNetwork
         foreach (var pos in neighbors)
         {
             var objects = GridManager.Instance.GetGridObjects(pos);
+            if (objects == null) continue;
+
             foreach (var obj in objects)
             {
                 if (obj is PumpjackBuilding pump)
