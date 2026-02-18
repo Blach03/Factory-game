@@ -2146,7 +2146,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   recipeSelectionPanel: {fileID: 1348768847}
   furnaceStatusPanel: {fileID: 2055987194}
-  assemblerStatusPanel: {fileID: 1608971292}
+  productionStatusPanel: {fileID: 1608971292}
   storageLimitPanel: {fileID: 608843753}
   limitInputField: {fileID: 179361945}
   inventoryPanel: {fileID: 809626759}
@@ -9810,7 +9810,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 1315548997}
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
@@ -11888,7 +11888,7 @@ MonoBehaviour:
   tertiaryInputCountText: {fileID: 1909025931}
   outputItemIcon: {fileID: 1302027662}
   outputItemCountText: {fileID: 1276297929}
-  assemblyProgressBar: {fileID: 793210240}
+  productionProgressBar: {fileID: 793210240}
   changeRecipeButton: {fileID: 232233376}
 --- !u!114 &1608971293
 MonoBehaviour:
@@ -13146,6 +13146,8 @@ MonoBehaviour:
     amount: 500
   - resource: {fileID: 11400000, guid: 76c5c0e139816944a872c29754cb1b03, type: 2}
     amount: 100
+  - resource: {fileID: 11400000, guid: de711455f414bf740be50f4724cab805, type: 2}
+    amount: 1000
 --- !u!1 &1756864104
 GameObject:
   m_ObjectHideFlags: 0

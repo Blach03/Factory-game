@@ -25,6 +25,7 @@ public class RecipeButtonHover : MonoBehaviour, IPointerEnterHandler, IPointerEx
         {
             tooltip.ShowAssemblyRecipe(assemblyRecipe);
         }
+        else if (recipe is RefineryRecipeData r) tooltip.ShowRefiningRecipe(r);
 
     }
 

@@ -84,9 +84,8 @@ public class PipeBuilding : GridObject
         return objects.Any(obj => 
             obj is PipeBuilding || 
             obj is PumpjackBuilding || 
-            obj is AssemblerBuilding);
+            obj is RefineryBuilding); // Dodano Rafinerię
     }
-
     private void SetPipe(Sprite s, float rotation)
     {
         spriteRenderer.sprite = s;

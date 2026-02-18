@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class RecipeTooltipUI : MonoBehaviour
 {
-    [Header("G³ówne elementy")]
+    [Header("Gï¿½ï¿½wne elementy")]
     public TextMeshProUGUI recipeNameText;
     public TextMeshProUGUI assemblyTimeText;
     public TextMeshProUGUI outputAmountText;
@@ -69,6 +69,31 @@ public class RecipeTooltipUI : MonoBehaviour
             if (hasTertiary)
             {
                 UpdateInputSlot(recipe.tertiaryInput, recipe.tertiaryInputAmount, tertiaryInputIcon, tertiaryInputAmountText);
+            }
+        }
+
+        gameObject.SetActive(true);
+    }
+
+    public void ShowRefiningRecipe(RefineryRecipeData recipe)
+    {
+        recipeNameText.text = recipe.recipeName;
+        assemblyTimeText.text = $"Creation Time: {recipe.processTime:F1}s";
+        outputAmountText.text = $"x{recipe.outputResultAmount}";
+        outputIcon.sprite = recipe.outputResource.icon;
+
+        primaryInputAmountText.text = $"x{recipe.inputItem}";
+        primaryInputIcon.sprite = recipe.inputItem.icon;
+
+        UpdateInputSlot(recipe.fluidResource, recipe.fluidAmount, secondaryInputIcon, secondaryInputAmountText);
+
+        bool hasTertiary = recipe.tetriaryinputItem != null;
+        if (tertiaryInputContainer != null)
+        {
+            tertiaryInputContainer.SetActive(hasTertiary);
+            if (hasTertiary)
+            {
+                UpdateInputSlot(recipe.tetriaryinputItem, recipe.tetriaryinputItemAmount, tertiaryInputIcon, tertiaryInputAmountText);
             }
         }
 

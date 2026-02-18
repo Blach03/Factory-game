@@ -6,7 +6,7 @@ public class PumpjackBuilding : GridObject
 {
     [Header("Ustawienia Wydobycia")]
     public ResourceData oilResourceData;
-    public float productionPerSecond = 0.2f; // Iloœæ ropy dodawana do sieci
+    public float productionPerSecond = 0.2f; // Iloï¿½ï¿½ ropy dodawana do sieci
 
     private bool isOnOilDeposit = false;
 
@@ -20,22 +20,22 @@ public class PumpjackBuilding : GridObject
 
     void Start()
     {
-        // Sprawdzenie poprawnoœci z³o¿a
+        // Sprawdzenie poprawnoï¿½ci zï¿½oï¿½a
         isOnOilDeposit = CheckIfOnOilDeposit();
 
         if (!isOnOilDeposit)
         {
-            Debug.LogWarning($"[Pumpjack] Postawiony na niew³aœciwym polu na {occupiedPosition}. Wymagane z³o¿e: Oil.");
+            Debug.LogWarning($"[Pumpjack] Postawiony na niewï¿½aï¿½ciwym polu na {occupiedPosition}. Wymagane zï¿½oï¿½e: Oil.");
         }
         else
         {
-            // Poinformuj s¹siednie rury, ¿e siê pojawi³eœ
+            // Poinformuj sï¿½siednie rury, ï¿½e siï¿½ pojawiï¿½eï¿½
             NotifyAdjacentPipes();
         }
     }
 
-    // Pumpjack nie potrzebuje Update() do wyrzucania przedmiotów, 
-    // bo PipeNetwork bêdzie pobieraæ od niego TotalProduction.
+    // Pumpjack nie potrzebuje Update() do wyrzucania przedmiotï¿½w, 
+    // bo PipeNetwork bï¿½dzie pobieraï¿½ od niego TotalProduction.
 
     private bool CheckIfOnOilDeposit()
     {
@@ -48,8 +48,8 @@ public class PumpjackBuilding : GridObject
     }
 
     /// <summary>
-    /// Metoda sprawdzaj¹ca, czy pumpjack jest aktywny i na w³aœciwym z³o¿u.
-    /// Wywo³ywana przez PipeNetwork.
+    /// Metoda sprawdzajï¿½ca, czy pumpjack jest aktywny i na wï¿½aï¿½ciwym zï¿½oï¿½u.
+    /// Wywoï¿½ywana przez PipeNetwork.
     /// </summary>
     public float GetCurrentOutput()
     {
@@ -57,7 +57,7 @@ public class PumpjackBuilding : GridObject
     }
 
     /// <summary>
-    /// Szuka rur wokó³ pumpjacka i wymusza na nich aktualizacjê sieci.
+    /// Szuka rur wokï¿½ pumpjacka i wymusza na nich aktualizacjï¿½ sieci.
     /// </summary>
     public void NotifyAdjacentPipes()
     {
@@ -73,7 +73,7 @@ public class PumpjackBuilding : GridObject
             var pipe = GridManager.Instance.GetGridObjects(nPos)?.OfType<PipeBuilding>().FirstOrDefault();
             if (pipe != null)
             {
-                // Nakazujemy rurze odœwie¿yæ swoj¹ sieæ, by uwzglêdni³a tego pumpjacka
+                pipe.UpdatePipeVisuals();
                 pipe.RefreshNetwork();
             }
         }
@@ -81,7 +81,7 @@ public class PumpjackBuilding : GridObject
 
     private void OnDestroy()
     {
-        // Po usuniêciu pumpjacka, rury musz¹ wiedzieæ, ¿e znikn¹³ Ÿród³o
+        // Po usuniï¿½ciu pumpjacka, rury muszï¿½ wiedzieï¿½, ï¿½e zniknï¿½ï¿½ ï¿½rï¿½dï¿½o
         NotifyAdjacentPipes();
     }
 }

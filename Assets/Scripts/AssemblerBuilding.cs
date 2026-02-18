@@ -3,8 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.EventSystems;
 
-public class AssemblerBuilding : GridObject
+public class AssemblerBuilding : GridObject, IProductionBuilding 
 {
+    // --- IMPLEMENTACJA INTERFEJSU ---
+    public IBuildingRecipe GetCurrentRecipe() => currentRecipe;
+    
+    public int GetInputCount(int slotIndex) {
+        if (slotIndex == 0) return currentPrimaryInput;
+        if (slotIndex == 1) return currentSecondaryInput;
+        if (slotIndex == 2) return currentTertiaryInput;
+        return 0;
+    }
+    public float GetProgressTimer() => timer;
+    // PamiÄ™taj, aby w interfejsie IProductionBuilding dodaÄ‡:
+    // int inputCapacity { get; }
+    // int outputCapacity { get; }
+
+
     [Header("Receptura Assemblera")]
     public AssemblyRecipeData currentRecipe;
 
@@ -25,6 +40,9 @@ public class AssemblerBuilding : GridObject
 
     private int currentOutputAmount = 0;
 
+    int IProductionBuilding.inputCapacity => inputCapacity;
+    int IProductionBuilding.outputCapacity => outputCapacity;
+
     [Header("Parametry Techniczne")]
     public float outputSpeed = 3.0f;
     public float timer;
@@ -36,8 +54,6 @@ public class AssemblerBuilding : GridObject
     public int GetTertiaryInputCount() { return currentTertiaryInput; }
     public int GetCurrentOutputAmount() { return currentOutputAmount; }
     public float GetAssemblyTimer() { return timer; }
-
-    public AssemblyRecipeData GetCurrentRecipe() { return currentRecipe; }
 
     protected override void Awake()
     {
@@ -116,12 +132,12 @@ public class AssemblerBuilding : GridObject
                     isAssembling = false;
 
                     // --- LOGIKA PRODUCTION SPEED ---
-                    // U¿ywamy zmodyfikowanego czasu zamiast surowego assemblyTime
+                    // Uï¿½ywamy zmodyfikowanego czasu zamiast surowego assemblyTime
                     timer = GetModifiedAssemblyTime();
                 }
                 else
                 {
-                    timer = 0.001f; // Czekamy, a¿ zwolni siê miejsce w ekwipunku
+                    timer = 0.001f; // Czekamy, aï¿½ zwolni siï¿½ miejsce w ekwipunku
                 }
             }
         }
@@ -131,7 +147,7 @@ public class AssemblerBuilding : GridObject
     {
         if (currentRecipe == null) return 1f;
 
-        // Pobieramy mno¿nik z managera (domyœlnie 1.0)
+        // Pobieramy mnoï¿½nik z managera (domyï¿½lnie 1.0)
         float speedMultiplier = 1.0f;
         if (TechTreeManager.Instance != null)
         {
@@ -143,11 +159,7 @@ public class AssemblerBuilding : GridObject
 
     public void OnMouseDown()
     {
-        if (EventSystem.current.IsPointerOverGameObject())
-        {
-            return;
-        }
-
+        if (EventSystem.current.IsPointerOverGameObject()) return;
         if (UIManager.Instance == null) return;
 
         if (currentRecipe == null)
@@ -156,7 +168,8 @@ public class AssemblerBuilding : GridObject
         }
         else
         {
-            UIManager.Instance.OpenAssemblerStatus(this);
+            // Zmieniamy na uniwersalne wywoÅ‚anie
+            UIManager.Instance.OpenStatusWindow(this); 
         }
     }
 
@@ -186,7 +199,7 @@ public class AssemblerBuilding : GridObject
         if (currentRecipe == null) return;
         if (currentOutputAmount >= outputCapacity) return;
 
-        // Sprawdzenie dostêpnoœci wszystkich 3 surowców (lub mniej, jeœli opcjonalne s¹ null)
+        // Sprawdzenie dostï¿½pnoï¿½ci wszystkich 3 surowcï¿½w (lub mniej, jeï¿½li opcjonalne sï¿½ null)
         bool canCraft =
             currentPrimaryInput >= currentRecipe.primaryInputAmount &&
             (currentRecipe.secondaryInput == null || currentSecondaryInput >= currentRecipe.secondaryInputAmount) &&
@@ -461,9 +474,9 @@ public class AssemblerBuilding : GridObject
             AssemblyRecipeData loadedRecipe = Resources.Load<AssemblyRecipeData>("Recipes/Assembler/" + data.activeRecipeName);
             if (loadedRecipe != null)
             {
-                SetRecipe(loadedRecipe); // To ustawia domyœlny timer i zeruje sk³adniki
+                SetRecipe(loadedRecipe); // To ustawia domyï¿½lny timer i zeruje skï¿½adniki
 
-                // Przywracamy dok³adny stan sprzed zapisu
+                // Przywracamy dokï¿½adny stan sprzed zapisu
                 this.currentPrimaryInput = data.primaryCount;
                 this.currentSecondaryInput = data.secondaryCount;
                 this.currentTertiaryInput = data.tertiaryCount;

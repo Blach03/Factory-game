@@ -7,6 +7,29 @@ public class PipeNetwork
     public HashSet<PumpjackBuilding> ConnectedPumps = new HashSet<PumpjackBuilding>();
 
     public float TotalProduction => ConnectedPumps.Count * 0.2f;
+    
+    public float storedFluid = 0f;
+    public float MaxCapacity => Pipes.Count * 10f; // Każda rura mieści 10 jednostek
+
+    public void TickProduction()
+    {
+        foreach (var pump in ConnectedPumps)
+        {
+            storedFluid += pump.GetCurrentOutput() * Time.deltaTime;
+        }
+        storedFluid = Mathf.Clamp(storedFluid, 0, MaxCapacity);
+    }
+
+    public bool RequestFluid(float amount)
+    {
+        if (storedFluid >= amount)
+        {
+            storedFluid -= amount;
+            return true;
+        }
+        return false;
+    }
+    
 
     public void AddPipe(PipeBuilding pipe)
     {

@@ -10,7 +10,7 @@ public class InventoryUI : MonoBehaviour
     public GameObject inventorySlotPrefab;
 
     public CraftingDetailsPanel craftingDetailsPanel;
-    private string lastSelectedResourceName; // Zmienna do zapamiêtania wyboru
+    private string lastSelectedResourceName; // Zmienna do zapamiï¿½tania wyboru
 
     public void SetupInventory()
     {
@@ -20,56 +20,60 @@ public class InventoryUI : MonoBehaviour
         }
 
         if (PlayerInventory.Instance == null) return;
+        if (craftingDetailsPanel != null) craftingDetailsPanel.ClearDetails();
 
         List<ResourceData> allResources = PlayerInventory.Instance.GetAllGameResources();
 
-
-        if (craftingDetailsPanel != null) craftingDetailsPanel.ClearDetails();
-        
-
         foreach (ResourceData resource in allResources)
         {
+            // 1. FILTR: Czy przedmiot moÅ¼na trzymaÄ‡ w EQ (np. Oil ma to odznaczone)
+            if (resource.canBeStoredInInventory == false) continue;
+
+            // 2. FILTR: Czy technologia jest odblokowana
+            if (!IsResourceUnlocked(resource)) continue;
+
             GameObject slotGO = Instantiate(inventorySlotPrefab, contentParent);
 
-            Image itemIcon = slotGO.transform.Find("Icon").GetComponent<Image>();
-            TextMeshProUGUI nameText = slotGO.transform.Find("NameText").GetComponent<TextMeshProUGUI>();
-            TextMeshProUGUI countText = slotGO.transform.Find("CountText").GetComponent<TextMeshProUGUI>();
+            // Szukanie komponentÃ³w (zachowujemy TwojÄ… strukturÄ™)
+            Image itemIcon = slotGO.transform.Find("Icon")?.GetComponent<Image>();
+            TextMeshProUGUI nameText = slotGO.transform.Find("NameText")?.GetComponent<TextMeshProUGUI>();
+            TextMeshProUGUI countText = slotGO.transform.Find("CountText")?.GetComponent<TextMeshProUGUI>();
+            Button slotButton = slotGO.GetComponentInChildren<Button>();
 
-            nameText.text = resource.resourceName;
-
-            if (resource.icon != null)
-            {
-                itemIcon.sprite = resource.icon;
-            }
+            if (nameText != null) nameText.text = resource.resourceName;
+            if (itemIcon != null && resource.icon != null) itemIcon.sprite = resource.icon;
 
             int count = PlayerInventory.Instance.GetItemCount(resource);
-            countText.text = count.ToString();
-
-            Button slotButton = slotGO.GetComponentInChildren<Button>();
+            if (countText != null) countText.text = count.ToString();
 
             if (slotButton != null)
             {
                 ResourceData capturedResource = resource;
-                slotButton.onClick.AddListener(() =>
-                {
-                    SelectResource(capturedResource);
-                });
+                slotButton.onClick.AddListener(() => SelectResource(capturedResource));
 
-                // NOWOŒÆ: Jeœli ten przedmiot by³ wczeœniej wybrany, odœwie¿ panel od razu
                 if (lastSelectedResourceName == resource.resourceName)
                 {
                     craftingDetailsPanel.DisplayItem(resource);
-                    // Opcjonalnie: tutaj mo¿esz dodaæ kod wizualnego podœwietlenia ramki slotu
                 }
             }
-            if (slotButton != null && craftingDetailsPanel != null)
-            {
-                ResourceData capturedResource = resource;
-                slotButton.onClick.AddListener(() => craftingDetailsPanel.DisplayItem(capturedResource));
-            }
+        }
+    }
+
+    private bool IsResourceUnlocked(ResourceData resource)
+    {
+        // JeÅ›li nie wymaga technologii, zwrÃ³Ä‡ true
+        if (string.IsNullOrEmpty(resource.requiredTechId)) return true;
+
+        // Sprawdzamy w Twoim TechTreeManager
+        if (TechTreeManager.Instance != null)
+        {
+            return TechTreeManager.Instance.IsResearched(resource.requiredTechId);
         }
 
+        return false; // JeÅ›li managera nie ma, ukryj przedmiot dla bezpieczeÅ„stwa
     }
+
+
     private void SelectResource(ResourceData resource)
     {
         lastSelectedResourceName = resource.resourceName;

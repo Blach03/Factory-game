@@ -7,4 +7,6 @@ public class ResourceData : ScriptableObject
     public Sprite icon;
 
     public Item itemPrefab;
+    public bool canBeStoredInInventory = true;
+    public string requiredTechId = "";
 }

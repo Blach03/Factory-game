@@ -7,10 +7,10 @@ using System.Linq;
 public class RecipeSelectionUI : MonoBehaviour
 {
 
-    [Tooltip("Kontener, do którego bêd¹ dodawane przyciski receptur.")]
+    [Tooltip("Kontener, do ktï¿½rego bï¿½dï¿½ dodawane przyciski receptur.")]
     public Transform recipeGridContainer;
 
-    [Tooltip("Prefab przycisku, który ma byæ instancjonowany dla ka¿dej receptury.")]
+    [Tooltip("Prefab przycisku, ktï¿½ry ma byï¿½ instancjonowany dla kaï¿½dej receptury.")]
     public GameObject recipeButtonPrefab;
 
     public RecipeTooltipUI recipeTooltip;
@@ -28,22 +28,22 @@ public class RecipeSelectionUI : MonoBehaviour
         }
 
         var tree = TechTreeManager.Instance;
-        // Jeœli z jakiegoœ powodu nie ma managera, poka¿emy tylko receptury bez wymagañ
+        // Jeï¿½li z jakiegoï¿½ powodu nie ma managera, pokaï¿½emy tylko receptury bez wymagaï¿½
 
         List<IBuildingRecipe> unlockedRecipes = recipes.Where(r =>
         {
-            // Jeœli ID jest puste, receptura jest darmowa (dostêpna od pocz¹tku)
+            // Jeï¿½li ID jest puste, receptura jest darmowa (dostï¿½pna od poczï¿½tku)
             if (string.IsNullOrEmpty(r.techRequirementId)) return true;
 
-            // W przeciwnym razie sprawdŸ, czy technologia jest zbadana
+            // W przeciwnym razie sprawdï¿½, czy technologia jest zbadana
             return tree != null && tree.IsResearched(r.techRequirementId);
         }).ToList();
 
-        // 3. Sprawdzenie czy mamy co wyœwietliæ po filtracji
+        // 3. Sprawdzenie czy mamy co wyï¿½wietliï¿½ po filtracji
         if (unlockedRecipes.Count == 0)
         {
             Debug.LogWarning($"Brak ODBLOKOWANYCH receptur dla {building.GetType().Name}.");
-            // Opcjonalnie: wyœwietl komunikat w UI: "Wymagane dalsze badania"
+            // Opcjonalnie: wyï¿½wietl komunikat w UI: "Wymagane dalsze badania"
             return;
         }
 
@@ -55,7 +55,7 @@ public class RecipeSelectionUI : MonoBehaviour
 
         if (recipes == null || recipes.Count == 0)
         {
-            Debug.LogWarning($"Nie znaleziono dostêpnych receptur dla {building.GetType().Name}.");
+            Debug.LogWarning($"Nie znaleziono dostï¿½pnych receptur dla {building.GetType().Name}.");
             return;
         }
 
@@ -86,13 +86,13 @@ public class RecipeSelectionUI : MonoBehaviour
 
     private ResourceData GetOutputResourceFromRecipe(IBuildingRecipe recipe)
     {
-        if (recipe is SmeltingRecipeData smeltingRecipe)
+        if (recipe is SmeltingRecipeData smeltingRecipe) return smeltingRecipe.outputItem;
+        if (recipe is AssemblyRecipeData assemblyRecipe) return assemblyRecipe.outputItem;
+        
+        if (recipe is RefineryRecipeData refinery) 
         {
-            return smeltingRecipe.outputItem;
-        }
-        else if (recipe is AssemblyRecipeData assemblyRecipe)
-        {
-            return assemblyRecipe.outputItem;
+            // SprawdÅº w swoim skrypcie RefineryRecipeData czy to pole nazywa siÄ™ outputResource czy outputItem
+            return refinery.outputResource; 
         }
         return null;
     }
@@ -111,27 +111,30 @@ public class RecipeSelectionUI : MonoBehaviour
 
     private void OnRecipeSelected(IBuildingRecipe selectedRecipe)
     {
+        UIManager.Instance.CloseAllUI();
+
         if (currentBuilding is FurnaceBuilding furnace && selectedRecipe is SmeltingRecipeData smeltingRecipe)
         {
             furnace.SetRecipe(smeltingRecipe);
-            UIManager.Instance.CloseAllUI();
             UIManager.Instance.OpenFurnaceStatus(furnace);
         }
-        else if (currentBuilding is AssemblerBuilding assembler && selectedRecipe is AssemblyRecipeData assemblyRecipe)
+        else if (currentBuilding is IProductionBuilding productionBuilding)
         {
-            assembler.SetRecipe(assemblyRecipe);
-            UIManager.Instance.CloseAllUI();
-            UIManager.Instance.OpenAssemblerStatus(assembler);
-        }
-        else
-        {
-            Debug.LogError($"B³¹d: Nie mo¿na przypisaæ receptury {selectedRecipe.GetType().Name} do budynku {currentBuilding.GetType().Name}.");
+            // To obsÅ‚uÅ¼y zarÃ³wno AssemblerBuilding jak i RefineryBuilding
+            if (currentBuilding is AssemblerBuilding assembler && selectedRecipe is AssemblyRecipeData assemblyRecipe)
+            {
+                assembler.SetRecipe(assemblyRecipe);
+            }
+            else if (currentBuilding is RefineryBuilding refinery && selectedRecipe is RefineryRecipeData refineryRecipe)
+            {
+                refinery.SetRecipe(refineryRecipe);
+            }
+
+            // WywoÅ‚ujemy nowÄ…, wspÃ³lnÄ… metodÄ™ UI
+            UIManager.Instance.OpenStatusWindow(productionBuilding);
         }
 
-        if (recipeTooltip != null)
-        {
-            recipeTooltip.Hide();
-        }
+        if (recipeTooltip != null) recipeTooltip.Hide();
     }
 
     private void OnDisable()

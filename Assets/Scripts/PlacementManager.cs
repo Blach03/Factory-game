@@ -124,7 +124,7 @@ public class PlacementManager : MonoBehaviour
             {
                 if (item.isBeingMoved)
                 {
-                    Debug.LogWarning("Nie moøna podnieúÊ przedmiotu: jest w trakcie przenoszenia przez taúmociπg.");
+                    Debug.LogWarning("Nie moÔøΩna podnieÔøΩÔøΩ przedmiotu: jest w trakcie przenoszenia przez taÔøΩmociÔøΩg.");
                     return;
                 }
 
@@ -137,7 +137,7 @@ public class PlacementManager : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogError("B≥πd: Nie znaleziono PlayerInventory.Instance! Przedmiot zosta≥ usuniÍty bez dodania do ekwipunku.");
+                    Debug.LogError("BÔøΩÔøΩd: Nie znaleziono PlayerInventory.Instance! Przedmiot zostaÔøΩ usuniÔøΩty bez dodania do ekwipunku.");
                 }
 
                 Destroy(item.gameObject);
@@ -312,7 +312,7 @@ public class PlacementManager : MonoBehaviour
 
         if (!CanPlaceBuildingAtPosition(gridPosition, selectedGridObjectComponent, out occupiedTiles) || !hasResources)
         {
-            if (!hasResources) Debug.LogWarning("Brak surowcÛw do budowy!");
+            if (!hasResources) Debug.LogWarning("Brak surowcÔøΩw do budowy!");
             return false;
         }
 
@@ -401,84 +401,65 @@ public class PlacementManager : MonoBehaviour
         UpdatePreview(true);
     }
 
-    private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject prefabGridObject, out List<Vector2Int> occupiedTiles)
+private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject prefabGridObject, out List<Vector2Int> occupiedTiles)
+{
+    occupiedTiles = GetOccupiedGridPositions(gridPosition, prefabGridObject.size);
+    if (GridManager.Instance == null) return false;
+
+    // --- 1. WALIDACJA POD≈ÅO≈ªA (WYMAGANE Z≈ÅO≈ªA) ---
+    // Pobieramy obiekty z g≈Ç√≥wnego kafelka (lewy dolny r√≥g)
+    List<GridObject> objectsAtMainTile = GridManager.Instance.GetGridObjects(gridPosition);
+    ResourceDeposit deposit = objectsAtMainTile.OfType<ResourceDeposit>().FirstOrDefault();
+
+    // Sprawdzenie dla Pumpjacka (musi byƒá Oil)
+    if (prefabGridObject is PumpjackBuilding)
     {
-        occupiedTiles = GetOccupiedGridPositions(gridPosition, prefabGridObject.size);
-
-        if (GridManager.Instance == null) return false;
-
-        // --- WALIDACJA SPECYFICZNA DLA TYPU BUDYNKU (Z£OØA) ---
-
-        // Sprawdzamy co znajduje siÍ na g≥Ûwnym polu (gridPosition)
-        List<GridObject> objectsAtTile = GridManager.Instance.GetGridObjects(gridPosition);
-        ResourceDeposit deposit = objectsAtTile.OfType<ResourceDeposit>().FirstOrDefault();
-
-        // 1. Ograniczenie dla Pumpjacka (tylko na Oil)
-        if (prefabGridObject is PumpjackBuilding)
-        {
-            if (deposit == null || deposit.resourceData.resourceName != "Oil")
-            {
-                return false; // Nie moøna postawiÊ poza z≥oøem Oil
-            }
-        }
-
-        // 2. Ograniczenie dla Minera i Extendera (tylko na surowcach sta≥ych)
-        bool isMiner = prefabGridObject.GetComponent<MinerBuilding>() != null;
-        bool isExtender = prefabGridObject.GetComponent<MinerExtender>() != null;
-
-        if (isMiner || isExtender)
-        {
-            string[] validResources = { "Iron Ore", "Copper Ore", "Coal Ore", "Sulfur Ore" };
-
-            if (deposit == null || !validResources.Contains(deposit.resourceData.resourceName))
-            {
-                return false; // Nie moøna postawiÊ poza wymienionymi surowcami
-            }
-        }
-
-        // --- STANDARDOWA LOGIKA KOLIZJI (Twoja istniejπca) ---
-        bool isPlacingMiner = isMiner;
-        bool isPlacingOverhead = prefabGridObject.GetComponent<OverheadConveyor>() != null;
-
-        foreach (Vector2Int tile in occupiedTiles)
-        {
-            // Jeúli pole jest zablokowane przez budynek/taúmÍ
-            if (GridManager.Instance.IsPlacementBlocked(tile) && !isPlacingOverhead)
-            {
-                GridObject existingObject = GridManager.Instance.GetGridObject(tile);
-
-                // Wyjπtek: Miner moøe staÊ na z≥oøu, Overhead na taúmie
-                if (existingObject != null && existingObject.objectType == GridObjectType.ResourceDeposit && isPlacingMiner)
-                {
-                    // To jest dopuszczalne
-                }
-                else if (existingObject != null && isPlacingOverhead && existingObject.objectType == GridObjectType.ConveyorBelt)
-                {
-                    // To jest dopuszczalne
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            // Dodatkowe sprawdzenia nak≥adania siÍ obiektÛw
-            GridObject existingObjectCheck = GridManager.Instance.GetGridObject(tile);
-            if (existingObjectCheck != null)
-            {
-                if (isPlacingOverhead && existingObjectCheck.objectType == GridObjectType.ConveyorBelt) { }
-                else if (isPlacingMiner && existingObjectCheck.objectType == GridObjectType.ResourceDeposit) { }
-                else if (existingObjectCheck.objectType == GridObjectType.OverheadConveyor) return false;
-                else if (prefabGridObject.objectType == GridObjectType.Building &&
-                        (existingObjectCheck.objectType == GridObjectType.ConveyorBelt || existingObjectCheck.objectType == GridObjectType.Building))
-                {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        if (deposit == null || deposit.resourceData.resourceName != "Oil") return false;
     }
+
+    // Sprawdzenie dla Minera i Extendera (surowce sta≈Çe)
+    bool isMiner = prefabGridObject.GetComponent<MinerBuilding>() != null;
+    bool isExtender = prefabGridObject.GetComponent<MinerExtender>() != null;
+    if (isMiner || isExtender)
+    {
+        string[] validResources = { "Iron Ore", "Copper Ore", "Coal Ore", "Sulfur Ore" };
+        if (deposit == null || !validResources.Contains(deposit.resourceData.resourceName)) return false;
+    }
+
+    // --- 2. SPRAWDZANIE KOLIZJI (CZY POLE JEST WOLNE) ---
+    bool isPlacingOverhead = prefabGridObject.GetComponent<OverheadConveyor>() != null;
+
+    foreach (Vector2Int tile in occupiedTiles)
+    {
+        List<GridObject> objectsOnTile = GridManager.Instance.GetGridObjects(tile);
+        if (objectsOnTile == null) continue;
+
+        foreach (GridObject existing in objectsOnTile)
+        {
+            // Zasoby (Ore/Oil) nigdy nie blokujƒÖ stawiania
+            if (existing.objectType == GridObjectType.ResourceDeposit) continue;
+
+            // WyjƒÖtek: Wiadukt (Overhead) mo≈ºe staƒá na zwyk≈Çej ta≈õmie
+            if (isPlacingOverhead && existing.objectType == GridObjectType.ConveyorBelt) continue;
+
+            // WyjƒÖtek: Zwyk≈Ça ta≈õma mo≈ºe byƒá pod wiaduktem (je≈õli stawiasz ta≈õmƒô pod istniejƒÖcym wiaduktem)
+            bool isPlacingBelt = prefabGridObject.objectType == GridObjectType.ConveyorBelt;
+            if (isPlacingBelt && existing.objectType == GridObjectType.OverheadConveyor) continue;
+
+            // Je≈õli to rura, ta≈õma lub budynek - blokujemy
+            // Sprawdzamy te≈º flagƒô isBlockingPlacement dla pewno≈õci
+            if (existing.isBlockingPlacement || 
+                existing.objectType == GridObjectType.Building || 
+                existing.objectType == GridObjectType.ConveyorBelt || 
+                existing.objectType == GridObjectType.OverheadConveyor)
+            {
+                return false; 
+            }
+        }
+    }
+
+    return true;
+}
 
     private void TryRemoveBuilding()
     {
@@ -490,7 +471,7 @@ public class PlacementManager : MonoBehaviour
 
         if (placedObjects.Count == 0)
         {
-            Debug.LogWarning($"PrÛba usuniÍcia: Na polu {gridPosition.x}, {gridPosition.y} nie ma øadnego obiektu.");
+            Debug.LogWarning($"PrÔøΩba usuniÔøΩcia: Na polu {gridPosition.x}, {gridPosition.y} nie ma ÔøΩadnego obiektu.");
             return;
         }
 

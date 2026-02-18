@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine.UI; // <-- TO JEST KLUCZOWE DLA KOMPONENTU IMAGE
-using UnityEngine.EventSystems; // DODAJ TÊ DYREKTYWÊ NA GÓRZE PLIKU
+using UnityEngine.EventSystems; // DODAJ Tï¿½ DYREKTYWï¿½ NA Gï¿½RZE PLIKU
 
 public class UIManager : MonoBehaviour
 {
@@ -12,7 +12,7 @@ public class UIManager : MonoBehaviour
     [Header("Panele UI - Budynki")]
     public RecipeSelectionUI recipeSelectionPanel;
     public FurnaceStatusUI furnaceStatusPanel;
-    public AssemblerStatusUI assemblerStatusPanel;
+    public ProductionStatusUI productionStatusPanel;
 
     [Header("Panele UI - Storage")]
     public GameObject storageLimitPanel;
@@ -49,7 +49,7 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
-        // Jeœli gracz klika/pisze w jakimkolwiek InputField, nie reaguj na skróty klawiszowe
+        // Jeï¿½li gracz klika/pisze w jakimkolwiek InputField, nie reaguj na skrï¿½ty klawiszowe
         if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
         {
             if (EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() != null)
@@ -68,8 +68,8 @@ public class UIManager : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.T))
         {
-            // Tutaj równie¿ warto dodaæ warunek, aby nie otwieraæ drzewka, 
-            // gdy inne panele s¹ ju¿ otwarte (podobnie jak robisz to z inventory)
+            // Tutaj rï¿½wnieï¿½ warto dodaï¿½ warunek, aby nie otwieraï¿½ drzewka, 
+            // gdy inne panele sï¿½ juï¿½ otwarte (podobnie jak robisz to z inventory)
             if (!isTechTreeOpen && IsAnyPanelOpen()) return;
 
             ToggleTechnologyTree();
@@ -77,8 +77,8 @@ public class UIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Logika obs³ugi klawisza ESC: najpierw zamyka aktywne okna, 
-    /// a jeœli nic nie jest otwarte - otwiera/zamyka Menu Pauzy.
+    /// Logika obsï¿½ugi klawisza ESC: najpierw zamyka aktywne okna, 
+    /// a jeï¿½li nic nie jest otwarte - otwiera/zamyka Menu Pauzy.
     /// </summary>
     /// 
     public void ToggleTechnologyTree()
@@ -86,7 +86,7 @@ public class UIManager : MonoBehaviour
 
         if (!isTechTreeOpen)
         {
-            // Jeœli otwieramy drzewko, zamknijmy inne panele (np. piec, assembler)
+            // Jeï¿½li otwieramy drzewko, zamknijmy inne panele (np. piec, assembler)
             CloseAllUI();
         }
 
@@ -107,34 +107,34 @@ public class UIManager : MonoBehaviour
 
     private void HandleEscapeLogic()
     {
-        // 1. Jeœli otwarte jest Menu Pauzy - zamknij je
+        // 1. Jeï¿½li otwarte jest Menu Pauzy - zamknij je
         if (pauseMenuPanel != null && pauseMenuPanel.activeSelf)
         {
             ClosePauseMenu();
             return;
         }
 
-        // 2. NOWOŒÆ: Najpierw sprawdŸ, czy otwarte jest okno SZCZEGÓ£ÓW technologii
-        // U¿ywamy Instance, bo TechDetailsUI to Singleton
+        // 2. NOWOï¿½ï¿½: Najpierw sprawdï¿½, czy otwarte jest okno SZCZEGÓ£ï¿½W technologii
+        // Uï¿½ywamy Instance, bo TechDetailsUI to Singleton
         if (TechDetailsUI.Instance != null && TechDetailsUI.Instance.panel.activeSelf)
         {
             TechDetailsUI.Instance.Close();
-            return; // Przerywamy, dziêki czemu drzewko (isTechTreeOpen) pozostanie otwarte
+            return; // Przerywamy, dziï¿½ki czemu drzewko (isTechTreeOpen) pozostanie otwarte
         }
 
-        // 3. Jeœli otwarte jest g³ówne drzewko technologii - zamknij je
+        // 3. Jeï¿½li otwarte jest gï¿½ï¿½wne drzewko technologii - zamknij je
         if (isTechTreeOpen)
         {
             ToggleTechnologyTree();
             return;
         }
 
-        // 4. Jeœli otwarte s¹ inne panele gry (ekwipunek, budynki) - zamknij je
+        // 4. Jeï¿½li otwarte sï¿½ inne panele gry (ekwipunek, budynki) - zamknij je
         if (IsAnyPanelOpen())
         {
             CloseAllUI();
         }
-        // 5. Jeœli nic nie jest otwarte - otwórz Menu Pauzy
+        // 5. Jeï¿½li nic nie jest otwarte - otwï¿½rz Menu Pauzy
         else
         {
             OpenPauseMenu();
@@ -143,7 +143,7 @@ public class UIManager : MonoBehaviour
 
     private void HandleInventoryToggle()
     {
-        // Nie pozwól otworzyæ ekwipunku, gdy Menu Pauzy jest aktywne
+        // Nie pozwï¿½l otworzyï¿½ ekwipunku, gdy Menu Pauzy jest aktywne
         if (pauseMenuPanel != null && pauseMenuPanel.activeSelf) return;
 
         if (isInventoryOpen)
@@ -156,7 +156,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // --- ZARZ¥DZANIE MENU PAUZY ---
+    // --- ZARZï¿½DZANIE MENU PAUZY ---
 
     public void OpenPauseMenu()
     {
@@ -176,7 +176,7 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    // --- ZARZ¥DZANIE PANELAMI ---
+    // --- ZARZï¿½DZANIE PANELAMI ---
 
     public void OpenInventory()
     {
@@ -200,7 +200,7 @@ public class UIManager : MonoBehaviour
     {
         return (recipeSelectionPanel != null && recipeSelectionPanel.gameObject.activeSelf) ||
                (furnaceStatusPanel != null && furnaceStatusPanel.gameObject.activeSelf) ||
-               (assemblerStatusPanel != null && assemblerStatusPanel.gameObject.activeSelf) ||
+               (productionStatusPanel != null && productionStatusPanel.gameObject.activeSelf) ||
                (storageLimitPanel != null && storageLimitPanel.activeSelf) ||
                inventoryPanel.activeSelf ||
                isTechTreeOpen;
@@ -211,13 +211,13 @@ public class UIManager : MonoBehaviour
         // Zamyka budynki
         if (recipeSelectionPanel != null) recipeSelectionPanel.gameObject.SetActive(false);
         if (furnaceStatusPanel != null) furnaceStatusPanel.gameObject.SetActive(false);
-        if (assemblerStatusPanel != null) assemblerStatusPanel.gameObject.SetActive(false);
+        if (productionStatusPanel != null) productionStatusPanel.gameObject.SetActive(false);
 
         // Zamyka storage i inventory
         CloseStorageLimitUI();
         CloseInventory();
 
-        // Upewniamy siê, ¿e czas p³ynie (na wypadek gdyby zamkniêto coœ si³owo)
+        // Upewniamy siï¿½, ï¿½e czas pï¿½ynie (na wypadek gdyby zamkniï¿½to coï¿½ siï¿½owo)
         if (pauseMenuPanel != null && !pauseMenuPanel.activeSelf)
         {
             Time.timeScale = 1f;
@@ -233,7 +233,7 @@ public class UIManager : MonoBehaviour
         currentStorage = null;
     }
 
-    // --- OTWIERANIE KONKRETNYCH STATUSÓW ---
+    // --- OTWIERANIE KONKRETNYCH STATUSï¿½W ---
 
     public void OpenRecipeSelection(GridObject building, List<IBuildingRecipe> availableRecipes)
     {
@@ -253,13 +253,10 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void OpenAssemblerStatus(AssemblerBuilding assembler)
+    public void OpenStatusWindow(IProductionBuilding building)
     {
         CloseAllUI();
-        if (assemblerStatusPanel != null)
-        {
-            assemblerStatusPanel.ShowStatus(assembler);
-        }
+        productionStatusPanel.ShowStatus(building); // productionStatusPanel to TwÃ³j stary assemblerStatusPanel
     }
 
     public void OpenStorageLimitUI(StorageContainer storage)
@@ -327,18 +324,18 @@ public class UIManager : MonoBehaviour
         }
 
         if (costPanel != null) costPanel.SetActive(true);
-        // Wyczyœæ stare ikony
+        // Wyczyï¿½ï¿½ stare ikony
         foreach (Transform child in costContainer) Destroy(child.gameObject);
 
         foreach (var cost in selectedBuilding.constructionCost)
         {
             GameObject go = Instantiate(costElementPrefab, costContainer);
-            var icon = go.GetComponentInChildren<Image>(); // ZnajdŸ obrazek ikony
-            var text = go.GetComponentInChildren<TextMeshProUGUI>(); // ZnajdŸ tekst
+            var icon = go.GetComponentInChildren<Image>(); // Znajdï¿½ obrazek ikony
+            var text = go.GetComponentInChildren<TextMeshProUGUI>(); // Znajdï¿½ tekst
 
             int invCount = PlayerInventory.Instance.GetItemCount(cost.resource);
 
-            icon.sprite = cost.resource.icon; // Upewnij siê, ¿e ResourceData ma pole 'icon'
+            icon.sprite = cost.resource.icon; // Upewnij siï¿½, ï¿½e ResourceData ma pole 'icon'
             text.text = $"{invCount}/{cost.amount}";
 
             // Kolorowanie tekstu
