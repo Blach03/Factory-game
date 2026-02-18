@@ -54,6 +54,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding
     {
         UpdateRecipeIcon();
         RotateBuilding(outputDirection);
+        NotifyNeighboringPipes();
     }
 
     void Update()
@@ -75,6 +76,27 @@ public class RefineryBuilding : GridObject, IProductionBuilding
         }
 
         if (currentOutputAmount > 0) TrySpitOutItem();
+    }
+
+    private void NotifyNeighboringPipes()
+    {
+        // Sprawdzamy obwód budynku 3x3 (od -1 do 3)
+        for (int x = -1; x <= size.x; x++)
+        {
+            for (int y = -1; y <= size.y; y++)
+            {
+                // Interesują nas tylko krawędzie
+                if (x >= 0 && x < size.x && y >= 0 && y < size.y) continue;
+
+                Vector2Int neighborPos = occupiedPosition + new Vector2Int(x, y);
+                var pipe = GridManager.Instance.GetGridObjects(neighborPos)?.OfType<PipeBuilding>().FirstOrDefault();
+                if (pipe != null)
+                {
+                    // Wywołaj metodę aktualizacji grafiki rury (nazwa zależy od Twojego skryptu rur, np. UpdatePipeVisuals)
+                    pipe.UpdatePipeVisuals(); 
+                }
+            }
+        }
     }
 
     private void TryConsumeFluidFromNetwork()
@@ -194,10 +216,44 @@ public class RefineryBuilding : GridObject, IProductionBuilding
         recipeIconRenderer.enabled = currentRecipe != null;
     }
 
-    public void RotateBuilding(Direction newDir)
+    public void RotateBuilding(Direction newDirection)
     {
-        outputDirection = newDir;
-        // Tutaj dodaj logikę wizualną wskaźnika (outputIndicatorObject) z Assemblera
+        outputDirection = newDirection;
+
+        if (outputIndicatorObject != null)
+        {
+            outputIndicatorObject.SetActive(true);
+            SpriteRenderer sr = outputIndicatorObject.GetComponent<SpriteRenderer>();
+            if (sr != null) sr.enabled = true;
+
+            // Dla budynku 3x3, dystans 1.1f z Assemblera może być za mały, 
+            // jeśli Assembler też ma 3x3 i tam działa, zostaw 1.1f. 
+            // Jeśli jednak jest "wewnątrz" budynku, zwiększ do ok 1.6f.
+            float baseDistance = 1.1f; 
+            float targetRotationZ = 0f;
+
+            switch (outputDirection)
+            {
+                case Direction.Right:
+                    outputIndicatorObject.transform.localPosition = new Vector3(baseDistance, 0, 0f);
+                    targetRotationZ = 270f;
+                    break;
+                case Direction.Down:
+                    outputIndicatorObject.transform.localPosition = new Vector3(0, -baseDistance, 0f);
+                    targetRotationZ = 180f;
+                    break;
+                case Direction.Left:
+                    outputIndicatorObject.transform.localPosition = new Vector3(-baseDistance, 0, 0f);
+                    targetRotationZ = 90f;
+                    break;
+                case Direction.Up:
+                    outputIndicatorObject.transform.localPosition = new Vector3(0, baseDistance, 0f);
+                    targetRotationZ = 0f;
+                    break;
+            }
+
+            outputIndicatorObject.transform.localRotation = Quaternion.Euler(0, 0, targetRotationZ);
+        }
     }
 
     private Vector2Int GetInputGridPosition()

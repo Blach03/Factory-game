@@ -169,6 +169,7 @@ public class PlacementManager : MonoBehaviour
             OverheadConveyor overheadComponent = previewObject.GetComponent<OverheadConveyor>();
             FurnaceBuilding furnaceComponent = previewObject.GetComponent<FurnaceBuilding>();
             AssemblerBuilding assemblerComponent = previewObject.GetComponent<AssemblerBuilding>();
+            RefineryBuilding refineryComponent = previewObject.GetComponent<RefineryBuilding>(); // DODANO
             MinerExtender extender = previewObject.GetComponent<MinerExtender>();
 
             if (extender != null)
@@ -194,6 +195,11 @@ public class PlacementManager : MonoBehaviour
             if (furnaceComponent != null)
             {
                 furnaceComponent.RotateFurnace((FurnaceBuilding.Direction)currentRotationIndex);
+            }
+
+            if (refineryComponent != null)
+            {
+                refineryComponent.RotateBuilding((RefineryBuilding.Direction)currentRotationIndex);
             }
 
             if (assemblerComponent != null)
@@ -227,6 +233,7 @@ public class PlacementManager : MonoBehaviour
             OverheadConveyor overhead = targetObject.GetComponent<OverheadConveyor>();
             FurnaceBuilding furnace = targetObject.GetComponent<FurnaceBuilding>();
             AssemblerBuilding assembler = targetObject.GetComponent<AssemblerBuilding>();
+            RefineryBuilding refinery = targetObject.GetComponent<RefineryBuilding>(); // DODANO
             MinerExtender extender = targetObject.GetComponent<MinerExtender>();
             if (extender != null)
             {
@@ -262,6 +269,12 @@ public class PlacementManager : MonoBehaviour
                 AssemblerBuilding.Direction currentDir = assembler.outputDirection;
                 AssemblerBuilding.Direction newDir = GetNextDirection(currentDir);
                 assembler.RotateBuilding(newDir);
+            }
+            else if (refinery != null)
+            {
+                RefineryBuilding.Direction currentDir = refinery.outputDirection;
+                RefineryBuilding.Direction newDir = GetNextDirection(currentDir);
+                refinery.RotateBuilding(newDir);
             }
         }
     }
