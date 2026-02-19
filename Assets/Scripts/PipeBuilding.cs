@@ -22,6 +22,16 @@ public class PipeBuilding : GridObject
         size = new Vector2Int(1, 1);
     }
 
+    void Update()
+    {
+        // Tylko jedna rura z danej sieci musi wywoływać TickProduction
+        // Sprawdzamy, czy jesteśmy "pierwszą" rurą w zbiorze HashSet
+        if (CurrentNetwork != null && CurrentNetwork.Pipes.First() == this)
+        {
+            CurrentNetwork.TickProduction();
+        }
+    }
+
     private void Start()
     {
         UpdatePipeVisuals();
@@ -144,5 +154,16 @@ public class PipeBuilding : GridObject
     {
         NotifyNeighborsToUpdateVisuals();
         // Tutaj logika rozdzielania sieci (opcjonalnie)
+    }
+
+    private void OnMouseDown()
+    {
+        // Sprawdź czy nie klikamy przez UI
+        if (UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject()) return;
+
+        if (CurrentNetwork != null)
+        {
+            PipeNetworkUI.Instance.OpenWindow(CurrentNetwork);
+        }
     }
 }

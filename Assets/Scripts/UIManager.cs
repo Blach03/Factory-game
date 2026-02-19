@@ -114,6 +114,12 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        if (PipeNetworkUI.Instance != null && PipeNetworkUI.Instance.windowPanel.activeSelf)
+        {
+            PipeNetworkUI.Instance.CloseWindow();
+            return; // Zamykamy tylko to okno i przerywamy, żeby nie otwierać pauzy
+        }
+
         // 2. NOWO��: Najpierw sprawd�, czy otwarte jest okno SZCZEGӣ�W technologii
         // U�ywamy Instance, bo TechDetailsUI to Singleton
         if (TechDetailsUI.Instance != null && TechDetailsUI.Instance.panel.activeSelf)
@@ -202,6 +208,7 @@ public class UIManager : MonoBehaviour
                (furnaceStatusPanel != null && furnaceStatusPanel.gameObject.activeSelf) ||
                (productionStatusPanel != null && productionStatusPanel.gameObject.activeSelf) ||
                (storageLimitPanel != null && storageLimitPanel.activeSelf) ||
+               (PipeNetworkUI.Instance != null && PipeNetworkUI.Instance.windowPanel.activeSelf) ||
                inventoryPanel.activeSelf ||
                isTechTreeOpen;
     }

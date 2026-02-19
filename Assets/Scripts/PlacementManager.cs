@@ -15,6 +15,8 @@ public class PlacementManager : MonoBehaviour
     public GameObject assemblerPrefab;
     public GameObject minerExtenderPrefab;
 
+    public GameObject pipePrefab;
+
     [Header("State")]
     private GameObject selectedPrefab;
     private GameObject previewObject;
@@ -356,6 +358,11 @@ public class PlacementManager : MonoBehaviour
             FurnaceBuilding furnace = newBuildingObject.GetComponent<FurnaceBuilding>();
             AssemblerBuilding assembler = newBuildingObject.GetComponent<AssemblerBuilding>();
             MinerExtender extender = newBuildingObject.GetComponent<MinerExtender>();
+            RefineryBuilding refinery = newBuildingObject.GetComponent<RefineryBuilding>();
+            if (refinery != null)
+            {
+                refinery.RotateBuilding((RefineryBuilding.Direction)currentRotationIndex);
+            }
             if (extender != null)
             {
                 extender.SetupRotation((MinerBuilding.Direction)currentRotationIndex);
@@ -407,7 +414,8 @@ public class PlacementManager : MonoBehaviour
         selectedGridObjectComponent = selectedPrefab.GetComponent<GridObject>();
 
         isPlacingConveyor = selectedGridObjectComponent.objectType == GridObjectType.ConveyorBelt ||
-                            selectedGridObjectComponent.objectType == GridObjectType.OverheadConveyor;
+                        selectedGridObjectComponent.objectType == GridObjectType.OverheadConveyor ||
+                        selectedGridObjectComponent is PipeBuilding; // <--- DODANO TO
 
         UpdateCostUI();
 

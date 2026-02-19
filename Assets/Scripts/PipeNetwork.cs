@@ -11,10 +11,16 @@ public class PipeNetwork
     public float storedFluid = 0f;
     public float MaxCapacity => Pipes.Count * 10f; // Każda rura mieści 10 jednostek
 
+    public ResourceData FluidType;
+
     public void TickProduction()
     {
+        float previousStored = storedFluid;
         foreach (var pump in ConnectedPumps)
         {
+            // Ustawiamy ikonę zasobu na podstawie tego, co wydobywa pompa
+            if (FluidType == null) FluidType = pump.oilResourceData;
+            
             storedFluid += pump.GetCurrentOutput() * Time.deltaTime;
         }
         storedFluid = Mathf.Clamp(storedFluid, 0, MaxCapacity);
@@ -25,6 +31,7 @@ public class PipeNetwork
         if (storedFluid >= amount)
         {
             storedFluid -= amount;
+            // Debug.Log($"[PipeNetwork] Rafineria pobrała {amount} ropy.");
             return true;
         }
         return false;

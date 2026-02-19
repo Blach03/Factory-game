@@ -30,7 +30,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding
     public int currentOutputAmount = 0;
     
     public int inputCapacity = 30;
-    public float fluidCapacity = 100f;
+    public float fluidCapacity = 99f;
     public int outputCapacity = 20;
 
     int IProductionBuilding.inputCapacity => inputCapacity;
@@ -103,17 +103,29 @@ public class RefineryBuilding : GridObject, IProductionBuilding
     {
         if (currentFluidAmount >= fluidCapacity) return;
 
-        Vector2Int inputPos = GetInputGridPosition();
-        var pipe = GridManager.Instance.GetGridObjects(inputPos)?.OfType<PipeBuilding>().FirstOrDefault();
-        
-        if (pipe != null && pipe.CurrentNetwork != null)
+        // Skanujemy obwód budynku (pola sąsiadujące)
+        for (int x = -1; x <= size.x; x++)
         {
-            float space = fluidCapacity - currentFluidAmount;
-            // Pobieramy płyn z sieci (max 10 na sekundę dla balansu)
-            float toTake = Mathf.Min(space, pipe.CurrentNetwork.storedFluid, 10f * Time.deltaTime);
-            if (pipe.CurrentNetwork.RequestFluid(toTake))
+            for (int y = -1; y <= size.y; y++)
             {
-                currentFluidAmount += toTake;
+                // Interesują nas tylko pola na zewnątrz (krawędzie)
+                if (x >= 0 && x < size.x && y >= 0 && y < size.y) continue;
+
+                Vector2Int neighborPos = occupiedPosition + new Vector2Int(x, y);
+                var pipe = GridManager.Instance.GetGridObjects(neighborPos)?.OfType<PipeBuilding>().FirstOrDefault();
+
+                if (pipe != null && pipe.CurrentNetwork != null && pipe.CurrentNetwork.storedFluid > 0)
+                {
+                    float space = fluidCapacity - currentFluidAmount;
+                    // Pobieramy płyn z pierwszej znalezionej rury sąsiadującej
+                    float toTake = Mathf.Min(space, pipe.CurrentNetwork.storedFluid, 10f * Time.deltaTime);
+                    
+                    if (pipe.CurrentNetwork.RequestFluid(toTake))
+                    {
+                        currentFluidAmount += toTake;
+                        return; // Pobraliśmy, możemy wyjść z pętli w tej klatce
+                    }
+                }
             }
         }
     }
@@ -284,5 +296,20 @@ public class RefineryBuilding : GridObject, IProductionBuilding
     private bool IsOutputBlocked(Vector3 pos)
     {
         return Physics2D.OverlapCircle(pos, 0.1f, itemLayerMask) != null;
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (!Application.isPlaying || GridManager.Instance == null) return;
+
+        // Rysuj wejście płynu (Niebieskie)
+        Gizmos.color = Color.blue;
+        Vector3 inputWorld = GridManager.Instance.GridToWorld(GetInputGridPosition()) + new Vector3(0.5f, 0.5f, 0);
+        Gizmos.DrawWireCube(inputWorld, Vector3.one * 0.8f);
+
+        // Rysuj wyjście przedmiotów (Czerwone)
+        Gizmos.color = Color.red;
+        Vector3 outputWorld = GridManager.Instance.GridToWorld(GetOutputGridPosition()) + new Vector3(0.5f, 0.5f, 0);
+        Gizmos.DrawWireCube(outputWorld, Vector3.one * 0.8f);
     }
 }
