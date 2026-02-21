@@ -9,4 +9,6 @@ public class ResourceData : ScriptableObject
     public Item itemPrefab;
     public bool canBeStoredInInventory = true;
     public string requiredTechId = "";
+
+    public bool isFluid = false;
 }

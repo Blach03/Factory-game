@@ -93,7 +93,8 @@ public class PipeBuilding : GridObject
 
         return objects.Any(obj => 
             obj is PipeBuilding || 
-            obj is PumpjackBuilding || 
+            obj is PumpjackBuilding ||
+            obj is SteamTurbineBuilding ||
             obj is RefineryBuilding); // Dodano Rafinerię
     }
     private void SetPipe(Sprite s, float rotation)
@@ -114,23 +115,52 @@ public class PipeBuilding : GridObject
 
     // --- LOGIKA SIECIOWA ---
 
+    public void HardReset()
+    {
+        if (this == null || gameObject == null) return;
+
+        // Całkowite odcięcie od starej sieci
+        CurrentNetwork = null;
+
+        // Wizualny reset (opcjonalnie)
+        UpdatePipeVisuals();
+
+        // Wywołujemy RefreshNetwork w następnej klatce, aby upewnić się, 
+        // że wszystkie niszczone rury już zniknęły z GridManager-a
+        Invoke(nameof(DelayedRefresh), 0.05f);
+    }
+
+    private void DelayedRefresh()
+    {
+        if (this != null) RefreshNetwork();
+    }
+
     public void RefreshNetwork()
     {
+        // BEZPIECZNIK: Jeśli obiekt jest właśnie niszczony, nie odświeżaj go
+        if(this == null || gameObject == null) return;
+
         List<PipeBuilding> neighborPipes = GetNeighborPipes();
 
-        if (neighborPipes.Count == 0)
+        // Filtrujemy sąsiadów, aby brać pod uwagę tylko tych, którzy mają przypisaną sieć
+        // i nie są właśnie usuwani
+        var validNeighbors = neighborPipes.Where(n => n != null && n.CurrentNetwork != null).ToList();
+
+        if (validNeighbors.Count == 0)
         {
             CurrentNetwork = new PipeNetwork();
             CurrentNetwork.AddPipe(this);
         }
         else
         {
-            CurrentNetwork = neighborPipes[0].CurrentNetwork;
+            // Bierzemy sieć od pierwszego poprawnego sąsiada
+            CurrentNetwork = validNeighbors[0].CurrentNetwork;
             CurrentNetwork.AddPipe(this);
 
-            foreach (var neighbor in neighborPipes)
+            foreach (var neighbor in validNeighbors)
             {
-                if (neighbor.CurrentNetwork != CurrentNetwork)
+                // Łączymy sieci tylko jeśli są różne i obie istnieją
+                if (neighbor.CurrentNetwork != null && neighbor.CurrentNetwork != CurrentNetwork)
                 {
                     CurrentNetwork.Merge(neighbor.CurrentNetwork);
                 }
@@ -138,22 +168,43 @@ public class PipeBuilding : GridObject
         }
     }
 
-    private List<PipeBuilding> GetNeighborPipes()
-    {
-        Vector2Int[] dirs = { Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left };
-        List<PipeBuilding> neighbors = new List<PipeBuilding>();
-        foreach (var dir in dirs)
-        {
-            var p = GridManager.Instance.GetGridObjects(occupiedPosition + dir)?.OfType<PipeBuilding>().FirstOrDefault();
-            if (p != null) neighbors.Add(p);
-        }
-        return neighbors;
-    }
-
     private void OnDestroy()
     {
+        if (!gameObject.scene.isLoaded) return;
+
+        if (CurrentNetwork != null)
+        {
+            // 1. Kopiujemy listę rur, które zostają na mapie
+            var pipesToReset = CurrentNetwork.Pipes.Where(p => p != null && p != this).ToList();
+
+            // 2. Czyścimy starą sieć, żeby przestała istnieć w pamięci
+            CurrentNetwork.Pipes.Clear();
+            CurrentNetwork.ConnectedPumps.Clear();
+            CurrentNetwork = null;
+
+            // 3. Każda rura, która została, musi przejść twardy reset
+            foreach (var pipe in pipesToReset)
+            {
+                pipe.HardReset();
+            }
+        }
+
+        // Odśwież sąsiadów (grafika)
         NotifyNeighborsToUpdateVisuals();
-        // Tutaj logika rozdzielania sieci (opcjonalnie)
+    }
+
+    private List<PipeBuilding> GetNeighborPipes()
+    {
+        List<PipeBuilding> neighbors = new List<PipeBuilding>();
+        Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+        foreach (var dir in dirs)
+        {
+            var obj = GridManager.Instance.GetGridObjects(occupiedPosition + dir)
+                      ?.Find(o => o is PipeBuilding) as PipeBuilding;
+            if (obj != null) neighbors.Add(obj);
+        }
+        return neighbors;
     }
 
     private void OnMouseDown()

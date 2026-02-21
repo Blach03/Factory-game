@@ -82,7 +82,7 @@ public class RecipeTooltipUI : MonoBehaviour
         outputAmountText.text = $"x{recipe.outputResultAmount}";
         outputIcon.sprite = recipe.outputResource.icon;
 
-        primaryInputAmountText.text = $"x{recipe.inputItem}";
+        primaryInputAmountText.text = $"x{recipe.inputItemAmount}";
         primaryInputIcon.sprite = recipe.inputItem.icon;
 
         UpdateInputSlot(recipe.fluidResource, recipe.fluidAmount, secondaryInputIcon, secondaryInputAmountText);

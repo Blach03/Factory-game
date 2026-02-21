@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cf623b634c6cc745a6fb671b256a1d5, type: 3}
+  m_Name: SteamRecipe
+  m_EditorClassIdentifier: Assembly-CSharp::RefineryRecipeData
+  recipeName: Steam Recipe
+  techRequirementId: 
+  processTime: 10
+  inputItem: {fileID: 11400000, guid: 9759673b777f7c444b191c21b7a732bd, type: 2}
+  inputItemAmount: 1
+  tetriaryinputItem: {fileID: 0}
+  tetriaryinputItemAmount: 0
+  fluidResource: {fileID: 11400000, guid: 9e9a3d1dad8ae154aaf9df193abb7100, type: 2}
+  fluidAmount: 5
+  outputResource: {fileID: 11400000, guid: cc36fa906134216409ddd953367ccb3c, type: 2}
+  outputResultAmount: 5

@@ -292,6 +292,11 @@ public class UIManager : MonoBehaviour
         return Resources.LoadAll<AssemblyRecipeData>("Recipes").ToList();
     }
 
+    public List<RefineryRecipeData> GetAllRefineryRecipes()
+    {
+        return Resources.LoadAll<RefineryRecipeData>("Recipes").ToList();
+    }
+
     public List<IBuildingRecipe> GetRecipesForBuilding(GridObject building)
     {
         if (building is FurnaceBuilding)
@@ -301,6 +306,10 @@ public class UIManager : MonoBehaviour
         else if (building is AssemblerBuilding)
         {
             return GetAllAssemblyRecipes().Cast<IBuildingRecipe>().ToList();
+        }
+        else if (building is RefineryBuilding)
+        {
+            return GetAllRefineryRecipes().Cast<IBuildingRecipe>().ToList();
         }
         return new List<IBuildingRecipe>();
     }

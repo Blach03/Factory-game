@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e5f9faac3d7886c4087415b489b24feb, type: 3}
-  m_Name: Oil
+  m_Name: Steam
   m_EditorClassIdentifier: Assembly-CSharp::ResourceData
-  resourceName: Oil
-  icon: {fileID: 21300000, guid: f31b5f3314134144295df1a091da1751, type: 3}
-  itemPrefab: {fileID: 1125818077834251566, guid: cde239992a9295446b8d79720b77dca2, type: 3}
+  resourceName: Steam
+  icon: {fileID: -1289435655362084788, guid: d128ac5681a203043a3c17208bfb6cf5, type: 3}
+  itemPrefab: {fileID: 6933068530673345784, guid: 6317a70b268266041ba192d7f93c6dca, type: 3}
   canBeStoredInInventory: 0
   requiredTechId: 
   isFluid: 1

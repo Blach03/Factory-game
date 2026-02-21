@@ -16,6 +16,10 @@ PrefabInstance:
       propertyPath: itemData
       value: 
       objectReference: {fileID: 11400000, guid: f88c8852c0b8c1c46a0d8b9fc0d316f6, type: 2}
+    - target: {fileID: 2620331378986641338, guid: d8c3c8397ee2ab142bf9b5d621b652ec, type: 3}
+      propertyPath: prefabNameForSave
+      value: oil_item
+      objectReference: {fileID: 0}
     - target: {fileID: 4235096246731401783, guid: d8c3c8397ee2ab142bf9b5d621b652ec, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

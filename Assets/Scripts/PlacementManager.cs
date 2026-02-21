@@ -435,8 +435,9 @@ private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject pref
     // Sprawdzenie dla Pumpjacka (musi być Oil)
     if (prefabGridObject is PumpjackBuilding)
     {
-        if (deposit == null || deposit.resourceData.resourceName != "Oil") return false;
-    }
+        if (deposit == null) return false;
+        if (deposit.resourceData.resourceName != "Water" && deposit.resourceData.resourceName != "Oil") return false;
+        }
 
     // Sprawdzenie dla Minera i Extendera (surowce stałe)
     bool isMiner = prefabGridObject.GetComponent<MinerBuilding>() != null;

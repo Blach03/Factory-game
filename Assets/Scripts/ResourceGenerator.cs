@@ -6,6 +6,7 @@ public class ResourceGenerator : MonoBehaviour
     public GameObject coalOreDepositPrefab;
     public GameObject copperOreDepositPrefab;
     public GameObject OilDepositPrefab;
+    public GameObject WaterDepositPrefab;
     public GameObject SulfurDepositPrefab;
 
     public int minDeposits = 100;
@@ -72,8 +73,9 @@ public class ResourceGenerator : MonoBehaviour
                 GameObject depositPrefabToUse;
                 float RandomValue = Random.value;
                 bool isCoal = RandomValue < 0.2f;
-                bool isOil = RandomValue > 0.2f && RandomValue < 0.3f;
-                bool isSulfur = RandomValue > 0.3f && RandomValue < 0.4f;
+                bool isOil = RandomValue > 0.2f && RandomValue < 0.27f;
+                bool isWater = RandomValue > 0.27f && RandomValue < 0.34f;
+                bool isSulfur = RandomValue > 0.34f && RandomValue < 0.4f;
                 bool isCopper = RandomValue > 0.4f && RandomValue < 0.7f;
 
                 if (isCoal)
@@ -94,6 +96,11 @@ public class ResourceGenerator : MonoBehaviour
                 else if (isOil)
                 {
                     depositPrefabToUse = OilDepositPrefab;
+                    copperCount++;
+                }
+                else if (isWater)
+                {
+                    depositPrefabToUse = WaterDepositPrefab;
                     copperCount++;
                 }
                 else

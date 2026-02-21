@@ -75,7 +75,75 @@ public class RefineryBuilding : GridObject, IProductionBuilding
             if (timer <= 0) FinishProduction();
         }
 
-        if (currentOutputAmount > 0) TrySpitOutItem();
+        if (currentOutputAmount > 0)
+        {
+            // Sprawdzamy, czy produkt to ciecz
+            if (currentRecipe.outputResource.isFluid)
+            {
+                TryPushFluidToOutputNetwork();
+            }
+            else
+            {
+                TrySpitOutItem();
+            }
+        }
+    }
+
+    private void TryPushFluidToOutputNetwork()
+    {
+        // Jeśli nie mamy nawet jednej pełnej jednostki, nie ma czego przesyłać
+        if (currentOutputAmount < 1) return;
+
+        List<PipeBuilding> outputPipes = GetPipesAtDirection(outputDirection);
+
+        foreach (var pipe in outputPipes)
+        {
+            if (pipe.CurrentNetwork != null)
+            {
+                PipeNetwork net = pipe.CurrentNetwork;
+
+                // 1. Sprawdzamy czy w sieci jest miejsce na przynajmniej 1 jednostkę
+                float spaceAvailable = net.MaxCapacity - net.storedFluid;
+                if (spaceAvailable < 1.0f) continue;
+
+                // 2. Inicjalizacja/Sprawdzenie typu płynu
+                if (net.FluidType == null)
+                    net.FluidType = currentRecipe.outputResource;
+
+                if (net.FluidType == currentRecipe.outputResource)
+                {
+                    // 3. Przesyłamy pełną jednostkę
+                    net.AddFluid(1.0f);
+                    currentOutputAmount -= 1; // Odejmujemy inta!
+
+                    // Jeśli po odjęciu 1 nadal mamy więcej, możemy kontynuować 
+                    // w tej samej klatce lub poczekać do następnej (dla efektu "przepływu")
+                    if (currentOutputAmount < 1) break;
+                }
+            }
+        }
+    }
+
+    private List<PipeBuilding> GetPipesAtDirection(Direction dir)
+    {
+        List<PipeBuilding> foundPipes = new List<PipeBuilding>();
+
+        // Dla budynku 3x3 sprawdzamy 3 pola wzdłuż krawędzi
+        for (int i = 0; i < 3; i++)
+        {
+            Vector2Int checkPos = Vector2Int.zero;
+            switch (dir)
+            {
+                case Direction.Right: checkPos = occupiedPosition + new Vector2Int(3, i); break;
+                case Direction.Down: checkPos = occupiedPosition + new Vector2Int(i, -1); break;
+                case Direction.Left: checkPos = occupiedPosition + new Vector2Int(-1, i); break;
+                case Direction.Up: checkPos = occupiedPosition + new Vector2Int(i, 3); break;
+            }
+
+            var pipe = GridManager.Instance.GetGridObjects(checkPos)?.OfType<PipeBuilding>().FirstOrDefault();
+            if (pipe != null) foundPipes.Add(pipe);
+        }
+        return foundPipes;
     }
 
     private void NotifyNeighboringPipes()
@@ -116,6 +184,8 @@ public class RefineryBuilding : GridObject, IProductionBuilding
 
                 if (pipe != null && pipe.CurrentNetwork != null && pipe.CurrentNetwork.storedFluid > 0)
                 {
+                    if (pipe.CurrentNetwork.FluidType != currentRecipe.fluidResource) continue;
+
                     float space = fluidCapacity - currentFluidAmount;
                     // Pobieramy płyn z pierwszej znalezionej rury sąsiadującej
                     float toTake = Mathf.Min(space, pipe.CurrentNetwork.storedFluid, 10f * Time.deltaTime);

@@ -8,7 +8,9 @@ public class PumpjackBuilding : GridObject
     public ResourceData oilResourceData;
     public float productionPerSecond = 0.2f; // Ilo�� ropy dodawana do sieci
 
-    private bool isOnOilDeposit = false;
+    private bool isOnFluidDeposit = false;
+
+    public ResourceData currentExtractedResource;
 
     protected override void Awake()
     {
@@ -21,11 +23,11 @@ public class PumpjackBuilding : GridObject
     void Start()
     {
         // Sprawdzenie poprawno�ci z�o�a
-        isOnOilDeposit = CheckIfOnOilDeposit();
+        isOnFluidDeposit = CheckIfOnFluidDeposit();
 
-        if (!isOnOilDeposit)
+        if (!isOnFluidDeposit)
         {
-            Debug.LogWarning($"[Pumpjack] Postawiony na niew�a�ciwym polu na {occupiedPosition}. Wymagane z�o�e: Oil.");
+            Debug.LogWarning($"[Pumpjack] Postawiony na niew�a�ciwym polu na {occupiedPosition}. Wymagane z�o�e: Oil lub Water.");
         }
         else
         {
@@ -37,14 +39,22 @@ public class PumpjackBuilding : GridObject
     // Pumpjack nie potrzebuje Update() do wyrzucania przedmiot�w, 
     // bo PipeNetwork b�dzie pobiera� od niego TotalProduction.
 
-    private bool CheckIfOnOilDeposit()
+    private bool CheckIfOnFluidDeposit()
     {
         if (GridManager.Instance == null) return false;
 
         var deposit = GridManager.Instance.GetGridObjects(occupiedPosition)
-                        .OfType<ResourceDeposit>().FirstOrDefault();
+                            .OfType<ResourceDeposit>().FirstOrDefault();
 
-        return deposit != null && deposit.resourceData.resourceName == "Oil";
+        if (deposit != null && (deposit.resourceData.resourceName == "Oil" || deposit.resourceData.resourceName == "Water"))
+        {
+            // Zapamiętujemy, co wydobywamy, aby przekazać to do rur
+            currentExtractedResource = deposit.resourceData;
+            return true;
+        }
+
+        currentExtractedResource = null;
+        return false;
     }
 
     /// <summary>
@@ -53,7 +63,7 @@ public class PumpjackBuilding : GridObject
     /// </summary>
     public float GetCurrentOutput()
     {
-        return isOnOilDeposit ? productionPerSecond : 0f;
+        return isOnFluidDeposit ? productionPerSecond : 0f;
     }
 
     /// <summary>

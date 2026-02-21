@@ -1,13 +1,16 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class PipeNetwork
 {
     public HashSet<PipeBuilding> Pipes = new HashSet<PipeBuilding>();
     public HashSet<PumpjackBuilding> ConnectedPumps = new HashSet<PumpjackBuilding>();
 
-    public float TotalProduction => ConnectedPumps.Count * 0.2f;
-    
+    // NOWE: Listy dla turbin i rafinerii podłączonych do sieci
+    public HashSet<SteamTurbineBuilding> ConnectedTurbines = new HashSet<SteamTurbineBuilding>();
+    public HashSet<RefineryBuilding> ConnectedRefineries = new HashSet<RefineryBuilding>();
+
     public float storedFluid = 0f;
     public float MaxCapacity => Pipes.Count * 10f; // Każda rura mieści 10 jednostek
 
@@ -15,14 +18,38 @@ public class PipeNetwork
 
     public void TickProduction()
     {
-        float previousStored = storedFluid;
-        foreach (var pump in ConnectedPumps)
+        if (Pipes.Count == 0) return;
+
+        // Jeśli sieć jest prawie pusta, pozwól na zmianę płynu
+        if (storedFluid < 0.1f)
         {
-            // Ustawiamy ikonę zasobu na podstawie tego, co wydobywa pompa
-            if (FluidType == null) FluidType = pump.oilResourceData;
-            
-            storedFluid += pump.GetCurrentOutput() * Time.deltaTime;
+            FluidType = null;
         }
+
+        // Czyszczenie martwych referencji
+        ConnectedPumps.RemoveWhere(p => p == null);
+        ConnectedTurbines.RemoveWhere(t => t == null);
+        ConnectedRefineries.RemoveWhere(r => r == null);
+
+        // Produkcja z pomp
+        if (ConnectedPumps.Count > 0)
+        {
+            foreach (var pump in ConnectedPumps)
+            {
+                // Inicjalizacja typu płynu w sieci na podstawie pierwszej pompy
+                if (FluidType == null && pump.currentExtractedResource != null)
+                {
+                    FluidType = pump.currentExtractedResource;
+                }
+
+                // Dodawaj płyn tylko jeśli typy się zgadzają
+                if (FluidType != null && pump.currentExtractedResource == FluidType)
+                {
+                    storedFluid += pump.GetCurrentOutput() * Time.deltaTime;
+                }
+            }
+        }
+
         storedFluid = Mathf.Clamp(storedFluid, 0, MaxCapacity);
     }
 
@@ -31,48 +58,55 @@ public class PipeNetwork
         if (storedFluid >= amount)
         {
             storedFluid -= amount;
-            // Debug.Log($"[PipeNetwork] Rafineria pobrała {amount} ropy.");
             return true;
         }
         return false;
     }
-    
 
     public void AddPipe(PipeBuilding pipe)
     {
         if (pipe == null) return;
-        
+
         if (Pipes.Add(pipe))
         {
             pipe.CurrentNetwork = this;
-            UpdatePumpsForPipe(pipe);
+            UpdateConnectionsForPipe(pipe); // Zmieniona nazwa na uniwersalną
         }
     }
 
-    // TA METODA NAPRAWI BŁĄD CS1061
+    public float AddFluid(float amount)
+    {
+        float spaceAvailable = MaxCapacity - storedFluid;
+        float canAdd = Mathf.Min(amount, spaceAvailable);
+
+        storedFluid += canAdd;
+        return canAdd;
+    }
+
     public void Merge(PipeNetwork other)
     {
         if (other == null || other == this) return;
 
-        // Skopiuj wszystkie rury z tamtej sieci do tej
         foreach (var pipe in other.Pipes)
         {
             pipe.CurrentNetwork = this;
             Pipes.Add(pipe);
         }
 
-        // Skopiuj pompy
-        foreach (var pump in other.ConnectedPumps)
-        {
-            ConnectedPumps.Add(pump);
-        }
+        foreach (var pump in other.ConnectedPumps) ConnectedPumps.Add(pump);
 
-        // Wyczyść tamtą sieć, by nie wisiała w pamięci
+        // NOWE: Kopiowanie turbin i rafinerii przy łączeniu sieci
+        foreach (var turbine in other.ConnectedTurbines) ConnectedTurbines.Add(turbine);
+        foreach (var refinery in other.ConnectedRefineries) ConnectedRefineries.Add(refinery);
+
         other.Pipes.Clear();
         other.ConnectedPumps.Clear();
+        other.ConnectedTurbines.Clear();
+        other.ConnectedRefineries.Clear();
     }
 
-    private void UpdatePumpsForPipe(PipeBuilding pipe)
+    // Zaktualizowana metoda szukająca wszystkich sąsiadujących budynków
+    private void UpdateConnectionsForPipe(PipeBuilding pipe)
     {
         Vector2Int[] neighbors = {
             pipe.occupiedPosition + Vector2Int.up,
@@ -88,9 +122,20 @@ public class PipeNetwork
 
             foreach (var obj in objects)
             {
+                // Rejestracja Pomp
                 if (obj is PumpjackBuilding pump)
                 {
                     ConnectedPumps.Add(pump);
+                }
+                // Rejestracja Turbin
+                else if (obj is SteamTurbineBuilding turbine)
+                {
+                    ConnectedTurbines.Add(turbine);
+                }
+                // Rejestracja Rafinerii
+                else if (obj is RefineryBuilding refinery)
+                {
+                    ConnectedRefineries.Add(refinery);
                 }
             }
         }
