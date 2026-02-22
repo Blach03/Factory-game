@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BatteryRecipe
   m_EditorClassIdentifier: 
   _recipeName: Battery Recipe
-  _techRequirementId: 
+  _techRequirementId: t14
   _primaryInput: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
   _primaryInputAmount: 2
   _secondaryInput: {fileID: 0}
@@ -23,3 +23,4 @@ MonoBehaviour:
   _outputItem: {fileID: 11400000, guid: 736dac994f4bf624fb6926c1ad73fbd2, type: 2}
   _outputAmount: 1
   assemblyTime: 15
+  powerRequirement: 3

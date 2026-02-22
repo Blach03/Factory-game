@@ -16,10 +16,11 @@ MonoBehaviour:
   _techRequirementId: 
   _primaryInput: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
   _primaryInputAmount: 10
-  _secondaryInput: {fileID: 0}
-  _secondaryInputAmount: 0
+  _secondaryInput: {fileID: 11400000, guid: 4fd2876fd4895dc42b2874a66a81fce6, type: 2}
+  _secondaryInputAmount: 10
   tertiaryInput: {fileID: 0}
   tertiaryInputAmount: 0
   _outputItem: {fileID: 11400000, guid: 822fa23858ccfd74cb6cfde1a23f204d, type: 2}
   _outputAmount: 1
   assemblyTime: 30
+  powerRequirement: 3

@@ -20,9 +20,15 @@ public class PowerManager : MonoBehaviour
     public void RegisterProduction(float amount) => frameProduction += amount;
     public void RegisterConsumption(float amount) => frameConsumption += amount;
 
+    public bool HasEnoughPower()
+    {
+        // Maszyny sprawdzaj¹ stan z poprzedniej klatki (stabilny odczyt)
+        // lub bie¿¹cy, jeœli chcemy natychmiastowej reakcji.
+        return frameConsumption < GlobalProduction;
+    }
+
     private void LateUpdate()
     {
-        // Na koniec klatki przepisujemy wartoœci i resetujemy liczniki dla nastêpnej klatki
         GlobalProduction = frameProduction;
         GlobalConsumption = frameConsumption;
 

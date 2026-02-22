@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1c3cd71ddbae8441aa63b52d4f89973, type: 3}
   m_Name: ScrewsRecipe
   m_EditorClassIdentifier: 
-  recipeName: Screws Recipe
+  _recipeName: Screws Recipe
   _techRequirementId: 
-  primaryInput: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}
-  primaryInputAmount: 1
-  secondaryInput: {fileID: 0}
-  secondaryInputAmount: 0
+  _primaryInput: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}
+  _primaryInputAmount: 1
+  _secondaryInput: {fileID: 0}
+  _secondaryInputAmount: 0
   tertiaryInput: {fileID: 0}
   tertiaryInputAmount: 0
-  outputItem: {fileID: 11400000, guid: 76c5c0e139816944a872c29754cb1b03, type: 2}
-  outputAmount: 5
+  _outputItem: {fileID: 11400000, guid: 76c5c0e139816944a872c29754cb1b03, type: 2}
+  _outputAmount: 5
   assemblyTime: 10
+  powerRequirement: 1

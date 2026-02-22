@@ -12,14 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a1c3cd71ddbae8441aa63b52d4f89973, type: 3}
   m_Name: ElectricMotorRecipe
   m_EditorClassIdentifier: 
-  recipeName: Electric Motor Recipe
+  _recipeName: Electric Motor Recipe
   _techRequirementId: t15
-  primaryInput: {fileID: 11400000, guid: 7ade40e580971b84884e858cfe79dd37, type: 2}
-  primaryInputAmount: 2
-  secondaryInput: {fileID: 11400000, guid: b3a130aac82b17c47b6ee06528891326, type: 2}
-  secondaryInputAmount: 2
+  _primaryInput: {fileID: 11400000, guid: 7ade40e580971b84884e858cfe79dd37, type: 2}
+  _primaryInputAmount: 2
+  _secondaryInput: {fileID: 11400000, guid: b3a130aac82b17c47b6ee06528891326, type: 2}
+  _secondaryInputAmount: 2
   tertiaryInput: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
   tertiaryInputAmount: 5
-  outputItem: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
-  outputAmount: 1
+  _outputItem: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
+  _outputAmount: 1
   assemblyTime: 30
+  powerRequirement: 3

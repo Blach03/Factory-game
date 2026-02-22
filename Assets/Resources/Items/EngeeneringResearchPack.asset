@@ -15,3 +15,6 @@ MonoBehaviour:
   resourceName: Engeenering Research Pack
   icon: {fileID: 21300000, guid: a847eebce7d46da40a51d8eaa3362b75, type: 3}
   itemPrefab: {fileID: 6091763925466761187, guid: f5030a4477714554aa3a3b399e53227e, type: 3}
+  canBeStoredInInventory: 1
+  requiredTechId: t13
+  isFluid: 0

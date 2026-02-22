@@ -61,23 +61,51 @@ public class RefineryBuilding : GridObject, IProductionBuilding
     {
         if (currentRecipe == null) return;
 
+        // 1. POBIERANIE ZASOBÓW (Zawsze próbuje napełnić bufory)
         TryConsumeFluidFromNetwork();
         TryConsumeItemsFromWorld();
-        
-        if (!isProcessing && CanStartProduction())
+
+        // 2. REZERWACJA ENERGII
+        // Sprawdzamy, czy maszyna jest w stanie rozpocząć produkcję
+        bool readyToWork = CanStartProduction();
+
+        // Zgłaszamy pobór tylko jeśli receptura tego wymaga (> 0)
+        // i tylko raz: jeśli maszyna już przetwarza LUB jest gotowa do startu
+        if (currentRecipe.powerRequirement > 0 && (isProcessing || readyToWork))
         {
-            StartProduction();
+            PowerManager.Instance.RegisterConsumption(currentRecipe.powerRequirement);
         }
 
+        // 3. START PRODUKCJI (Z kontrolą energii)
+        if (!isProcessing)
+        {
+            // LOGIKA: Jeśli receptura kosztuje 0 MW, startuj zawsze.
+            // Jeśli kosztuje > 0, sprawdź czy PowerManager pozwoli.
+            if (readyToWork)
+            {
+                if (currentRecipe.powerRequirement <= 0 || PowerManager.Instance.HasEnoughPower())
+                {
+                    StartProduction();
+
+                    // Od razu rejestrujemy pobór po starcie dla płynności UI
+                    if (isProcessing && currentRecipe.powerRequirement > 0)
+                    {
+                        PowerManager.Instance.RegisterConsumption(currentRecipe.powerRequirement);
+                    }
+                }
+            }
+        }
+
+        // 4. LOGIKA CZASU PRACY
         if (isProcessing)
         {
             timer -= Time.deltaTime;
             if (timer <= 0) FinishProduction();
         }
 
+        // 5. WYRZUCANIE PRODUKTÓW
         if (currentOutputAmount > 0)
         {
-            // Sprawdzamy, czy produkt to ciecz
             if (currentRecipe.outputResource.isFluid)
             {
                 TryPushFluidToOutputNetwork();

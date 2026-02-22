@@ -12,4 +12,6 @@ public interface IBuildingRecipe
 
     ResourceData outputItem { get; }
     int outputAmount { get; }
+
+    float powerRequirement { get; }
 }

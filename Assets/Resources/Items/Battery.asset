@@ -15,3 +15,6 @@ MonoBehaviour:
   resourceName: Battery
   icon: {fileID: 21300000, guid: f0085a0cef4ca43419ec7b2880cf6993, type: 3}
   itemPrefab: {fileID: 5814251113104160629, guid: 88af9a849ca3ce84fa9c4089e3e73f0b, type: 3}
+  canBeStoredInInventory: 1
+  requiredTechId: t14
+  isFluid: 0

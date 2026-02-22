@@ -46,4 +46,7 @@ public class AssemblyRecipeData : ScriptableObject, IBuildingRecipe
     public int outputAmount => _outputAmount;
 
     public float assemblyTime = 5.0f;
+
+    public float powerRequirement = 0f;
+    float IBuildingRecipe.powerRequirement => powerRequirement;
 }

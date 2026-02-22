@@ -23,3 +23,4 @@ MonoBehaviour:
   _outputItem: {fileID: 11400000, guid: ca614afc814ce5e49a024fbe90357ab9, type: 2}
   _outputAmount: 1
   assemblyTime: 20
+  powerRequirement: 3

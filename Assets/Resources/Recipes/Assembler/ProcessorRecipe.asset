@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: ProcessorRecipe
   m_EditorClassIdentifier: 
   _recipeName: Processor Recipe
-  _techRequirementId: 
+  _techRequirementId: t17
   _primaryInput: {fileID: 11400000, guid: 0495c53f59dd08b44bac3b1d8e010bb4, type: 2}
   _primaryInputAmount: 3
-  _secondaryInput: {fileID: 0}
-  _secondaryInputAmount: 0
+  _secondaryInput: {fileID: 11400000, guid: 736dac994f4bf624fb6926c1ad73fbd2, type: 2}
+  _secondaryInputAmount: 3
   tertiaryInput: {fileID: 0}
   tertiaryInputAmount: 0
   _outputItem: {fileID: 11400000, guid: 31bc856968d48dc44ab611c2c126d7e1, type: 2}
   _outputAmount: 1
   assemblyTime: 30
+  powerRequirement: 5

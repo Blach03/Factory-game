@@ -15,3 +15,6 @@ MonoBehaviour:
   resourceName: PCB
   icon: {fileID: 21300000, guid: 0d2b9c6239ebfc940b273916f495206b, type: 3}
   itemPrefab: {fileID: 2380379124702405307, guid: fca3e6e07d3941f4aa628f703d4c3222, type: 3}
+  canBeStoredInInventory: 1
+  requiredTechId: t12
+  isFluid: 0

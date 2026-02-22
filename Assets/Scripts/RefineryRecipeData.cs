@@ -40,4 +40,7 @@ public class RefineryRecipeData : ScriptableObject, IBuildingRecipe
     // Rezultat
     ResourceData IBuildingRecipe.outputItem => outputResource;
     int IBuildingRecipe.outputAmount => outputResultAmount;
+
+    public float powerRequirement = 0f;
+    float IBuildingRecipe.powerRequirement => powerRequirement;
 }

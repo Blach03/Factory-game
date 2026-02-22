@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AdvancedResearchPackRecipe
   m_EditorClassIdentifier: 
   _recipeName: Advanced Research Pack Recipe
-  _techRequirementId: 
+  _techRequirementId: t18
   _primaryInput: {fileID: 11400000, guid: 31bc856968d48dc44ab611c2c126d7e1, type: 2}
   _primaryInputAmount: 2
   _secondaryInput: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
@@ -23,3 +23,4 @@ MonoBehaviour:
   _outputItem: {fileID: 11400000, guid: 3f1fde9694877d9449387401ff65bfce, type: 2}
   _outputAmount: 1
   assemblyTime: 80
+  powerRequirement: 10

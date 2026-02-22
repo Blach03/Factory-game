@@ -42,4 +42,7 @@ public class SmeltingRecipeData : ScriptableObject, IBuildingRecipe
     public int outputAmount => _outputAmount;
 
     public float smeltingTime = 3.0f;
+
+    public float powerRequirement = 0f;
+    float IBuildingRecipe.powerRequirement => powerRequirement;
 }

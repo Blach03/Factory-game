@@ -13,13 +13,14 @@ MonoBehaviour:
   m_Name: RocketFuelRecipe
   m_EditorClassIdentifier: 
   _recipeName: Rocket Fuel Recipe
-  _techRequirementId: 
+  _techRequirementId: t23
   _primaryInput: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
-  _primaryInputAmount: 1
-  _secondaryInput: {fileID: 0}
-  _secondaryInputAmount: 0
+  _primaryInputAmount: 3
+  _secondaryInput: {fileID: 11400000, guid: f88c8852c0b8c1c46a0d8b9fc0d316f6, type: 2}
+  _secondaryInputAmount: 20
   tertiaryInput: {fileID: 0}
   tertiaryInputAmount: 0
   _outputItem: {fileID: 11400000, guid: f39b9b86639cb4f488711fd844e657bf, type: 2}
   _outputAmount: 1
   assemblyTime: 20
+  powerRequirement: 3

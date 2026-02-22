@@ -102,10 +102,40 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
     {
         if (currentRecipe == null) return;
 
+        // 1. REZERWACJA ENERGII
+        bool hasIngredients = currentPrimaryInput >= currentRecipe.primaryInputAmount &&
+                             (currentRecipe.secondaryInput == null || currentSecondaryInput >= currentRecipe.secondaryInputAmount) &&
+                             (currentRecipe.tertiaryInput == null || currentTertiaryInput >= currentRecipe.tertiaryInputAmount);
+
+        bool hasSpace = currentOutputAmount < outputCapacity;
+
+        // Zgłaszamy pobór tylko jeśli receptura faktycznie go wymaga
+        if (currentRecipe.powerRequirement > 0 && (isAssembling || (hasIngredients && hasSpace)))
+        {
+            PowerManager.Instance.RegisterConsumption(currentRecipe.powerRequirement);
+        }
+
         TrySpitOutItem();
         TryConsumeFromWorld();
-        TryAssemble();
 
+        // 2. PRÓBA STARTU PRODUKCJI
+        if (!isAssembling)
+        {
+            // LOGIKA: Jeśli receptura wymaga 0 prądu, startuj zawsze. 
+            // Jeśli wymaga więcej niż 0, sprawdź czy jest dostępna moc.
+            if (currentRecipe.powerRequirement <= 0 || PowerManager.Instance.HasEnoughPower())
+            {
+                TryAssemble();
+
+                // Od razu rejestrujemy pobór po starcie, by uniknąć migotania UI
+                if (isAssembling && currentRecipe.powerRequirement > 0)
+                {
+                    PowerManager.Instance.RegisterConsumption(currentRecipe.powerRequirement);
+                }
+            }
+        }
+
+        // 3. LOGIKA TRWANIA PRODUKCJI
         if (isAssembling)
         {
             timer -= Time.deltaTime;
@@ -114,7 +144,6 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
             {
                 if (currentOutputAmount < outputCapacity)
                 {
-                    // --- LOGIKA PRODUCTIVITY ---
                     int totalOutput = currentRecipe.outputAmount;
 
                     if (TechTreeManager.Instance != null)
@@ -122,22 +151,18 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
                         float prodChance = TechTreeManager.Instance.GetProductivityChance();
                         if (Random.value < prodChance)
                         {
-                            totalOutput *= 2; // Bonus: podwajamy wynik produkcji
+                            totalOutput *= 2;
                             Debug.Log("<color=cyan>[Productivity]</color> Bonusowy przedmiot!");
                         }
                     }
 
                     currentOutputAmount += totalOutput;
-
                     isAssembling = false;
-
-                    // --- LOGIKA PRODUCTION SPEED ---
-                    // U�ywamy zmodyfikowanego czasu zamiast surowego assemblyTime
                     timer = GetModifiedAssemblyTime();
                 }
                 else
                 {
-                    timer = 0.001f; // Czekamy, a� zwolni si� miejsce w ekwipunku
+                    timer = 0.001f;
                 }
             }
         }

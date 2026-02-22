@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: AdvancedElectronicsRecipe
   m_EditorClassIdentifier: 
   _recipeName: Advanced Electronics Recipe
-  _techRequirementId: 
+  _techRequirementId: t12
   _primaryInput: {fileID: 11400000, guid: 2635e50e999728d4c999d71b70240c06, type: 2}
   _primaryInputAmount: 1
   _secondaryInput: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
@@ -23,3 +23,4 @@ MonoBehaviour:
   _outputItem: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
   _outputAmount: 1
   assemblyTime: 15
+  powerRequirement: 3
