@@ -70,10 +70,17 @@ public class SaveManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(saveToLoad))
         {
-            // Generowanie nowej mapy
-            ResourceGenerator generator = Object.FindAnyObjectByType<ResourceGenerator>();
-            if (generator != null) generator.InitializeGenerator();
-            Debug.Log("Rozpoczêto generowanie nowej gry.");
+            // --- TUTAJ ZMIANA: Szukamy nowego WorldGeneratora zamiast ResourceGenerator ---
+            WorldGenerator generator = Object.FindFirstObjectByType<WorldGenerator>();
+            if (generator != null)
+            {
+                generator.InitializeWorld();
+                Debug.Log("<color=green>SaveManager:</color> Rozpoczêto generowanie nowej mapy (System Chunkowy).");
+            }
+            else
+            {
+                Debug.LogError("<color=red>SaveManager:</color> Nie znaleziono WorldGenerator na scenie!");
+            }
         }
         else
         {

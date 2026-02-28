@@ -3,10 +3,10 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     public float baseMoveSpeed = 15f;
-    private float minX = -118f;
-    private float maxX = 118f;
-    private float minY = -153f;
-    private float maxY = 153f;
+    private float minX = -1180f;
+    private float maxX = 1180f;
+    private float minY = -1530f;
+    private float maxY = 1530f;
 
     public float zoomSpeed = 5f;
     public float minZoom = 5f;

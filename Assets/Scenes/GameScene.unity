@@ -3448,7 +3448,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!212 &451648575
 SpriteRenderer:
   serializedVersion: 2
@@ -9248,6 +9248,133 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1180826728}
   m_CullTransparentMesh: 1
+--- !u!1 &1193646714
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1193646715}
+  - component: {fileID: 1193646717}
+  - component: {fileID: 1193646716}
+  m_Layer: 0
+  m_Name: GroundTilemap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1193646715
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193646714}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1590000089}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!483693784 &1193646716
+TilemapRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193646714}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: -10
+  m_MaskInteraction: 0
+  m_ChunkSize: {x: 32, y: 32, z: 32}
+  m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
+  m_MaxChunkCount: 16
+  m_MaxFrameAge: 16
+  m_SortOrder: 0
+  m_Mode: 0
+  m_DetectChunkCullingBounds: 0
+--- !u!1839735485 &1193646717
+Tilemap:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1193646714}
+  m_Enabled: 1
+  m_Tiles: {}
+  m_AnimatedTiles: {}
+  m_TileAssetArray: []
+  m_TileSpriteArray: []
+  m_TileMatrixArray: []
+  m_TileColorArray: []
+  m_TileObjectToInstantiateArray: []
+  m_AnimationFrameRate: 1
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Origin: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0, y: 0, z: 1}
+  m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
+  m_TileOrientation: 0
+  m_TileOrientationMatrix:
+    e00: 1
+    e01: 0
+    e02: 0
+    e03: 0
+    e10: 0
+    e11: 1
+    e12: 0
+    e13: 0
+    e20: 0
+    e21: 0
+    e22: 1
+    e23: 0
+    e30: 0
+    e31: 0
+    e32: 0
+    e33: 1
 --- !u!1 &1200246312
 GameObject:
   m_ObjectHideFlags: 0
@@ -12568,6 +12695,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1581703059}
   m_CullTransparentMesh: 1
+--- !u!1 &1590000087
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1590000089}
+  - component: {fileID: 1590000088}
+  m_Layer: 0
+  m_Name: Grid
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!156049354 &1590000088
+Grid:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590000087}
+  m_Enabled: 1
+  m_CellSize: {x: 1, y: 1, z: 0}
+  m_CellGap: {x: 0, y: 0, z: 0}
+  m_CellLayout: 0
+  m_CellSwizzle: 0
+--- !u!4 &1590000089
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1590000087}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1193646715}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1592005189
 GameObject:
   m_ObjectHideFlags: 0
@@ -13849,10 +14021,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1747662916}
   - component: {fileID: 1747662915}
-  - component: {fileID: 1747662917}
   - component: {fileID: 1747662918}
   - component: {fileID: 1747662919}
   - component: {fileID: 1747662920}
+  - component: {fileID: 1747662921}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -13889,27 +14061,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1747662917
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1747662914}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 337ca8fafb5befc42a2ed501b5155ac9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ironOreDepositPrefab: {fileID: 5794206462228371961, guid: 7c2551d9f362c7344be9365e3fd616ff, type: 3}
-  coalOreDepositPrefab: {fileID: 4384221491182019281, guid: b8fa7ac1eca50fb4096f02161ba18b8e, type: 3}
-  copperOreDepositPrefab: {fileID: 2429094711706066293, guid: ddd8fb6e1033892408c17f0f237d642b, type: 3}
-  OilDepositPrefab: {fileID: 5714795301647905608, guid: 8a650dae5719aed409bc23df8dc2a3c9, type: 3}
-  WaterDepositPrefab: {fileID: 8301271753377031515, guid: 7272f6c7c948c754b941640be85f44a5, type: 3}
-  SulfurDepositPrefab: {fileID: 3896691140022516981, guid: 915c7f9c9a039104b86b3e5a1da972ae, type: 3}
-  minDeposits: 500
-  maxDeposits: 1000
-  depositsContainer: {fileID: 1756864105}
 --- !u!114 &1747662918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13972,6 +14123,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 22ca6b63e7c82424aae3f088d6ee3dba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PowerManager
+--- !u!114 &1747662921
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1747662914}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ac17323448a2ce45ab231cd073716df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WorldGenerator
+  ironPrefab: {fileID: 5794206462228371961, guid: 7c2551d9f362c7344be9365e3fd616ff, type: 3}
+  coalPrefab: {fileID: 4384221491182019281, guid: b8fa7ac1eca50fb4096f02161ba18b8e, type: 3}
+  copperPrefab: {fileID: 2429094711706066293, guid: ddd8fb6e1033892408c17f0f237d642b, type: 3}
+  oilPrefab: {fileID: 5714795301647905608, guid: 8a650dae5719aed409bc23df8dc2a3c9, type: 3}
+  waterPrefab: {fileID: 8301271753377031515, guid: 7272f6c7c948c754b941640be85f44a5, type: 3}
+  sulfurPrefab: {fileID: 3896691140022516981, guid: 915c7f9c9a039104b86b3e5a1da972ae, type: 3}
+  groundTilemap: {fileID: 1193646717}
+  groundTile: {fileID: 11400000, guid: abc6f9be96d18454ca72b0c85f332bee, type: 2}
+  chunkSize: 100
+  renderDistanceChunks: 5
+  worldContainer: {fileID: 1756864105}
 --- !u!1 &1756864104
 GameObject:
   m_ObjectHideFlags: 0
@@ -13982,7 +14156,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1756864105}
   m_Layer: 0
-  m_Name: --IRON ORE DEPOSITS--
+  m_Name: --WORLD--
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -16831,3 +17005,4 @@ SceneRoots:
   - {fileID: 930119925}
   - {fileID: 268208711}
   - {fileID: 2145895630}
+  - {fileID: 1590000089}
