@@ -3,14 +3,15 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     public float baseMoveSpeed = 15f;
-    private float minX = -1180f;
-    private float maxX = 1180f;
-    private float minY = -1530f;
-    private float maxY = 1530f;
 
     public float zoomSpeed = 5f;
     public float minZoom = 5f;
     public float maxZoom = 50f;
+
+    [Header("Infinite Generation")]
+    public WorldGenerator worldGenerator;
+    public int viewDistanceChunks = 2; // Ile chunków widaæ przed kamer¹
+    private Vector2Int lastChunkCoords = new Vector2Int(-999, -999);
 
     private Camera cam;
 
@@ -32,6 +33,52 @@ public class CameraController : MonoBehaviour
     {
         HandleMovement();
         HandleZoom();
+        CheckForNewChunks();
+
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            GoToHome();
+        }
+    }
+
+    public void GoToHome()
+    {
+        // Przenosimy kamerê do 0,0 (zachowuj¹c jej Z, zazwyczaj -10)
+        transform.position = new Vector3(0, 0, transform.position.z);
+
+        // Opcjonalnie: resetujemy zoom do domyœlnego (np. 15)
+        if (cam != null) cam.orthographicSize = 15f;
+
+        Debug.Log("Kamera powróci³a do punktu 0,0");
+    }
+
+    void CheckForNewChunks()
+    {
+        if (worldGenerator == null) return;
+
+        // Obliczamy w jakim chunku jest obecnie œrodek kamery
+        // Zak³adamy, ¿e chunkSize w WorldGenerator to 100
+        int chunkSize = worldGenerator.chunkSize;
+        int currentChunkX = Mathf.RoundToInt(transform.position.x / chunkSize);
+        int currentChunkY = Mathf.RoundToInt(transform.position.y / chunkSize);
+
+        Vector2Int currentCoords = new Vector2Int(currentChunkX, currentChunkY);
+
+        // Sprawdzamy tylko jeœli kamera przesunê³a siê do innego chunka
+        if (currentCoords != lastChunkCoords)
+        {
+            lastChunkCoords = currentCoords;
+
+            // Pêtla sprawdzaj¹ca chunki w promieniu viewDistance
+            for (int x = -viewDistanceChunks; x <= viewDistanceChunks; x++)
+            {
+                for (int y = -viewDistanceChunks; y <= viewDistanceChunks; y++)
+                {
+                    ChunkCoords targetCoords = new ChunkCoords(currentChunkX + x, currentChunkY + y);
+                    worldGenerator.TryGenerateChunk(targetCoords);
+                }
+            }
+        }
     }
 
     void HandleMovement()
@@ -48,9 +95,6 @@ public class CameraController : MonoBehaviour
         transform.position += movement;
 
         Vector3 currentPosition = transform.position;
-
-        currentPosition.x = Mathf.Clamp(currentPosition.x, minX, maxX);
-        currentPosition.y = Mathf.Clamp(currentPosition.y, minY, maxY);
 
         transform.position = currentPosition;
     }

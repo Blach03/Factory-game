@@ -11,15 +11,23 @@ public class WorldGenerator : MonoBehaviour
     public GameObject oilPrefab;
     public GameObject waterPrefab;
     public GameObject sulfurPrefab;
+    public GameObject dirtBackgroundPrefab;
 
-    [Header("Visuals - Tilemap")]
-    public Tilemap groundTilemap; // Przeci¹gnij tutaj obiekt GroundTilemap z hierarchii
-    public Tile groundTile;
+    [Header("Visuals - Tiles")]
+    public Tilemap groundTilemap;
+    public Tile grassTile; // Przypisz GrassTile.asset
+    public Tile sandTile;  // Przypisz SandTile.asset
+
+    [Header("Biome Settings")]
+    [Tooltip("Im mniejsza liczba, tym wiêksze plamy biomów (0.005 - 0.02)")]
+    public float biomeScale = 0.01f;
 
     [Header("World Settings")]
     public int chunkSize = 100;
     public int renderDistanceChunks = 5;
     public Transform worldContainer;
+
+    private HashSet<ChunkCoords> generatedChunks = new HashSet<ChunkCoords>();
 
     // Szanse bazowe
     private float chanceCoal = 0.40f;
@@ -29,157 +37,233 @@ public class WorldGenerator : MonoBehaviour
     private float chanceOil = 0.10f;
     private float chanceSulfur = 0.05f;
 
+    [Header("Randomness")]
+    private float seedX;
+    private float seedY;
+
     public void InitializeWorld()
     {
         if (worldContainer == null) worldContainer = new GameObject("--WORLD--").transform;
-
-        // Czyœcimy tilemapê przed now¹ generacj¹
         if (groundTilemap != null) groundTilemap.ClearAllTiles();
+        generatedChunks.Clear();
+
+        // --- LOSOWANIE SEEDU ---
+        // Losujemy ogromne liczby, aby "przesun¹æ" mapê szumu w zupe³nie inne miejsce
+        seedX = Random.Range(-100000f, 100000f);
+        seedY = Random.Range(-100000f, 100000f);
 
         for (int cx = -renderDistanceChunks; cx <= renderDistanceChunks; cx++)
         {
             for (int cy = -renderDistanceChunks; cy <= renderDistanceChunks; cy++)
             {
-                GenerateChunk(new ChunkCoords(cx, cy));
+                TryGenerateChunk(new ChunkCoords(cx, cy));
             }
         }
+    }
+    public void TryGenerateChunk(ChunkCoords coords)
+    {
+        if (generatedChunks.Contains(coords)) return;
+        generatedChunks.Add(coords);
+        GenerateChunk(coords);
     }
 
     private void GenerateChunk(ChunkCoords coords)
     {
-        FillChunkWithGroundTilemap(coords);
+        FillChunkWithBiomes(coords); // Nowa metoda wype³niania
+
         bool isStartingChunk = (coords.x == 0 && coords.y == 0);
         float distFromCenter = Mathf.Sqrt(coords.x * coords.x + coords.y * coords.y);
 
         var resourceConfigs = new[] {
-        new { prefab = coalPrefab, chance = isStartingChunk ? 1f : chanceCoal, type = "coal" },
-        new { prefab = ironPrefab, chance = isStartingChunk ? 1f : chanceIron, type = "iron" },
-        new { prefab = copperPrefab, chance = isStartingChunk ? 1f : chanceCopper, type = "copper" },
-        new { prefab = waterPrefab, chance = isStartingChunk ? 1f : chanceWater, type = "water" },
-        new { prefab = oilPrefab, chance = distFromCenter < 3 ? 0f : chanceOil, type = "oil" },
-        new { prefab = sulfurPrefab, chance = distFromCenter < 3 ? 0f : chanceSulfur, type = "sulfur" }
-    };
+            new { prefab = coalPrefab, chance = isStartingChunk ? 1f : chanceCoal, type = "coal" },
+            new { prefab = ironPrefab, chance = isStartingChunk ? 1f : chanceIron, type = "iron" },
+            new { prefab = copperPrefab, chance = isStartingChunk ? 1f : chanceCopper, type = "copper" },
+            new { prefab = waterPrefab, chance = isStartingChunk ? 1f : chanceWater, type = "water" },
+            new { prefab = oilPrefab, chance = distFromCenter < 3 ? 0f : chanceOil, type = "oil" },
+            new { prefab = sulfurPrefab, chance = distFromCenter < 3 ? 0f : chanceSulfur, type = "sulfur" }
+        };
 
         foreach (var config in resourceConfigs)
         {
             if (Random.value <= config.chance)
             {
-                // Losujemy pozycjê wewn¹trz chunka (0 do 99)
-                Vector2Int localPoint = new Vector2Int(Random.Range(20, chunkSize - 20), Random.Range(20, chunkSize - 20));
-
-                // --- POPRAWKA WYCENTROWANIA ---
-                // Zamiast: (coords.x * 100) + local
-                // Robimy: (coords.x * 100) + local - 50
-                // Dziêki temu dla chunka (0,0) zakres to -50 do +49, a œrodek to (0,0)
                 int offset = chunkSize / 2;
+                Vector2Int localPoint = new Vector2Int(Random.Range(20, chunkSize - 20), Random.Range(20, chunkSize - 20));
                 Vector2Int globalPos = new Vector2Int(
                     (coords.x * chunkSize) + localPoint.x - offset,
                     (coords.y * chunkSize) + localPoint.y - offset
                 );
+
+                // --- SPRAWDZANIE BIOMU PRZED SPAWNEM ---
+                float finalBiomeValue = GetCurrentBiomeValue(globalPos.x, globalPos.y);
+                bool isGrass = finalBiomeValue > 0.45f;
+
+                // Woda tylko na trawie, Ropa tylko na piasku
+                if (config.type == "water" && !isGrass) continue;
+                if (config.type == "oil" && isGrass) continue;
 
                 SpawnResource(config.prefab, globalPos, distFromCenter, config.type);
             }
         }
     }
 
-    private void FillChunkWithGroundTilemap(ChunkCoords coords)
+    private float GetBiomeNoiseAt(float x, float y)
     {
-        if (groundTilemap == null || groundTile == null) return;
+        // Zamiast +10000f u¿ywamy naszych zmiennych
+        return Mathf.PerlinNoise(x * biomeScale + seedX, y * biomeScale + seedY);
+    }
+
+    private float GetCurrentBiomeValue(float globalX, float globalY)
+    {
+        float noiseValue = GetBiomeNoiseAt(globalX, globalY);
+
+        // Obliczamy dystans od œrodka œwiata (0,0)
+        float distFromZero = Vector2.Distance(new Vector2(globalX, globalY), Vector2.zero);
+
+        // Identyczny bonus jak w FillChunkWithBiomes
+        float centerBonus = Mathf.Clamp01(1f - (distFromZero / 150f));
+        return noiseValue + centerBonus;
+    }
+
+    private void FillChunkWithBiomes(ChunkCoords coords)
+    {
+        if (groundTilemap == null || grassTile == null || sandTile == null) return;
 
         int offset = chunkSize / 2;
         int startX = (coords.x * chunkSize) - offset;
         int startY = (coords.y * chunkSize) - offset;
 
-        // Przygotowujemy tablicê kafelków dla ca³ego chunka
         TileBase[] tileArray = new TileBase[chunkSize * chunkSize];
-        for (int i = 0; i < tileArray.Length; i++)
+
+        for (int y = 0; y < chunkSize; y++)
         {
-            tileArray[i] = groundTile;
+            for (int x = 0; x < chunkSize; x++)
+            {
+                float globalX = startX + x;
+                float globalY = startY + y;
+
+                // Obliczamy dystans od œrodka œwiata (0,0)
+                float distFromZero = Vector2.Distance(new Vector2(globalX, globalY), Vector2.zero);
+
+                float noiseValue = GetBiomeNoiseAt(globalX, globalY);
+
+                // --- P£YNNE PRZEJŒCIE W CENTRUM ---
+                // Jeœli jesteœmy blisko œrodka (np. w promieniu 80 kratek), 
+                // sztucznie podbijamy wartoœæ szumu, ¿eby faworyzowaæ trawê.
+                // Im dalej od zera, tym mniejszy wp³yw tego "bonusu".
+                float centerBonus = Mathf.Clamp01(1f - (distFromZero / 150f));
+                noiseValue += centerBonus;
+
+                tileArray[y * chunkSize + x] = (noiseValue > 0.45f) ? grassTile : sandTile;
+            }
         }
 
-        // Definiujemy obszar (Bounds) dla tego chunka
         BoundsInt area = new BoundsInt(startX, startY, 0, chunkSize, chunkSize, 1);
-
-        // Ustawiamy wszystkie kafelki jednym poleceniem (to jest klucz do wydajnoœci)
         groundTilemap.SetTilesBlock(area, tileArray);
-
-        // Uwaga: Tilemapa nie obs³uguje ³atwo losowej rotacji na pojedynczym kafelku przez SetTilesBlock.
-        // Jeœli chcesz rotacji, musia³byœ u¿yæ SetTileFlags i SetTransformMatrix dla ka¿dej komórki,
-        // co nieco spowolni generowanie. Lepiej zostawiæ to jednolite dla maksymalnej prêdkoœci.
     }
+
+    // --- KLUCZOWA METODA DLA KAMERY ---
+    // Wywo³uj to z CameraController, aby generowaæ œwiat w locie
+
 
     private void SpawnResource(GameObject prefab, Vector2Int center, float dist, string type)
     {
-        // Rozmiar bazowy skalowany sqrt(odleg³oœæ)
-        float baseSize = (Mathf.Sqrt(dist + 1) * 5f) + 3f;
+        float baseSize = (Mathf.Sqrt(dist) * 6f) + 5f;
 
-        // --- TWOJE NOWE MODYFIKATORY ---
         if (type == "sulfur") baseSize *= 0.5f;
-        if (type == "water" || type == "oil") baseSize *= 0.33f; // Redukcja iloœci surowca o 3 razy
+        if (type == "water" || type == "oil") baseSize *= 0.33f;
 
-        int totalTiles = Mathf.RoundToInt(baseSize * Random.Range(0.7f, 1.3f));
+        int totalTiles = Mathf.Max(1, Mathf.RoundToInt(baseSize * Random.Range(0.7f, 1.3f)));
 
-        // Zamiast kolejki u¿ywamy Listy, ¿eby móc losowaæ krawêdzie (bardziej naturalny kszta³t)
         List<Vector2Int> edgeTiles = new List<Vector2Int> { center };
         HashSet<Vector2Int> placedTiles = new HashSet<Vector2Int>();
 
+        List<Vector2Int> resourcePositions = new List<Vector2Int>();
+
         int placed = 0;
         int attempts = 0;
-        int maxAttempts = totalTiles * 20;
+        int maxAttempts = totalTiles * 30;
 
         while (placed < totalTiles && edgeTiles.Count > 0 && attempts < maxAttempts)
         {
             attempts++;
-            // Losowy wybór z listy krawêdzi sprawia, ¿e blob "wyci¹ga siê" w ró¿ne strony nieliniowo
             int randomIndex = Random.Range(0, edgeTiles.Count);
             Vector2Int current = edgeTiles[randomIndex];
 
             if (GridManager.Instance.GetResourceDeposit(current) == null)
             {
                 bool canPlace = true;
-
-                // --- ROZPROSZENIE P£YNÓW (Logika z Twojego rysunku) ---
                 if (type == "water" || type == "oil")
                 {
-                    // Rozpychamy o 2 pola (Radius 2 sprawdza obszar 5x5)
-                    // Dziêki temu ka¿da "kropka" ma wokó³ siebie woln¹ przestrzeñ
-                    if (HasAnyResourceInRadius(current, 2))
-                    {
-                        canPlace = false;
-                    }
+                    if (HasAnyResourceInRadius(current, 2)) canPlace = false;
                 }
 
                 if (canPlace)
                 {
                     InstantiateDeposit(prefab, current);
                     placedTiles.Add(current);
+                    resourcePositions.Add(current); // Zapamiêtujemy pozycjê kropki
                     placed++;
                 }
 
-                // Dodajemy s¹siadów do listy krawêdzi
                 foreach (Vector2Int neighbor in GetNeighbors(current))
                 {
                     if (!placedTiles.Contains(neighbor) && !edgeTiles.Contains(neighbor))
                     {
-                        // P³yny rozprzestrzeniaj¹ siê rzadziej, co tworzy "rozstrzelony" efekt
                         float spreadChance = (type == "water" || type == "oil") ? 0.25f : 0.85f;
-                        if (Random.value < spreadChance)
-                        {
-                            edgeTiles.Add(neighbor);
-                        }
+                        if (Random.value < spreadChance) edgeTiles.Add(neighbor);
                     }
                 }
             }
 
-            // Jeœli utknêliœmy (brak miejsca przy rozproszeniu), "skaczemy" w nowe miejsce w promieniu z³o¿a
             if (edgeTiles.Count == 0 || (Random.value < 0.1f && (type == "water" || type == "oil")))
             {
                 Vector2Int jumpPos = center + new Vector2Int(Random.Range(-10, 11), Random.Range(-10, 11));
                 if (!placedTiles.Contains(jumpPos)) edgeTiles.Add(jumpPos);
             }
 
-            // Usuwamy stare punkty z krawêdzi, ¿eby nie mieliæ ich w nieskoñczonoœæ
             if (attempts % 5 == 0 && edgeTiles.Count > 10) edgeTiles.RemoveAt(0);
+        }
+
+        if (type == "water" || type == "oil")
+        {
+            GenerateOrganicDirtBlob(resourcePositions, 4); // Zwiêkszony zasiêg do 3 dla lepszego t³a
+        }
+    }
+
+    private void GenerateOrganicDirtBlob(List<Vector2Int> corePositions, int radius)
+    {
+        HashSet<Vector2Int> dirtPositions = new HashSet<Vector2Int>();
+
+        // Dla ka¿dego punktu surowca sprawdzamy otoczenie w promieniu ko³owym
+        foreach (Vector2Int core in corePositions)
+        {
+            for (int x = -radius; x <= radius; x++)
+            {
+                for (int y = -radius; y <= radius; y++)
+                {
+                    Vector2Int targetPos = core + new Vector2Int(x, y);
+
+                    // Sprawdzamy dystans euklidesowy (ko³owy) zamiast kwadratu
+                    float distance = Vector2.Distance(core, targetPos);
+
+                    // Jeœli mieœci siê w promieniu, dodajemy do zbioru (HashSet zapobiega duplikatom)
+                    if (distance <= radius + 0.5f)
+                    {
+                        dirtPositions.Add(targetPos);
+                    }
+                }
+            }
+        }
+
+        // Teraz fizycznie stawiamy prefaby z zapamiêtanych unikalnych pozycji
+        foreach (Vector2Int pos in dirtPositions)
+        {
+            Vector3 worldPos = GridManager.Instance.GridToWorld(pos);
+
+            // Dodajemy ma³¹ losowoœæ na krawêdziach bloba, ¿eby by³ bardziej "poszarpany"
+            // Sprawdzamy czy w danym miejscu ju¿ coœ nie stoi (opcjonalnie dla optymalizacji)
+            Instantiate(dirtBackgroundPrefab, worldPos, Quaternion.identity, worldContainer);
         }
     }
 

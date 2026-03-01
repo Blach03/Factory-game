@@ -3998,6 +3998,8 @@ MonoBehaviour:
   zoomSpeed: 5
   minZoom: 5
   maxZoom: 50
+  worldGenerator: {fileID: 1747662921}
+  viewDistanceChunks: 2
 --- !u!1 &533411864
 GameObject:
   m_ObjectHideFlags: 0
@@ -14141,8 +14143,11 @@ MonoBehaviour:
   oilPrefab: {fileID: 5714795301647905608, guid: 8a650dae5719aed409bc23df8dc2a3c9, type: 3}
   waterPrefab: {fileID: 8301271753377031515, guid: 7272f6c7c948c754b941640be85f44a5, type: 3}
   sulfurPrefab: {fileID: 3896691140022516981, guid: 915c7f9c9a039104b86b3e5a1da972ae, type: 3}
+  dirtBackgroundPrefab: {fileID: 7264471276588645529, guid: dbfe3c9ea90cb9c48b0b0c2fdca9cd98, type: 3}
   groundTilemap: {fileID: 1193646717}
-  groundTile: {fileID: 11400000, guid: abc6f9be96d18454ca72b0c85f332bee, type: 2}
+  grassTile: {fileID: 11400000, guid: a631edaace3aa874b8e01210e3213128, type: 2}
+  sandTile: {fileID: 11400000, guid: abc6f9be96d18454ca72b0c85f332bee, type: 2}
+  biomeScale: 0.003
   chunkSize: 100
   renderDistanceChunks: 5
   worldContainer: {fileID: 1756864105}
