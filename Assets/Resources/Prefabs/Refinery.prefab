@@ -151,6 +151,7 @@ MonoBehaviour:
   outputDirection: 0
   outputIndicatorObject: {fileID: 8193887086305155322}
   recipeIconRenderer: {fileID: 5729563676970334135}
+  refinerySpriteRenderer: {fileID: 6730333583441130119}
   currentFluidAmount: 0
   currentItemInput: 0
   currentOutputAmount: 0

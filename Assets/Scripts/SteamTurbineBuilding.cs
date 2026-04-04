@@ -4,9 +4,17 @@ using System.Linq;
 public class SteamTurbineBuilding : GridObject
 {
     [Header("Ustawienia Turbiny")]
-    public float steamConsumptionRate = 0.25f; // na sekundê
-    public float powerOutput = 10f; // ile pr¹du daje
-    public ResourceData steamResource; // Przypisz Steam w inspektorze
+    public float steamConsumptionRate = 0.25f;
+    public float powerOutput = 10f;
+    public ResourceData steamResource;
+
+    [Header("Wizualizacja i Animacja")]
+    public SpriteRenderer turbineRenderer; // Przypisz w Inspektorze
+    private Sprite[] animFrames;
+    private Sprite idleSprite;
+    private int currentFrame = 0;
+    private float animTimer = 0f;
+    private float frameDuration = 0.1f; // 10 FPS
 
     [Header("Stan")]
     public bool isRunning;
@@ -15,15 +23,35 @@ public class SteamTurbineBuilding : GridObject
     protected override void Awake()
     {
         base.Awake();
-        size = new Vector2Int(2, 2); // Turbina mo¿e byæ 2x2
+        size = new Vector2Int(2, 2);
         objectType = GridObjectType.Building;
+    }
+
+    void Start()
+    {
+        // £adowanie animacji
+        animFrames = Resources.LoadAll<Sprite>("TurbineAnim");
+
+        if (turbineRenderer != null)
+        {
+            idleSprite = turbineRenderer.sprite;
+        }
     }
 
     void Update()
     {
+        // Wykonaj logikê produkcji
         ConsumeSteamAndGeneratePower();
+
+        // Obs³u¿ wygl¹d turbiny
+        HandleAnimation();
+    }
+
+    private void ConsumeSteamAndGeneratePower()
+    {
         isRunning = false;
-        // Jeœli rura obok nas zarejestrowa³a nas w sieci
+
+        // Najpierw sprawdŸ sieæ przypisan¹ (AttachedNetwork)
         if (AttachedNetwork != null && AttachedNetwork.FluidType == steamResource)
         {
             float toConsume = steamConsumptionRate * Time.deltaTime;
@@ -32,27 +60,18 @@ public class SteamTurbineBuilding : GridObject
                 AttachedNetwork.RequestFluid(toConsume);
                 isRunning = true;
                 PowerManager.Instance.RegisterProduction(powerOutput);
+                return; // ZnaleŸliœmy paliwo, koñczymy metodê
             }
         }
-    }
 
-    private void ConsumeSteamAndGeneratePower()
-    {
-        isRunning = false;
-
-        // Szukamy rury w s¹siedztwie (uproszczony skan wokó³ budynku 2x2)
+        // Jeœli nie ma AttachedNetwork, szukamy rury obok (zapasowo)
         PipeBuilding pipe = FindNearbyPipe();
-
         if (pipe != null && pipe.CurrentNetwork != null)
         {
             PipeNetwork net = pipe.CurrentNetwork;
-
-            // Sprawdzamy czy w sieci jest para i czy jest jej wystarczaj¹co
-            if (net.FluidType == steamResource && net.storedFluid > 0)
+            if (net.FluidType == steamResource)
             {
                 float toConsume = steamConsumptionRate * Time.deltaTime;
-
-                // Pobieramy p³yn z sieci
                 if (net.RequestFluid(toConsume))
                 {
                     isRunning = true;
@@ -62,9 +81,38 @@ public class SteamTurbineBuilding : GridObject
         }
     }
 
+    private void HandleAnimation()
+    {
+        if (turbineRenderer == null || animFrames == null || animFrames.Length == 0) return;
+
+        if (isRunning)
+        {
+            animTimer += Time.deltaTime;
+            if (animTimer >= frameDuration)
+            {
+                animTimer = 0f;
+                currentFrame++;
+
+                if (currentFrame >= animFrames.Length)
+                    currentFrame = 0;
+
+                turbineRenderer.sprite = animFrames[currentFrame];
+            }
+        }
+        else
+        {
+            // Turbina stoi
+            if (turbineRenderer.sprite != idleSprite)
+            {
+                turbineRenderer.sprite = idleSprite;
+                currentFrame = 0;
+                animTimer = 0f;
+            }
+        }
+    }
+
     private PipeBuilding FindNearbyPipe()
     {
-        // Sprawdza pola przylegaj¹ce do budynku 2x2
         for (int x = -1; x <= size.x; x++)
         {
             for (int y = -1; y <= size.y; y++)

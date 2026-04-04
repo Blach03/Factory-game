@@ -30,6 +30,14 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
     public GameObject outputIndicatorObject;
     public SpriteRenderer recipeIconRenderer;
 
+    // --- ANIMACJA ASEMBLERA ---
+    [Header("Animacja Asemblera")]
+    public SpriteRenderer assemblerSpriteRenderer;
+    private Sprite[] assemblerAnimFrames;
+    private int currentAnimFrame = 0;
+    private float animTimer = 0f;
+    private float animFrameRate = 0.1f; // 10 fps
+
     [Header("Ekwipunek Assemblera")]
     public int inputCapacity = 30;
     public int outputCapacity = 10;
@@ -81,6 +89,17 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
         {
             RotateBuilding(outputDirection);
         }
+
+        // --- INICJALIZACJA ANIMACJI ASEMBLERA ---
+        assemblerAnimFrames = Resources.LoadAll<Sprite>("AssAnim");
+        if (assemblerSpriteRenderer == null)
+        {
+            assemblerSpriteRenderer = GetComponent<SpriteRenderer>();
+        }
+        if (assemblerAnimFrames != null && assemblerAnimFrames.Length > 0 && assemblerSpriteRenderer != null)
+        {
+            assemblerSpriteRenderer.sprite = assemblerAnimFrames[0];
+        }
     }
 
     private void UpdateRecipeIcon()
@@ -117,6 +136,26 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
 
         TrySpitOutItem();
         TryConsumeFromWorld();
+
+        if (assemblerAnimFrames != null && assemblerAnimFrames.Length > 0 && assemblerSpriteRenderer != null)
+        {
+            if (isAssembling)
+            {
+                animTimer += Time.deltaTime;
+                if (animTimer >= animFrameRate)
+                {
+                    animTimer = 0f;
+                    currentAnimFrame = (currentAnimFrame + 1) % assemblerAnimFrames.Length;
+                    assemblerSpriteRenderer.sprite = assemblerAnimFrames[currentAnimFrame];
+                }
+            }
+            else
+            {
+                currentAnimFrame = 0;
+                animTimer = 0f;
+                assemblerSpriteRenderer.sprite = assemblerAnimFrames[0];
+            }
+        }
 
         // 2. PRÓBA STARTU PRODUKCJI
         if (!isAssembling)

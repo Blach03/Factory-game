@@ -15,6 +15,14 @@ public class FurnaceBuilding : GridObject
     public GameObject outputIndicatorObject;
     public SpriteRenderer recipeIconRenderer;
 
+    // --- ANIMACJA PIECA ---
+    [Header("Animacja Pieca")]
+    public SpriteRenderer furnaceSpriteRenderer;
+    private Sprite[] furnaceAnimFrames;
+    private int currentAnimFrame = 0;
+    private float animTimer = 0f;
+    private float animFrameRate = 0.1f; // 10 fps
+
     [Header("Ekwipunek Pieca")]
     public int inputOreCapacity = 10;
     public int inputCoalCapacity = 10;
@@ -71,6 +79,18 @@ public class FurnaceBuilding : GridObject
         {
             RotateFurnace(outputDirection);
         }
+
+        // --- INICJALIZACJA ANIMACJI PIECA ---
+        furnaceAnimFrames = Resources.LoadAll<Sprite>("FurnaceAnim");
+        if (furnaceSpriteRenderer == null)
+        {
+            // Spróbuj znaleŸæ SpriteRenderer automatycznie, jeœli nie przypisano w Inspectorze
+            furnaceSpriteRenderer = GetComponent<SpriteRenderer>();
+        }
+        if (furnaceAnimFrames != null && furnaceAnimFrames.Length > 0 && furnaceSpriteRenderer != null)
+        {
+            furnaceSpriteRenderer.sprite = furnaceAnimFrames[0];
+        }
     }
 
     private void UpdateRecipeIcon()
@@ -88,7 +108,6 @@ public class FurnaceBuilding : GridObject
         }
     }
 
-
     void Update()
     {
         if (currentRecipe == null) return;
@@ -96,6 +115,28 @@ public class FurnaceBuilding : GridObject
         TrySpitOutItem();
         TryConsumeFromWorld();
         TrySmelt();
+
+        // --- OBS£UGA ANIMACJI PIECA ---
+        if (furnaceAnimFrames != null && furnaceAnimFrames.Length > 0 && furnaceSpriteRenderer != null)
+        {
+            if (isSmelting)
+            {
+                animTimer += Time.deltaTime;
+                if (animTimer >= animFrameRate)
+                {
+                    animTimer = 0f;
+                    currentAnimFrame = (currentAnimFrame + 1) % furnaceAnimFrames.Length;
+                    furnaceSpriteRenderer.sprite = furnaceAnimFrames[currentAnimFrame];
+                }
+            }
+            else
+            {
+                // Zatrzymaj animacjê na pierwszej klatce
+                currentAnimFrame = 0;
+                animTimer = 0f;
+                furnaceSpriteRenderer.sprite = furnaceAnimFrames[0];
+            }
+        }
 
         if (isSmelting)
         {
@@ -123,7 +164,6 @@ public class FurnaceBuilding : GridObject
                     isSmelting = false;
 
                     // --- LOGIKA PRODUCTION SPEED ---
-                    // U¿ywamy zmodyfikowanego czasu zamiast surowego assemblyTime
                     timer = GetModifiedSmeltingTime();
                 }
                 else
@@ -394,8 +434,8 @@ public class FurnaceBuilding : GridObject
             Vector3 localOffset = Vector3.zero;
             float targetRotationZ = 0f;
 
-            float baseDistance = 0.60f;
-            float localSideAdjustment = 0.25f;
+            float baseDistance = 1f;
+            float localSideAdjustment = 0.5f;
 
             float finalMainOffset = baseDistance - 0.25f;
             float finalSideOffset = localSideAdjustment;

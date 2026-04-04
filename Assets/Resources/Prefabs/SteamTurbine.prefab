@@ -114,4 +114,5 @@ MonoBehaviour:
   steamConsumptionRate: 0.25
   powerOutput: 10
   steamResource: {fileID: 11400000, guid: cc36fa906134216409ddd953367ccb3c, type: 2}
+  turbineRenderer: {fileID: 7309185743115626075}
   isRunning: 0

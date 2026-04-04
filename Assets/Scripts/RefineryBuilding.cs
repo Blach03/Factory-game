@@ -24,6 +24,14 @@ public class RefineryBuilding : GridObject, IProductionBuilding
     public GameObject outputIndicatorObject;
     public SpriteRenderer recipeIconRenderer;
 
+    // --- ANIMACJA RAFINERII ---
+    [Header("Animacja Rafinerii")]
+    public SpriteRenderer refinerySpriteRenderer;
+    private Sprite[] refineryAnimFrames;
+    private int currentAnimFrame = 0;
+    private float animTimer = 0f;
+    private float animFrameRate = 0.1f; // 10 fps
+
     [Header("Ekwipunek")]
     public float currentFluidAmount = 0f;
     public int currentItemInput = 0;
@@ -55,6 +63,18 @@ public class RefineryBuilding : GridObject, IProductionBuilding
         UpdateRecipeIcon();
         RotateBuilding(outputDirection);
         NotifyNeighboringPipes();
+
+        // --- INICJALIZACJA ANIMACJI RAFINERII ---
+        refineryAnimFrames = Resources.LoadAll<Sprite>("RefAnim");
+        if (refinerySpriteRenderer == null)
+        {
+            refinerySpriteRenderer = GetComponent<SpriteRenderer>();
+        }
+        if (refineryAnimFrames != null && refineryAnimFrames.Length > 0 && refinerySpriteRenderer != null)
+        {
+            refinerySpriteRenderer.sprite = refineryAnimFrames[0];
+        }
+
     }
 
     void Update()
@@ -75,6 +95,28 @@ public class RefineryBuilding : GridObject, IProductionBuilding
         {
             PowerManager.Instance.RegisterConsumption(currentRecipe.powerRequirement);
         }
+
+        // --- OBSŁUGA ANIMACJI RAFINERII ---
+        if (refineryAnimFrames != null && refineryAnimFrames.Length > 0 && refinerySpriteRenderer != null)
+        {
+            if (isProcessing)
+            {
+                animTimer += Time.deltaTime;
+                if (animTimer >= animFrameRate)
+                {
+                    animTimer = 0f;
+                    currentAnimFrame = (currentAnimFrame + 1) % refineryAnimFrames.Length;
+                    refinerySpriteRenderer.sprite = refineryAnimFrames[currentAnimFrame];
+                }
+            }
+            else
+            {
+                currentAnimFrame = 0;
+                animTimer = 0f;
+                refinerySpriteRenderer.sprite = refineryAnimFrames[0];
+            }
+        }
+
 
         // 3. START PRODUKCJI (Z kontrolą energii)
         if (!isProcessing)
