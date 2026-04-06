@@ -34,6 +34,12 @@ public class UIManager : MonoBehaviour
     public GameObject technologyPanel; // Przypisz TechnologyMenu z hierarchii
     private bool isTechTreeOpen = false;
 
+    [Header("Machine Selection UI")]
+    // Tutaj w Inspektorze przeciągnij wszystkie obiekty "Frame" (Image) z Twoich guzików
+    public List<Image> machineButtonFrames;
+    public Color activeFrameColor = Color.green;
+    public Color inactiveFrameColor = new Color(0.2f, 0.2f, 0.2f);
+
     void Awake()
     {
         if (Instance == null)
@@ -356,6 +362,25 @@ public class UIManager : MonoBehaviour
 
             // Kolorowanie tekstu
             text.color = invCount >= cost.amount ? Color.green : Color.red;
+        }
+    }
+
+    public void UpdateMachineSelection(int selectedIndex)
+    {
+        if (machineButtonFrames == null || machineButtonFrames.Count == 0) return;
+
+        for (int i = 0; i < machineButtonFrames.Count; i++)
+        {
+            if (i == selectedIndex)
+            {
+                machineButtonFrames[i].color = activeFrameColor;
+                // Opcjonalnie: machineButtonFrames[i].gameObject.SetActive(true);
+            }
+            else
+            {
+                machineButtonFrames[i].color = inactiveFrameColor;
+                // Opcjonalnie: machineButtonFrames[i].gameObject.SetActive(false);
+            }
         }
     }
 }

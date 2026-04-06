@@ -17,6 +17,9 @@ public class PlacementManager : MonoBehaviour
 
     public GameObject pipePrefab;
 
+    [Header("UI Reference")]
+    public List<GameObject> machinePrefabs;
+
     [Header("State")]
     private GameObject selectedPrefab;
     private GameObject previewObject;
@@ -420,6 +423,12 @@ public class PlacementManager : MonoBehaviour
         UpdateCostUI();
 
         UpdatePreview(true);
+
+        if (UIManager.Instance != null && machinePrefabs != null)
+        {
+            int selectedIndex = machinePrefabs.IndexOf(prefab);
+            UIManager.Instance.UpdateMachineSelection(selectedIndex);
+        }
     }
 
 private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject prefabGridObject, out List<Vector2Int> occupiedTiles)
@@ -646,6 +655,7 @@ private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject pref
         }
 
         UIManager.Instance?.UpdateCostDisplay(null);
+        UIManager.Instance?.UpdateMachineSelection(-1);
 
         currentRotationIndex = 1;
         isPlacingConveyor = false;
