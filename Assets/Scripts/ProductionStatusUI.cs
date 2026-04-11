@@ -30,9 +30,23 @@ public class ProductionStatusUI : MonoBehaviour
     private readonly Color RequiredColor = Color.white;
     private readonly Color NotEnoughColor = Color.red;
 
+    [Header("Launch Logic")]
+    public Button launchButton;
+
     public void ShowStatus(IProductionBuilding building) // Parametr jako interfejs
     {
         currentBuilding = building;
+        bool isSilo = building is RocketSiloBuilding;
+
+        changeRecipeButton.gameObject.SetActive(!isSilo); // Ukryj zmianę recepty w silosie
+        if (launchButton != null)
+        {
+            launchButton.gameObject.SetActive(isSilo); // Pokaż przycisk Launch w silosie
+            launchButton.onClick.RemoveAllListeners();
+            launchButton.onClick.AddListener(() => {
+                (building as RocketSiloBuilding).Launch();
+            });
+        }
 
         changeRecipeButton.onClick.RemoveAllListeners();
         changeRecipeButton.onClick.AddListener(OnSwitchRecipeClicked);
@@ -105,6 +119,13 @@ public class ProductionStatusUI : MonoBehaviour
         outputItemCountText.color = curOut >= currentBuilding.outputCapacity ? NotEnoughColor : RequiredColor;
 
         productionProgressBar.value = productionProgressBar.maxValue - timer;
+
+        // Obsługa interaktywności przycisku Launch
+        if (currentBuilding is RocketSiloBuilding silo && launchButton != null)
+        {
+            // Przycisk aktywny tylko gdy rakieta jest gotowa (outputCount == 1)
+            launchButton.interactable = silo.GetCurrentOutputAmount() >= 1;
+        }
     }
 
     // ... Reszta metod (SetupInputIcon, UpdateInputSlot, OnSwitchRecipeClicked bez zmian) ...

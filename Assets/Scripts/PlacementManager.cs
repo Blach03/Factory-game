@@ -338,8 +338,21 @@ public class PlacementManager : MonoBehaviour
 
         if (selectedGridObjectComponent.size.x > 1 || selectedGridObjectComponent.size.y > 1)
         {
-            float offset = GridManager.Instance.tileSize / 2f;
-            worldPosition += new Vector3(offset, offset, 0);
+            if (selectedGridObjectComponent.size == new Vector2Int(3, 3))
+            {
+                worldPosition += new Vector3(GridManager.Instance.tileSize, GridManager.Instance.tileSize, 0);
+            }
+            else if (selectedGridObjectComponent.size == new Vector2Int(5, 5))
+            {
+                // To naprawi stawianie "za wysoko i za bardzo w prawo"
+                float offset = GridManager.Instance.tileSize * 2f;
+                worldPosition += new Vector3(offset, offset, 0);
+            }
+            else
+            {
+                float offset = GridManager.Instance.tileSize / 2f;
+                worldPosition += new Vector3(offset, offset, 0);
+            }
         }
 
         GameObject newBuildingObject = Instantiate(selectedPrefab, worldPosition, Quaternion.identity, buildingsContainer);
@@ -596,6 +609,12 @@ private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject pref
             if (selectedGridObjectComponent.size == new Vector2Int(3, 3))
             {
                 float offset = GridManager.Instance.tileSize;
+                worldPosition += new Vector3(offset, offset, 0);
+            }
+            else if (selectedGridObjectComponent.size == new Vector2Int(5, 5))
+            {
+                // Dla 5x5 środek jest 2 kratki od rogu + pół kratki (czyli 2.5f)
+                float offset = GridManager.Instance.tileSize * 2f;
                 worldPosition += new Vector3(offset, offset, 0);
             }
             else
