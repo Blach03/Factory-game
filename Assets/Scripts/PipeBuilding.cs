@@ -17,7 +17,7 @@ public class PipeBuilding : GridObject
     protected override void Awake()
     {
         base.Awake();
-        objectType = GridObjectType.Building;
+        objectType = GridObjectType.Pipe;
         isBlockingPlacement = true;
         size = new Vector2Int(1, 1);
     }

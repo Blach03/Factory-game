@@ -5,4 +5,5 @@ public enum GridObjectType
     Building,
     ConveyorBelt,
     OverheadConveyor,
+    Pipe,
 }

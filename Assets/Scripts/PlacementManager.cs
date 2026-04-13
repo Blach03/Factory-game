@@ -444,66 +444,82 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
-private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject prefabGridObject, out List<Vector2Int> occupiedTiles)
-{
-    occupiedTiles = GetOccupiedGridPositions(gridPosition, prefabGridObject.size);
-    if (GridManager.Instance == null) return false;
-
-    // --- 1. WALIDACJA PODŁOŻA (WYMAGANE ZŁOŻA) ---
-    // Pobieramy obiekty z głównego kafelka (lewy dolny róg)
-    List<GridObject> objectsAtMainTile = GridManager.Instance.GetGridObjects(gridPosition);
-    ResourceDeposit deposit = objectsAtMainTile.OfType<ResourceDeposit>().FirstOrDefault();
-
-    // Sprawdzenie dla Pumpjacka (musi być Oil)
-    if (prefabGridObject is PumpjackBuilding)
+    private bool CanPlaceBuildingAtPosition(Vector2Int gridPosition, GridObject prefabGridObject, out List<Vector2Int> occupiedTiles)
     {
-        if (deposit == null) return false;
-        if (deposit.resourceData.resourceName != "Water" && deposit.resourceData.resourceName != "Oil") return false;
+        occupiedTiles = GetOccupiedGridPositions(gridPosition, prefabGridObject.size);
+        if (GridManager.Instance == null) return false;
+
+        // --- 1. WALIDACJA PODŁOŻA (WYMAGANE ZŁOŻA) ---
+        List<GridObject> objectsAtMainTile = GridManager.Instance.GetGridObjects(gridPosition);
+        ResourceDeposit deposit = objectsAtMainTile.OfType<ResourceDeposit>().FirstOrDefault();
+
+        if (prefabGridObject is PumpjackBuilding)
+        {
+            if (deposit == null) return false;
+            if (deposit.resourceData.resourceName != "Water" && deposit.resourceData.resourceName != "Oil") return false;
         }
 
-    // Sprawdzenie dla Minera i Extendera (surowce stałe)
-    bool isMiner = prefabGridObject.GetComponent<MinerBuilding>() != null;
-    bool isExtender = prefabGridObject.GetComponent<MinerExtender>() != null;
-    if (isMiner || isExtender)
-    {
-        string[] validResources = { "Iron Ore", "Copper Ore", "Coal Ore", "Sulfur Ore" };
-        if (deposit == null || !validResources.Contains(deposit.resourceData.resourceName)) return false;
-    }
-
-    // --- 2. SPRAWDZANIE KOLIZJI (CZY POLE JEST WOLNE) ---
-    bool isPlacingOverhead = prefabGridObject.GetComponent<OverheadConveyor>() != null;
-
-    foreach (Vector2Int tile in occupiedTiles)
-    {
-        List<GridObject> objectsOnTile = GridManager.Instance.GetGridObjects(tile);
-        if (objectsOnTile == null) continue;
-
-        foreach (GridObject existing in objectsOnTile)
+        bool isMiner = prefabGridObject.GetComponent<MinerBuilding>() != null;
+        bool isExtender = prefabGridObject.GetComponent<MinerExtender>() != null;
+        if (isMiner || isExtender)
         {
-            // Zasoby (Ore/Oil) nigdy nie blokują stawiania
-            if (existing.objectType == GridObjectType.ResourceDeposit) continue;
+            string[] validResources = { "Iron Ore", "Copper Ore", "Coal Ore", "Sulfur Ore" };
+            if (deposit == null || !validResources.Contains(deposit.resourceData.resourceName)) return false;
+        }
 
-            // Wyjątek: Wiadukt (Overhead) może stać na zwykłej taśmie
-            if (isPlacingOverhead && existing.objectType == GridObjectType.ConveyorBelt) continue;
+        // --- 2. SPRAWDZANIE KOLIZJI (CZY POLE JEST WOLNE) ---
+        bool isPlacingOverhead = prefabGridObject.GetComponent<OverheadConveyor>() != null;
+        bool isPlacingBelt = prefabGridObject.objectType == GridObjectType.ConveyorBelt;
+        // Sprawdzamy czy stawiany obiekt to rura (zakładając komponent PipeBuilding)
+        bool isPlacingPipe = prefabGridObject.GetComponent<PipeBuilding>() != null;
 
-            // Wyjątek: Zwykła taśma może być pod wiaduktem (jeśli stawiasz taśmę pod istniejącym wiaduktem)
-            bool isPlacingBelt = prefabGridObject.objectType == GridObjectType.ConveyorBelt;
-            if (isPlacingBelt && existing.objectType == GridObjectType.OverheadConveyor) continue;
+        foreach (Vector2Int tile in occupiedTiles)
+        {
+            List<GridObject> objectsOnTile = GridManager.Instance.GetGridObjects(tile);
+            if (objectsOnTile == null) continue;
 
-            // Jeśli to rura, taśma lub budynek - blokujemy
-            // Sprawdzamy też flagę isBlockingPlacement dla pewności
-            if (existing.isBlockingPlacement || 
-                existing.objectType == GridObjectType.Building || 
-                existing.objectType == GridObjectType.ConveyorBelt || 
-                existing.objectType == GridObjectType.OverheadConveyor)
+            foreach (GridObject existing in objectsOnTile)
             {
-                return false; 
+                // Zasoby nigdy nie blokują
+                if (existing.objectType == GridObjectType.ResourceDeposit) continue;
+
+                // --- SYSTEM WYJĄTKÓW DLA WIADUKTU (OVERHEAD) ---
+
+                // Pobieramy informację czy istniejący obiekt to rura
+                bool existingIsPipe = existing.GetComponent<PipeBuilding>() != null;
+
+                // Jeśli stawiamy WIADUKT, ignorujemy: taśmy i rury
+                if (isPlacingOverhead)
+                {
+                    if (existing.objectType == GridObjectType.ConveyorBelt || existingIsPipe) continue;
+                }
+
+                // Jeśli stawiamy TAŚMĘ, ignorujemy: istniejące wiadukty
+                if (isPlacingBelt)
+                {
+                    if (existing.objectType == GridObjectType.OverheadConveyor) continue;
+                }
+
+                // Jeśli stawiamy RURĘ, ignorujemy: istniejące wiadukty
+                if (isPlacingPipe)
+                {
+                    if (existing.objectType == GridObjectType.OverheadConveyor) continue;
+                }
+
+                // --- STANDARDOWA BLOKADA ---
+                // Jeśli obiekt nie załapał się na powyższe wyjątki i blokuje stawianie - zwróć false
+                if (existing.isBlockingPlacement ||
+                    existing.objectType == GridObjectType.Building ||
+                    existing.objectType == GridObjectType.ConveyorBelt ||
+                    existing.objectType == GridObjectType.OverheadConveyor)
+                {
+                    return false;
+                }
             }
         }
-    }
 
-    return true;
-}
+        return true;
+    }
 
     private void TryRemoveBuilding()
     {

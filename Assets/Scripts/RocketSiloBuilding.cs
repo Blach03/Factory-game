@@ -146,6 +146,7 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
             timer = buildTime;
             UpdateVisuals();
             Debug.Log("RAKIETA WYSTARTOWA£A WYK£ADNICZO!");
+            UIManager.Instance.CloseAllUI();
         }
     }
 
