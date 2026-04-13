@@ -7,6 +7,8 @@ public class GameSaveData
 
     public List<EntityData> entityDatas = new List<EntityData>();
     public List<string> researchedTechnologyIds = new List<string>();
+    public float seedX;
+    public float seedY;
 }
 
 [System.Serializable]

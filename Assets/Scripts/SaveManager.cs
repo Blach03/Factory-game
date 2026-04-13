@@ -154,6 +154,13 @@ public class SaveManager : MonoBehaviour
             saveData.entityDatas.Add(eData);
         }
 
+        WorldGenerator worldGen = Object.FindFirstObjectByType<WorldGenerator>();
+        if (worldGen != null)
+        {
+            saveData.seedX = worldGen.seedX;
+            saveData.seedY = worldGen.seedY;
+        }
+
         string json = JsonUtility.ToJson(saveData, true);
         File.WriteAllText(fullPath, json);
 
@@ -173,6 +180,12 @@ public class SaveManager : MonoBehaviour
 
         string json = File.ReadAllText(fullPath);
         GameSaveData data = JsonUtility.FromJson<GameSaveData>(json);
+
+        WorldGenerator worldGen = Object.FindFirstObjectByType<WorldGenerator>();
+        if (worldGen != null)
+        {
+            worldGen.LoadSeed(data.seedX, data.seedY);
+        }
 
         // 1. Wczytaj Ekwipunek
         if (PlayerInventory.Instance != null && data.inventoryData != null)

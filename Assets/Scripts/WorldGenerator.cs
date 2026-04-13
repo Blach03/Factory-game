@@ -38,8 +38,8 @@ public class WorldGenerator : MonoBehaviour
     private float chanceSulfur = 0.05f;
 
     [Header("Randomness")]
-    private float seedX;
-    private float seedY;
+    public float seedX;
+    public float seedY;
 
     public void InitializeWorld()
     {
@@ -293,5 +293,14 @@ public class WorldGenerator : MonoBehaviour
         return new List<Vector2Int> {
             pos + Vector2Int.up, pos + Vector2Int.down, pos + Vector2Int.left, pos + Vector2Int.right
         };
+    }
+
+    public void LoadSeed(float x, float y)
+    {
+        seedX = x;
+        seedY = y;
+        // Opcjonalnie wyczyœæ stare kafelki, jeœli istniej¹
+        if (groundTilemap != null) groundTilemap.ClearAllTiles();
+        generatedChunks.Clear();
     }
 }
