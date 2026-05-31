@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using TMPro;
 using UnityEngine.UI; // <-- TO JEST KLUCZOWE DLA KOMPONENTU IMAGE
 using UnityEngine.EventSystems; // DODAJ T� DYREKTYW� NA G�RZE PLIKU
@@ -365,6 +366,35 @@ public class UIManager : MonoBehaviour
 
             // Kolorowanie tekstu
             text.color = invCount >= cost.amount ? Color.green : Color.red;
+        }
+    }
+
+    public void UpdateCostDisplayFromCosts(Dictionary<ResourceData, int> costs)
+    {
+        if (costs == null || costs.Count == 0)
+        {
+            costPanel.SetActive(false);
+            return;
+        }
+
+        if (costPanel != null) costPanel.SetActive(true);
+        foreach (Transform child in costContainer) Destroy(child.gameObject);
+
+        foreach (var kv in costs)
+        {
+            ResourceData resource = kv.Key;
+            int amount = kv.Value;
+            if (resource == null || amount <= 0) continue;
+
+            GameObject go = Instantiate(costElementPrefab, costContainer);
+            var icon = go.GetComponentInChildren<Image>();
+            var text = go.GetComponentInChildren<TextMeshProUGUI>();
+
+            int invCount = PlayerInventory.Instance.GetItemCount(resource);
+
+            icon.sprite = resource.icon;
+            text.text = $"{invCount}/{amount}";
+            text.color = invCount >= amount ? Color.green : Color.red;
         }
     }
 
