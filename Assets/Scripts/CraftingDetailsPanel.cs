@@ -110,7 +110,16 @@ public class CraftingDetailsPanel : MonoBehaviour
 
     public void OnCraftClicked(int amount)
     {
-        if (selectedRecipe != null) HandCraftingManager.Instance.AddToQueue(selectedRecipe, amount);
+        if (selectedRecipe != null)
+        {
+            // Tutorial step: verify exact action "Iron Gear + Craft x10".
+            if (amount == 10 && selectedRecipe.outputItem != null && selectedRecipe.outputItem.resourceName == "Iron Gear")
+            {
+                TutorialItemTracker.OnPressedCraftX10IronGear();
+            }
+
+            HandCraftingManager.Instance.AddToQueue(selectedRecipe, amount);
+        }
     }
 
     private void OnEnable()

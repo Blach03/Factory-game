@@ -82,7 +82,9 @@ public class SaveManager : MonoBehaviour
         // nowych obiektach (np. PlayerInventory) zosta� wykonany.
         yield return null;
 
-        if (string.IsNullOrEmpty(saveToLoad))
+        bool isNewGame = string.IsNullOrEmpty(saveToLoad);
+
+        if (isNewGame)
         {
             totalPlayTimeSeconds = 0f;
 
@@ -107,6 +109,17 @@ public class SaveManager : MonoBehaviour
         yield return null; // Jeszcze jedna klatka, by UnlockManager zd��y� si� zainicjalizowa�
         UnlockManager unlocker = Object.FindAnyObjectByType<UnlockManager>();
         if (unlocker != null) unlocker.RefreshUnlocks();
+
+        // Uruchom tutorial TYLKO dla nowej gry
+        if (isNewGame)
+        {
+            yield return null; // Czekaj jeszcze jedną klatkę
+            TutorialManager tutorialMgr = Object.FindAnyObjectByType<TutorialManager>();
+            if (tutorialMgr != null)
+            {
+                tutorialMgr.StartTutorial();
+            }
+        }
     }
 
     // --- PUBLICZNE METODY DLA MAIN MENU ---

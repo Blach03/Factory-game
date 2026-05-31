@@ -11,9 +11,11 @@ public class MinerBuilding : GridObject
 
     [Header("Miner Output Settings")]
     public float outputSpeed = 3.0f;
+    public int outputBufferCapacity = 3;
 
     private float timer;
     private ResourceDeposit depositToMine;
+    private readonly Queue<Item> outputBuffer = new Queue<Item>();
 
     private static LayerMask itemLayerMask;
     private static Transform itemsContainer;
@@ -75,11 +77,17 @@ public class MinerBuilding : GridObject
             timer = outputInterval;
         }
 
+        // Zawsze prÃ³buj wyrzucaÄ‡ z bufora, gdy tylko pole przed minerem jest wolne.
+        TryOutputFromBuffer();
+
         timer -= Time.deltaTime;
         if (timer <= 0f)
         {
-            MineResource();
+            MineResourceToBuffer();
             timer = outputInterval;
+
+            // Po wydobyciu sprÃ³buj od razu wypchnÄ…Ä‡ pierwszy element z bufora.
+            TryOutputFromBuffer();
         }
     }
 
@@ -99,17 +107,26 @@ public class MinerBuilding : GridObject
 
             if (depositToMine != null)
             {
-                Debug.Log($"MinerBuilding na pozycji {GetGridPosition()} znalaz³ z³o¿e: {depositToMine.resourceData.resourceName}");
+                Debug.Log($"MinerBuilding na pozycji {GetGridPosition()} znalazï¿½ zï¿½oï¿½e: {depositToMine.resourceData.resourceName}");
             }
         }
     }
 
-    private void MineResource()
+    private void MineResourceToBuffer()
     {
         if (depositToMine == null) return;
+        if (outputBuffer.Count >= outputBufferCapacity) return;
 
         Item itemPrefabToSpawn = depositToMine.GetMinedItemPrefab();
         if (itemPrefabToSpawn == null) return;
+
+        outputBuffer.Enqueue(itemPrefabToSpawn);
+    }
+
+    private void TryOutputFromBuffer()
+    {
+        if (outputBuffer.Count == 0) return;
+        if (GridManager.Instance == null) return;
 
         Vector2Int minerGridPosition = GetGridPosition();
         Vector2Int outputGridPosition = GetOutputGridPosition();
@@ -125,6 +142,13 @@ public class MinerBuilding : GridObject
         Vector3 outputVector = outputWorldPosition - minerWorldPosition;
         Vector3 startWorldPosition = minerWorldPosition + (outputVector / 2.0f);
 
+        Item itemPrefabToSpawn = outputBuffer.Peek();
+        if (itemPrefabToSpawn == null)
+        {
+            outputBuffer.Dequeue();
+            return;
+        }
+
         Item newItem = Instantiate(itemPrefabToSpawn, startWorldPosition, Quaternion.identity, itemsContainer);
 
 
@@ -133,10 +157,11 @@ public class MinerBuilding : GridObject
 
 
             newItem.SetTargetPosition(outputWorldPosition, outputSpeed);
+            outputBuffer.Dequeue();
         }
         else
         {
-            Destroy(newItem.gameObject);
+            // Gdy instantiate nie powiedzie siÄ™, pozostaw item w buforze i sprÃ³buj ponownie.
         }
     }
 
@@ -190,7 +215,7 @@ public class MinerBuilding : GridObject
     [System.Serializable]
     public class BuildingSaveData
     {
-        // Zmieniamy na int, aby ³atwo zapisaæ Enum Direction
+        // Zmieniamy na int, aby ï¿½atwo zapisaï¿½ Enum Direction
         public int outputDirectionInt;
         public string activeRecipeName;
     }
@@ -210,32 +235,32 @@ public class MinerBuilding : GridObject
         if (string.IsNullOrEmpty(json)) return;
         BuildingSaveData data = JsonUtility.FromJson<BuildingSaveData>(json);
 
-        // Przywracamy Enum z inta i odœwie¿amy wizualia strza³ki
+        // Przywracamy Enum z inta i odï¿½wieï¿½amy wizualia strzaï¿½ki
         this.outputDirection = (Direction)data.outputDirectionInt;
 
-        // Wywo³ujemy Twoj¹ istniej¹c¹ metodê wizualizacji
+        // Wywoï¿½ujemy Twojï¿½ istniejï¿½cï¿½ metodï¿½ wizualizacji
         RotateMiner(this.outputDirection);
 
     }
 
     public void RecalculateBoost()
     {
-        // HashSet przechowuje unikalne pozycje, które ju¿ policzyliœmy
+        // HashSet przechowuje unikalne pozycje, ktï¿½re juï¿½ policzyliï¿½my
         HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
         Vector2Int myPos = GetGridPosition();
         visited.Add(myPos); // Nie licz minera jako extendera
 
-        // Rozpoczynamy rekurencjê od Minera
+        // Rozpoczynamy rekurencjï¿½ od Minera
         int totalExtenders = CountAllConnectedExtenders(myPos, visited);
 
-        // Limit 100 extenderów (zabezpieczenie wydajnoœciowe)
+        // Limit 100 extenderï¿½w (zabezpieczenie wydajnoï¿½ciowe)
         totalExtenders = Mathf.Min(totalExtenders, 100);
 
         float multiplier = 1f + totalExtenders;
         currentProductionSpeed = baseProductionSpeed * multiplier;
         timer = Mathf.Min(timer, outputInterval);
 
-        Debug.Log($"[Miner {myPos}] Znaleziono ³¹cznie {totalExtenders} extenderów w sieci. Speed: {currentProductionSpeed}");
+        Debug.Log($"[Miner {myPos}] Znaleziono ï¿½ï¿½cznie {totalExtenders} extenderï¿½w w sieci. Speed: {currentProductionSpeed}");
     }
 
     private int CountAllConnectedExtenders(Vector2Int currentPoint, HashSet<Vector2Int> visited)
@@ -252,7 +277,7 @@ public class MinerBuilding : GridObject
 
         foreach (Vector2Int nPos in neighbors)
         {
-            // Jeœli ju¿ tu byliœmy, skaczemy dalej
+            // Jeï¿½li juï¿½ tu byliï¿½my, skaczemy dalej
             if (visited.Contains(nPos)) continue;
 
             var objects = GridManager.Instance.GetGridObjects(nPos);
@@ -260,7 +285,7 @@ public class MinerBuilding : GridObject
 
             MinerExtender extender = objects.OfType<MinerExtender>().FirstOrDefault();
 
-            // Sprawdzamy: czy to extender, czy celuje w currentPoint i czy jest na tym samym z³o¿u
+            // Sprawdzamy: czy to extender, czy celuje w currentPoint i czy jest na tym samym zï¿½oï¿½u
             if (extender != null && extender.GetTargetGridPosition() == currentPoint)
             {
                 if (IsSameDepositType(nPos))
@@ -270,7 +295,7 @@ public class MinerBuilding : GridObject
                 }
                 else
                 {
-                    Debug.Log($"[Miner] Extender na {nPos} jest na innym z³o¿u - ignorujê.");
+                    Debug.Log($"[Miner] Extender na {nPos} jest na innym zï¿½oï¿½u - ignorujï¿½.");
                 }
             }
         }
@@ -279,17 +304,17 @@ public class MinerBuilding : GridObject
 
     private bool IsSameDepositType(Vector2Int pos)
     {
-        // Pobieramy z³o¿e pod minerem
+        // Pobieramy zï¿½oï¿½e pod minerem
         var myDeposit = GridManager.Instance.GetGridObjects(GetGridPosition())
                         .OfType<ResourceDeposit>().FirstOrDefault();
 
-        // Pobieramy z³o¿e pod sprawdzanym polem
+        // Pobieramy zï¿½oï¿½e pod sprawdzanym polem
         var targetDeposit = GridManager.Instance.GetGridObjects(pos)
                             .OfType<ResourceDeposit>().FirstOrDefault();
 
         if (myDeposit == null || targetDeposit == null) return false;
 
-        // Porównujemy nazwy surowców (np. "Coal" == "Coal")
+        // Porï¿½wnujemy nazwy surowcï¿½w (np. "Coal" == "Coal")
         return myDeposit.resourceData.resourceName == targetDeposit.resourceData.resourceName;
     }
 }

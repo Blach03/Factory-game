@@ -75,9 +75,8 @@ public class HandCraftingManager : MonoBehaviour
 
     public void AddToQueue(IBuildingRecipe recipe, int amount)
     {
-        // amount = ile przedmiotów finałnych chcemy stworzyć
-        // Obliczamy ile razy trzeba wykonać recepturę na podstawie outputAmount
-        int recipesToQueue = Mathf.CeilToInt((float)amount / recipe.outputAmount);
+        // amount = ile razy chcemy wykonać recepturę (np. x10 = 10 craftów)
+        int recipesToQueue = amount;
         
         for (int i = 0; i < recipesToQueue; i++)
         {

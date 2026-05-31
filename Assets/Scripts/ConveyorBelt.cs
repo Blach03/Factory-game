@@ -6,7 +6,7 @@ using System;
 public class ConveyorBelt : GridObject
 {
     [Header("Settings")]
-    public float baseBeltSpeed = 2f; // Prêdkoœæ bazowa
+    public float baseBeltSpeed = 2f; // Prï¿½dkoï¿½ï¿½ bazowa
 
     public float CurrentBeltSpeed
     {
@@ -154,11 +154,11 @@ public class ConveyorBelt : GridObject
 
             if (overheadDelayFrames > 0)
             {
-                Debug.Log($"[CB-DELAYED] OpóŸnienie: pozosta³o {overheadDelayFrames} klatek. Zatrzymujê.");
+                Debug.Log($"[CB-DELAYED] Opï¿½nienie: pozostaï¿½o {overheadDelayFrames} klatek. Zatrzymujï¿½.");
                 return;
             }
 
-            Debug.Log($"[CB-DELAYED] Licznik opóŸnienia siê wyczerpa³. Wymuszam ruch.");
+            Debug.Log($"[CB-DELAYED] Licznik opï¿½nienia siï¿½ wyczerpaï¿½. Wymuszam ruch.");
         }
         else
         {
@@ -168,12 +168,12 @@ public class ConveyorBelt : GridObject
             {
                 if (overhead.itemOnOverheadLayer != null)
                 {
-                    Debug.Log($"[CB-OH-BLOCKED] Overhead jest ZAJÊTY. Pcham dalej.");
+                    Debug.Log($"[CB-OH-BLOCKED] Overhead jest ZAJï¿½TY. Pcham dalej.");
                 }
                 else
                 {
                     overheadDelayFrames = MAX_OVERHEAD_DELAY_FRAMES;
-                    Debug.Log($"[CB-OH-ACCEPT] Overhead jest WOLNY. Rozpoczynam opóŸnienie ({MAX_OVERHEAD_DELAY_FRAMES} klatek).");
+                    Debug.Log($"[CB-OH-ACCEPT] Overhead jest WOLNY. Rozpoczynam opï¿½nienie ({MAX_OVERHEAD_DELAY_FRAMES} klatek).");
                     return;
                 }
             }
@@ -189,6 +189,7 @@ public class ConveyorBelt : GridObject
         }
 
         itemToMove.SetTargetPosition(nextWorldPosition, CurrentBeltSpeed);
+        TutorialItemTracker.OnItemMovedByConveyor();
         isHoldingItem = false;
     }
 
@@ -291,10 +292,10 @@ public class ConveyorBelt : GridObject
         if (string.IsNullOrEmpty(json)) return;
         BuildingSaveData data = JsonUtility.FromJson<BuildingSaveData>(json);
 
-        // Przywracamy Enum z inta i odœwie¿amy wizualia strza³ki
+        // Przywracamy Enum z inta i odï¿½wieï¿½amy wizualia strzaï¿½ki
         this.travelDirection = (Direction)data.outputDirectionInt;
 
-        // Wywo³ujemy Twoj¹ istniej¹c¹ metodê wizualizacji
+        // Wywoï¿½ujemy Twojï¿½ istniejï¿½cï¿½ metodï¿½ wizualizacji
         RotateBelt(this.travelDirection);
 
     }

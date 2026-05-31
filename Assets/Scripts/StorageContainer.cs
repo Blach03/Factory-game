@@ -17,8 +17,8 @@ public class StorageContainer : GridObject
 
     protected override void Awake()
     {
-        // 1. Wywo³aj Awake z GridObject (który wywo³a Awake z SavableEntity)
-        // Jest to niezbêdne, aby wygenerowaæ uniqueID dla zapisu!
+        // 1. Wywoï¿½aj Awake z GridObject (ktï¿½ry wywoï¿½a Awake z SavableEntity)
+        // Jest to niezbï¿½dne, aby wygenerowaï¿½ uniqueID dla zapisu!
         base.Awake();
 
         // 2. Twoja dotychczasowa logika
@@ -108,6 +108,11 @@ public class StorageContainer : GridObject
         if (currentCount < itemLimit)
         {
             PlayerInventory.Instance.AddItem(trackedResource, 1);
+            TutorialItemTracker.OnItemMovedByStorageToInventory();
+            if (trackedResource != null && trackedResource.resourceName == "Copper Bar")
+            {
+                TutorialItemTracker.OnCopperBarMovedByStorageToInventory();
+            }
             Destroy(itemToCollect.gameObject);
 
             Debug.Log($"[Storage: {occupiedPosition}] Zebrano {newItemResource.resourceName}. Stan: {currentCount + 1}/{itemLimit} (Skanowanie).");
@@ -150,7 +155,7 @@ public class StorageContainer : GridObject
             trackedResourceName = this.trackedResource != null ? this.trackedResource.resourceName : null
         };
 
-        // U¿ywamy wbudowanej metody Unity
+        // Uï¿½ywamy wbudowanej metody Unity
         return JsonUtility.ToJson(data);
     }
 
@@ -172,20 +177,20 @@ public class StorageContainer : GridObject
                 }
                 else
                 {
-                    // Jeœli inventory jeszcze nie ma, spróbujmy za³adowaæ z Resources bezpoœrednio
+                    // Jeï¿½li inventory jeszcze nie ma, sprï¿½bujmy zaï¿½adowaï¿½ z Resources bezpoï¿½rednio
                     this.trackedResource = Resources.Load<ResourceData>("Items/" + data.trackedResourceName);
                 }
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"B³¹d wczytywania danych magazynu: {e.Message}");
+            Debug.LogError($"Bï¿½ï¿½d wczytywania danych magazynu: {e.Message}");
         }
     }
 
     private ResourceData FindResourceByName(string name)
     {
-        // U¿yj PlayerInventory.Instance.GetAllGameResources(), aby znaleŸæ ResourceData
+        // Uï¿½yj PlayerInventory.Instance.GetAllGameResources(), aby znaleï¿½ï¿½ ResourceData
         return PlayerInventory.Instance.GetAllGameResources().FirstOrDefault(r => r.resourceName == name);
     }
 }

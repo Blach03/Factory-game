@@ -110,13 +110,13 @@ public class Item : SavableEntity
     public class ItemSaveData
     {
         public string resourceName;
-        public float[] pos; // float[] jest ³atwiejszy dla JsonUtility ni¿ Vector3
+        public float[] pos; // float[] jest ï¿½atwiejszy dla JsonUtility niï¿½ Vector3
         public float[] targetPos;
         public bool moving;
         public float speed;
     }
 
-    // DODAJ S£OWO override
+    // DODAJ Sï¿½OWO override
     public override string GetSerializedData()
     {
         ItemSaveData data = new ItemSaveData();
@@ -124,18 +124,18 @@ public class Item : SavableEntity
         data.pos = new float[] { transform.position.x, transform.position.y, transform.position.z };
         data.targetPos = new float[] { targetWorldPosition.x, targetWorldPosition.y, targetWorldPosition.z };
         data.moving = isBeingMoved;
-        data.speed = currentMoveSpeed; // upewnij siê, ¿e masz tak¹ zmienn¹
+        data.speed = currentMoveSpeed; // upewnij siï¿½, ï¿½e masz takï¿½ zmiennï¿½
 
         return JsonUtility.ToJson(data);
     }
 
-    // Tê metodê wywo³amy w SaveManagerze podczas wczytywania
+    // Tï¿½ metodï¿½ wywoï¿½amy w SaveManagerze podczas wczytywania
     public override void LoadComponentData(string json)
     {
         if (string.IsNullOrEmpty(json)) return;
         ItemSaveData data = JsonUtility.FromJson<ItemSaveData>(json);
 
-        // Przywracamy fizyczn¹ pozycjê
+        // Przywracamy fizycznï¿½ pozycjï¿½
         transform.position = new Vector3(data.pos[0], data.pos[1], data.pos[2]);
 
         // Przywracamy cel ruchu
