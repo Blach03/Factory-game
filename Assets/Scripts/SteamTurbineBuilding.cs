@@ -29,21 +29,23 @@ public class SteamTurbineBuilding : GridObject
 
     void Start()
     {
-        // £adowanie animacji
+        // ï¿½adowanie animacji
         animFrames = Resources.LoadAll<Sprite>("TurbineAnim");
 
         if (turbineRenderer != null)
         {
             idleSprite = turbineRenderer.sprite;
         }
+
+        NotifyAdjacentPipes();
     }
 
     void Update()
     {
-        // Wykonaj logikê produkcji
+        // Wykonaj logikï¿½ produkcji
         ConsumeSteamAndGeneratePower();
 
-        // Obs³u¿ wygl¹d turbiny
+        // Obsï¿½uï¿½ wyglï¿½d turbiny
         HandleAnimation();
     }
 
@@ -51,7 +53,7 @@ public class SteamTurbineBuilding : GridObject
     {
         isRunning = false;
 
-        // Najpierw sprawdŸ sieæ przypisan¹ (AttachedNetwork)
+        // Najpierw sprawdï¿½ sieï¿½ przypisanï¿½ (AttachedNetwork)
         if (AttachedNetwork != null && AttachedNetwork.FluidType == steamResource)
         {
             float toConsume = steamConsumptionRate * Time.deltaTime;
@@ -60,11 +62,11 @@ public class SteamTurbineBuilding : GridObject
                 AttachedNetwork.RequestFluid(toConsume);
                 isRunning = true;
                 PowerManager.Instance.RegisterProduction(powerOutput);
-                return; // ZnaleŸliœmy paliwo, koñczymy metodê
+                return; // Znaleï¿½liï¿½my paliwo, koï¿½czymy metodï¿½
             }
         }
 
-        // Jeœli nie ma AttachedNetwork, szukamy rury obok (zapasowo)
+        // Jeï¿½li nie ma AttachedNetwork, szukamy rury obok (zapasowo)
         PipeBuilding pipe = FindNearbyPipe();
         if (pipe != null && pipe.CurrentNetwork != null)
         {
@@ -124,5 +126,36 @@ public class SteamTurbineBuilding : GridObject
             }
         }
         return null;
+    }
+
+    private void NotifyAdjacentPipes()
+    {
+        if (GridManager.Instance == null) return;
+
+        for (int x = -1; x <= size.x; x++)
+        {
+            for (int y = -1; y <= size.y; y++)
+            {
+                // Interesuje nas tylko obwï¿½d, nie wnï¿½trze turbiny.
+                if (x >= 0 && x < size.x && y >= 0 && y < size.y) continue;
+
+                Vector2Int neighborPos = occupiedPosition + new Vector2Int(x, y);
+                var pipe = GridManager.Instance.GetGridObjects(neighborPos)?.OfType<PipeBuilding>().FirstOrDefault();
+                if (pipe != null)
+                {
+                    pipe.UpdatePipeVisuals();
+                    pipe.RefreshNetwork();
+                }
+            }
+        }
+    }
+
+    protected override void OnDestroy()
+    {
+        // Najpierw usuwamy turbinï¿½ z siatki, potem odï¿½wieï¿½amy rury.
+        base.OnDestroy();
+
+        if (!gameObject.scene.isLoaded) return;
+        NotifyAdjacentPipes();
     }
 }

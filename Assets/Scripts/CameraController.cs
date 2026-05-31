@@ -10,7 +10,7 @@ public class CameraController : MonoBehaviour
 
     [Header("Infinite Generation")]
     public WorldGenerator worldGenerator;
-    public int viewDistanceChunks = 2; // Ile chunków widaæ przed kamer¹
+    public int viewDistanceChunks = 2; // Ile chunkï¿½w widaï¿½ przed kamerï¿½
     private Vector2Int lastChunkCoords = new Vector2Int(-999, -999);
 
     private Camera cam;
@@ -43,33 +43,33 @@ public class CameraController : MonoBehaviour
 
     public void GoToHome()
     {
-        // Przenosimy kamerê do 0,0 (zachowuj¹c jej Z, zazwyczaj -10)
+        // Przenosimy kamerï¿½ do 0,0 (zachowujï¿½c jej Z, zazwyczaj -10)
         transform.position = new Vector3(0, 0, transform.position.z);
 
-        // Opcjonalnie: resetujemy zoom do domyœlnego (np. 15)
+        // Opcjonalnie: resetujemy zoom do domyï¿½lnego (np. 15)
         if (cam != null) cam.orthographicSize = 15f;
 
-        Debug.Log("Kamera powróci³a do punktu 0,0");
+        Debug.Log("Kamera powrï¿½ciï¿½a do punktu 0,0");
     }
 
     void CheckForNewChunks()
     {
         if (worldGenerator == null) return;
 
-        // Obliczamy w jakim chunku jest obecnie œrodek kamery
-        // Zak³adamy, ¿e chunkSize w WorldGenerator to 100
+        // Obliczamy w jakim chunku jest obecnie ï¿½rodek kamery
+        // Zakï¿½adamy, ï¿½e chunkSize w WorldGenerator to 100
         int chunkSize = worldGenerator.chunkSize;
         int currentChunkX = Mathf.RoundToInt(transform.position.x / chunkSize);
         int currentChunkY = Mathf.RoundToInt(transform.position.y / chunkSize);
 
         Vector2Int currentCoords = new Vector2Int(currentChunkX, currentChunkY);
 
-        // Sprawdzamy tylko jeœli kamera przesunê³a siê do innego chunka
+        // Sprawdzamy tylko jeï¿½li kamera przesunï¿½a siï¿½ do innego chunka
         if (currentCoords != lastChunkCoords)
         {
             lastChunkCoords = currentCoords;
 
-            // Pêtla sprawdzaj¹ca chunki w promieniu viewDistance
+            // Pï¿½tla sprawdzajï¿½ca chunki w promieniu viewDistance
             for (int x = -viewDistanceChunks; x <= viewDistanceChunks; x++)
             {
                 for (int y = -viewDistanceChunks; y <= viewDistanceChunks; y++)
@@ -79,6 +79,13 @@ public class CameraController : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void ForceRefreshChunks()
+    {
+        // Wymuszamy przeliczenie bez potrzeby ruchu kamery.
+        lastChunkCoords = new Vector2Int(-999, -999);
+        CheckForNewChunks();
     }
 
     void HandleMovement()

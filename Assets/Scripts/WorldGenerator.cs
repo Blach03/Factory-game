@@ -19,7 +19,7 @@ public class WorldGenerator : MonoBehaviour
     public Tile sandTile;  // Przypisz SandTile.asset
 
     [Header("Biome Settings")]
-    [Tooltip("Im mniejsza liczba, tym wiêksze plamy biomów (0.005 - 0.02)")]
+    [Tooltip("Im mniejsza liczba, tym wiï¿½ksze plamy biomï¿½w (0.005 - 0.02)")]
     public float biomeScale = 0.01f;
 
     [Header("World Settings")]
@@ -27,7 +27,8 @@ public class WorldGenerator : MonoBehaviour
     public int renderDistanceChunks = 5;
     public Transform worldContainer;
 
-    private HashSet<ChunkCoords> generatedChunks = new HashSet<ChunkCoords>();
+    private HashSet<ChunkCoords> generatedTileChunks = new HashSet<ChunkCoords>();
+    private HashSet<ChunkCoords> generatedResourceChunks = new HashSet<ChunkCoords>();
 
     // Szanse bazowe
     private float chanceCoal = 0.40f;
@@ -45,10 +46,11 @@ public class WorldGenerator : MonoBehaviour
     {
         if (worldContainer == null) worldContainer = new GameObject("--WORLD--").transform;
         if (groundTilemap != null) groundTilemap.ClearAllTiles();
-        generatedChunks.Clear();
+        generatedTileChunks.Clear();
+        generatedResourceChunks.Clear();
 
         // --- LOSOWANIE SEEDU ---
-        // Losujemy ogromne liczby, aby "przesun¹æ" mapê szumu w zupe³nie inne miejsce
+        // Losujemy ogromne liczby, aby "przesunï¿½ï¿½" mapï¿½ szumu w zupeï¿½nie inne miejsce
         seedX = Random.Range(-100000f, 100000f);
         seedY = Random.Range(-100000f, 100000f);
 
@@ -62,15 +64,19 @@ public class WorldGenerator : MonoBehaviour
     }
     public void TryGenerateChunk(ChunkCoords coords)
     {
-        if (generatedChunks.Contains(coords)) return;
-        generatedChunks.Add(coords);
-        GenerateChunk(coords);
+        if (!generatedTileChunks.Contains(coords))
+        {
+            FillChunkWithBiomes(coords);
+            generatedTileChunks.Add(coords);
+        }
+
+        if (generatedResourceChunks.Contains(coords)) return;
+        generatedResourceChunks.Add(coords);
+        GenerateChunkResources(coords);
     }
 
-    private void GenerateChunk(ChunkCoords coords)
+    private void GenerateChunkResources(ChunkCoords coords)
     {
-        FillChunkWithBiomes(coords); // Nowa metoda wype³niania
-
         bool isStartingChunk = (coords.x == 0 && coords.y == 0);
         float distFromCenter = Mathf.Sqrt(coords.x * coords.x + coords.y * coords.y);
 
@@ -109,7 +115,7 @@ public class WorldGenerator : MonoBehaviour
 
     private float GetBiomeNoiseAt(float x, float y)
     {
-        // Zamiast +10000f u¿ywamy naszych zmiennych
+        // Zamiast +10000f uï¿½ywamy naszych zmiennych
         return Mathf.PerlinNoise(x * biomeScale + seedX, y * biomeScale + seedY);
     }
 
@@ -117,7 +123,7 @@ public class WorldGenerator : MonoBehaviour
     {
         float noiseValue = GetBiomeNoiseAt(globalX, globalY);
 
-        // Obliczamy dystans od œrodka œwiata (0,0)
+        // Obliczamy dystans od ï¿½rodka ï¿½wiata (0,0)
         float distFromZero = Vector2.Distance(new Vector2(globalX, globalY), Vector2.zero);
 
         // Identyczny bonus jak w FillChunkWithBiomes
@@ -142,15 +148,15 @@ public class WorldGenerator : MonoBehaviour
                 float globalX = startX + x;
                 float globalY = startY + y;
 
-                // Obliczamy dystans od œrodka œwiata (0,0)
+                // Obliczamy dystans od ï¿½rodka ï¿½wiata (0,0)
                 float distFromZero = Vector2.Distance(new Vector2(globalX, globalY), Vector2.zero);
 
                 float noiseValue = GetBiomeNoiseAt(globalX, globalY);
 
-                // --- P£YNNE PRZEJŒCIE W CENTRUM ---
-                // Jeœli jesteœmy blisko œrodka (np. w promieniu 80 kratek), 
-                // sztucznie podbijamy wartoœæ szumu, ¿eby faworyzowaæ trawê.
-                // Im dalej od zera, tym mniejszy wp³yw tego "bonusu".
+                // --- Pï¿½YNNE PRZEJï¿½CIE W CENTRUM ---
+                // Jeï¿½li jesteï¿½my blisko ï¿½rodka (np. w promieniu 80 kratek), 
+                // sztucznie podbijamy wartoï¿½ï¿½ szumu, ï¿½eby faworyzowaï¿½ trawï¿½.
+                // Im dalej od zera, tym mniejszy wpï¿½yw tego "bonusu".
                 float centerBonus = Mathf.Clamp01(1f - (distFromZero / 150f));
                 noiseValue += centerBonus;
 
@@ -163,7 +169,7 @@ public class WorldGenerator : MonoBehaviour
     }
 
     // --- KLUCZOWA METODA DLA KAMERY ---
-    // Wywo³uj to z CameraController, aby generowaæ œwiat w locie
+    // Wywoï¿½uj to z CameraController, aby generowaï¿½ ï¿½wiat w locie
 
 
     private void SpawnResource(GameObject prefab, Vector2Int center, float dist, string type)
@@ -202,7 +208,7 @@ public class WorldGenerator : MonoBehaviour
                 {
                     InstantiateDeposit(prefab, current);
                     placedTiles.Add(current);
-                    resourcePositions.Add(current); // Zapamiêtujemy pozycjê kropki
+                    resourcePositions.Add(current); // Zapamiï¿½tujemy pozycjï¿½ kropki
                     placed++;
                 }
 
@@ -227,7 +233,7 @@ public class WorldGenerator : MonoBehaviour
 
         if (type == "water" || type == "oil")
         {
-            GenerateOrganicDirtBlob(resourcePositions, 4); // Zwiêkszony zasiêg do 3 dla lepszego t³a
+            GenerateOrganicDirtBlob(resourcePositions, 4); // Zwiï¿½kszony zasiï¿½g do 3 dla lepszego tï¿½a
         }
     }
 
@@ -235,7 +241,7 @@ public class WorldGenerator : MonoBehaviour
     {
         HashSet<Vector2Int> dirtPositions = new HashSet<Vector2Int>();
 
-        // Dla ka¿dego punktu surowca sprawdzamy otoczenie w promieniu ko³owym
+        // Dla kaï¿½dego punktu surowca sprawdzamy otoczenie w promieniu koï¿½owym
         foreach (Vector2Int core in corePositions)
         {
             for (int x = -radius; x <= radius; x++)
@@ -244,10 +250,10 @@ public class WorldGenerator : MonoBehaviour
                 {
                     Vector2Int targetPos = core + new Vector2Int(x, y);
 
-                    // Sprawdzamy dystans euklidesowy (ko³owy) zamiast kwadratu
+                    // Sprawdzamy dystans euklidesowy (koï¿½owy) zamiast kwadratu
                     float distance = Vector2.Distance(core, targetPos);
 
-                    // Jeœli mieœci siê w promieniu, dodajemy do zbioru (HashSet zapobiega duplikatom)
+                    // Jeï¿½li mieï¿½ci siï¿½ w promieniu, dodajemy do zbioru (HashSet zapobiega duplikatom)
                     if (distance <= radius + 0.5f)
                     {
                         dirtPositions.Add(targetPos);
@@ -256,13 +262,13 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
-        // Teraz fizycznie stawiamy prefaby z zapamiêtanych unikalnych pozycji
+        // Teraz fizycznie stawiamy prefaby z zapamiï¿½tanych unikalnych pozycji
         foreach (Vector2Int pos in dirtPositions)
         {
             Vector3 worldPos = GridManager.Instance.GridToWorld(pos);
 
-            // Dodajemy ma³¹ losowoœæ na krawêdziach bloba, ¿eby by³ bardziej "poszarpany"
-            // Sprawdzamy czy w danym miejscu ju¿ coœ nie stoi (opcjonalnie dla optymalizacji)
+            // Dodajemy maï¿½ï¿½ losowoï¿½ï¿½ na krawï¿½dziach bloba, ï¿½eby byï¿½ bardziej "poszarpany"
+            // Sprawdzamy czy w danym miejscu juï¿½ coï¿½ nie stoi (opcjonalnie dla optymalizacji)
             Instantiate(dirtBackgroundPrefab, worldPos, Quaternion.identity, worldContainer);
         }
     }
@@ -299,8 +305,50 @@ public class WorldGenerator : MonoBehaviour
     {
         seedX = x;
         seedY = y;
-        // Opcjonalnie wyczyœæ stare kafelki, jeœli istniej¹
+        // Opcjonalnie wyczyï¿½ï¿½ stare kafelki, jeï¿½li istniejï¿½
         if (groundTilemap != null) groundTilemap.ClearAllTiles();
-        generatedChunks.Clear();
+        generatedTileChunks.Clear();
+        generatedResourceChunks.Clear();
+    }
+
+    public List<ChunkSaveData> GetGeneratedResourceChunksData()
+    {
+        List<ChunkSaveData> data = new List<ChunkSaveData>();
+        foreach (ChunkCoords coords in generatedResourceChunks)
+        {
+            data.Add(new ChunkSaveData(coords.x, coords.y));
+        }
+        return data;
+    }
+
+    public void LoadGeneratedResourceChunksData(List<ChunkSaveData> chunks)
+    {
+        generatedResourceChunks.Clear();
+        if (chunks == null) return;
+
+        foreach (ChunkSaveData chunk in chunks)
+        {
+            generatedResourceChunks.Add(new ChunkCoords(chunk.x, chunk.y));
+        }
+    }
+
+    public void RebuildGeneratedResourceChunksFromSceneDeposits(bool clearBefore = false)
+    {
+        if (clearBefore)
+        {
+            generatedResourceChunks.Clear();
+        }
+
+        int offset = chunkSize / 2;
+        ResourceDeposit[] deposits = Object.FindObjectsByType<ResourceDeposit>(FindObjectsSortMode.None);
+
+        foreach (ResourceDeposit deposit in deposits)
+        {
+            Vector2Int p = deposit.occupiedPosition;
+            int chunkX = Mathf.FloorToInt((p.x + offset) / (float)chunkSize);
+            int chunkY = Mathf.FloorToInt((p.y + offset) / (float)chunkSize);
+
+            generatedResourceChunks.Add(new ChunkCoords(chunkX, chunkY));
+        }
     }
 }

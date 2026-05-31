@@ -32,6 +32,14 @@ public class PlacementManager : MonoBehaviour
     private bool isPlacingConveyor = false;
     private Vector2Int lastPlacedGridPos = new Vector2Int(int.MaxValue, int.MaxValue);
 
+    private bool hasPipettePlacementState = false;
+    private int pipetteRotationIndex = 1;
+    private SmeltingRecipeData pipetteFurnaceRecipe;
+    private AssemblyRecipeData pipetteAssemblerRecipe;
+    private RefineryRecipeData pipetteRefineryRecipe;
+    private bool pipetteHasStorageLimit = false;
+    private int pipetteStorageLimit = 100;
+
     private const string BuildingsContainerName = "--BUILDINGS--";
 
     [System.Serializable]
@@ -81,6 +89,11 @@ public class PlacementManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.X) && selectedPrefab == null)
         {
             TryRemoveBuilding();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            TryPipetteUnderCursor();
         }
 
         if (Input.GetMouseButtonDown(0) && selectedPrefab != null && !isPlacingConveyor)
@@ -167,51 +180,197 @@ public class PlacementManager : MonoBehaviour
             previewObject.transform.position = worldPosition;
         }
 
-        if (previewObject != null)
+        ApplyCurrentRotationToPreviewObject();
+    }
+
+    private void ApplyCurrentRotationToPreviewObject()
+    {
+        if (previewObject == null) return;
+
+        MinerBuilding minerComponent = previewObject.GetComponent<MinerBuilding>();
+        ConveyorBelt beltComponent = previewObject.GetComponent<ConveyorBelt>();
+        OverheadConveyor overheadComponent = previewObject.GetComponent<OverheadConveyor>();
+        FurnaceBuilding furnaceComponent = previewObject.GetComponent<FurnaceBuilding>();
+        AssemblerBuilding assemblerComponent = previewObject.GetComponent<AssemblerBuilding>();
+        RefineryBuilding refineryComponent = previewObject.GetComponent<RefineryBuilding>();
+        MinerExtender extender = previewObject.GetComponent<MinerExtender>();
+
+        if (extender != null)
         {
-            MinerBuilding minerComponent = previewObject.GetComponent<MinerBuilding>();
-            ConveyorBelt beltComponent = previewObject.GetComponent<ConveyorBelt>();
-            OverheadConveyor overheadComponent = previewObject.GetComponent<OverheadConveyor>();
-            FurnaceBuilding furnaceComponent = previewObject.GetComponent<FurnaceBuilding>();
-            AssemblerBuilding assemblerComponent = previewObject.GetComponent<AssemblerBuilding>();
-            RefineryBuilding refineryComponent = previewObject.GetComponent<RefineryBuilding>(); // DODANO
-            MinerExtender extender = previewObject.GetComponent<MinerExtender>();
+            extender.RotateBuilding((MinerBuilding.Direction)currentRotationIndex);
+        }
 
-            if (extender != null)
-            {
-                extender.RotateBuilding(GetNextDirection(extender.outputDirection));
-            }
+        if (minerComponent != null)
+        {
+            minerComponent.RotateMiner((MinerBuilding.Direction)currentRotationIndex);
+        }
 
-            if (minerComponent != null)
-            {
-                minerComponent.RotateMiner((MinerBuilding.Direction)currentRotationIndex);
-            }
+        if (beltComponent != null)
+        {
+            beltComponent.RotateBelt((ConveyorBelt.Direction)currentRotationIndex);
+        }
 
-            if (beltComponent != null)
-            {
-                beltComponent.RotateBelt((ConveyorBelt.Direction)currentRotationIndex);
-            }
+        if (overheadComponent != null)
+        {
+            overheadComponent.RotateBelt((ConveyorBelt.Direction)currentRotationIndex);
+        }
 
-            if (overheadComponent != null)
-            {
-                overheadComponent.RotateBelt((ConveyorBelt.Direction)currentRotationIndex);
-            }
+        if (furnaceComponent != null)
+        {
+            furnaceComponent.RotateFurnace((FurnaceBuilding.Direction)currentRotationIndex);
+        }
 
-            if (furnaceComponent != null)
-            {
-                furnaceComponent.RotateFurnace((FurnaceBuilding.Direction)currentRotationIndex);
-            }
+        if (refineryComponent != null)
+        {
+            refineryComponent.RotateBuilding((RefineryBuilding.Direction)currentRotationIndex);
+        }
 
-            if (refineryComponent != null)
-            {
-                refineryComponent.RotateBuilding((RefineryBuilding.Direction)currentRotationIndex);
-            }
+        if (assemblerComponent != null)
+        {
+            assemblerComponent.RotateBuilding((AssemblerBuilding.Direction)currentRotationIndex);
+        }
+    }
 
-            if (assemblerComponent != null)
+    private void TryPipetteUnderCursor()
+    {
+        if (Camera.main == null || GridManager.Instance == null) return;
+
+        Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorldPosition.z = 0;
+        Vector2Int gridPosition = GridManager.Instance.WorldToGrid(mouseWorldPosition);
+
+        GridObject sourceObject = GetTopPlaceableObjectAt(gridPosition);
+        if (sourceObject == null) return;
+
+        GameObject prefabToSelect = ResolvePrefabForPipette(sourceObject);
+        if (prefabToSelect == null) return;
+
+        SelectBuildingInternal(prefabToSelect, false);
+        CopyPlacementStateFromSource(sourceObject);
+
+        currentRotationIndex = pipetteRotationIndex;
+        ApplyCurrentRotationToPreviewObject();
+    }
+
+    private GridObject GetTopPlaceableObjectAt(Vector2Int gridPosition)
+    {
+        List<GridObject> placedObjects = GridManager.Instance.GetGridObjects(gridPosition);
+        if (placedObjects == null || placedObjects.Count == 0) return null;
+
+        return placedObjects
+            .Where(o => o.objectType != GridObjectType.ResourceDeposit)
+            .OrderByDescending(o => o.objectType == GridObjectType.OverheadConveyor ? 3 :
+                                    o.objectType == GridObjectType.Building ? 2 :
+                                    o.objectType == GridObjectType.ConveyorBelt ? 1 : 0)
+            .FirstOrDefault();
+    }
+
+    private GameObject ResolvePrefabForPipette(GridObject sourceObject)
+    {
+        SavableEntity savable = sourceObject.GetComponent<SavableEntity>();
+        if (savable != null && !string.IsNullOrEmpty(savable.prefabNameForSave))
+        {
+            GameObject prefabFromResources = Resources.Load<GameObject>("Prefabs/" + savable.prefabNameForSave);
+            if (prefabFromResources != null)
             {
-                assemblerComponent.RotateBuilding((AssemblerBuilding.Direction)currentRotationIndex);
+                return prefabFromResources;
             }
         }
+
+        if (machinePrefabs != null)
+        {
+            foreach (GameObject prefab in machinePrefabs)
+            {
+                if (prefab == null) continue;
+                GridObject prefabGridObj = prefab.GetComponent<GridObject>();
+                if (prefabGridObj == null) continue;
+
+                if (prefabGridObj.GetType() == sourceObject.GetType())
+                {
+                    return prefab;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void CopyPlacementStateFromSource(GridObject sourceObject)
+    {
+        ResetPipettePlacementState();
+
+        hasPipettePlacementState = true;
+        pipetteRotationIndex = GetRotationIndexForObject(sourceObject);
+
+        if (sourceObject is FurnaceBuilding furnace)
+        {
+            pipetteFurnaceRecipe = furnace.currentRecipe;
+        }
+        else if (sourceObject is AssemblerBuilding assembler)
+        {
+            pipetteAssemblerRecipe = assembler.currentRecipe;
+        }
+        else if (sourceObject is RefineryBuilding refinery)
+        {
+            pipetteRefineryRecipe = refinery.currentRecipe;
+        }
+        else if (sourceObject is StorageContainer storage)
+        {
+            pipetteHasStorageLimit = true;
+            pipetteStorageLimit = storage.itemLimit;
+        }
+    }
+
+    private int GetRotationIndexForObject(GridObject sourceObject)
+    {
+        if (sourceObject is MinerBuilding miner) return (int)miner.outputDirection;
+        if (sourceObject is ConveyorBelt belt) return (int)belt.travelDirection;
+        if (sourceObject is OverheadConveyor overhead) return (int)overhead.travelDirection;
+        if (sourceObject is FurnaceBuilding furnace) return (int)furnace.outputDirection;
+        if (sourceObject is AssemblerBuilding assembler) return (int)assembler.outputDirection;
+        if (sourceObject is RefineryBuilding refinery) return (int)refinery.outputDirection;
+        if (sourceObject is MinerExtender extender) return (int)extender.outputDirection;
+        return 1;
+    }
+
+    private void ApplyPipetteStateToPlacedObject(GameObject placedObject)
+    {
+        if (!hasPipettePlacementState || placedObject == null) return;
+
+        FurnaceBuilding furnace = placedObject.GetComponent<FurnaceBuilding>();
+        if (furnace != null && pipetteFurnaceRecipe != null)
+        {
+            furnace.SetRecipe(pipetteFurnaceRecipe);
+        }
+
+        AssemblerBuilding assembler = placedObject.GetComponent<AssemblerBuilding>();
+        if (assembler != null && pipetteAssemblerRecipe != null)
+        {
+            assembler.SetRecipe(pipetteAssemblerRecipe);
+        }
+
+        RefineryBuilding refinery = placedObject.GetComponent<RefineryBuilding>();
+        if (refinery != null && pipetteRefineryRecipe != null)
+        {
+            refinery.SetRecipe(pipetteRefineryRecipe);
+        }
+
+        StorageContainer storage = placedObject.GetComponent<StorageContainer>();
+        if (storage != null && pipetteHasStorageLimit)
+        {
+            storage.SetLimit(pipetteStorageLimit);
+        }
+    }
+
+    private void ResetPipettePlacementState()
+    {
+        hasPipettePlacementState = false;
+        pipetteRotationIndex = 1;
+        pipetteFurnaceRecipe = null;
+        pipetteAssemblerRecipe = null;
+        pipetteRefineryRecipe = null;
+        pipetteHasStorageLimit = false;
+        pipetteStorageLimit = 100;
     }
 
     private void TryRotatePlacedBuilding()
@@ -404,6 +563,9 @@ public class PlacementManager : MonoBehaviour
             {
                 assembler.RotateBuilding((AssemblerBuilding.Direction)currentRotationIndex);
             }
+
+            ApplyPipetteStateToPlacedObject(newBuildingObject);
+
             UpdateCostUI();
             return true;
         }
@@ -417,7 +579,12 @@ public class PlacementManager : MonoBehaviour
 
     public void SelectBuilding(GameObject prefab)
     {
-        if (selectedPrefab == prefab)
+        SelectBuildingInternal(prefab, true);
+    }
+
+    private void SelectBuildingInternal(GameObject prefab, bool allowToggleOff)
+    {
+        if (allowToggleOff && selectedPrefab == prefab)
         {
             CancelPlacement();
             return;
@@ -428,6 +595,8 @@ public class PlacementManager : MonoBehaviour
         currentRotationIndex = 1;
 
         selectedGridObjectComponent = selectedPrefab.GetComponent<GridObject>();
+
+        ResetPipettePlacementState();
 
         isPlacingConveyor = selectedGridObjectComponent.objectType == GridObjectType.ConveyorBelt ||
                         selectedGridObjectComponent.objectType == GridObjectType.OverheadConveyor ||
@@ -610,7 +779,7 @@ public class PlacementManager : MonoBehaviour
             }
 
             SetPreviewOpacity(previewObject, 0.5f);
-            RotateSelectedBuilding();
+            ApplyCurrentRotationToPreviewObject();
         }
 
         Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -695,6 +864,7 @@ public class PlacementManager : MonoBehaviour
         currentRotationIndex = 1;
         isPlacingConveyor = false;
         lastPlacedGridPos = new Vector2Int(int.MaxValue, int.MaxValue);
+        ResetPipettePlacementState();
     }
 
     private bool HasRequiredResources(GridObject prefabGridObject)

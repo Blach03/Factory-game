@@ -9,6 +9,23 @@ public class GameSaveData
     public List<string> researchedTechnologyIds = new List<string>();
     public float seedX;
     public float seedY;
+    public float totalPlayTimeSeconds;
+    public List<ChunkSaveData> generatedResourceChunks = new List<ChunkSaveData>();
+}
+
+[System.Serializable]
+public class ChunkSaveData
+{
+    public int x;
+    public int y;
+
+    public ChunkSaveData() { }
+
+    public ChunkSaveData(int x, int y)
+    {
+        this.x = x;
+        this.y = y;
+    }
 }
 
 [System.Serializable]

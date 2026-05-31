@@ -12,9 +12,13 @@ public class SaveManager : MonoBehaviour
     [HideInInspector]
     public string saveToLoad = ""; // Nazwa pliku przekazana z Main Menu
 
+    private float totalPlayTimeSeconds = 0f;
+
     private string baseSaveFolder;
 
     public string SaveFolderPath => baseSaveFolder;
+
+    public float TotalPlayTimeSeconds => totalPlayTimeSeconds;
 
     private void Awake()
     {
@@ -22,7 +26,7 @@ public class SaveManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            // Œcie¿ka do AppData
+            // ï¿½cieï¿½ka do AppData
             baseSaveFolder = Application.persistentDataPath;
 
             if (!Directory.Exists(baseSaveFolder))
@@ -36,7 +40,7 @@ public class SaveManager : MonoBehaviour
         }
     }
 
-    // Obs³uga zdarzeñ ³adowania sceny
+    // Obsï¿½uga zdarzeï¿½ ï¿½adowania sceny
     private void OnEnable() => SceneManager.sceneLoaded += OnSceneLoaded;
     private void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
 
@@ -53,29 +57,41 @@ public class SaveManager : MonoBehaviour
                 {
                     btn.onClick.RemoveAllListeners();
                     btn.onClick.AddListener(SaveGame);
-                    Debug.Log("Pomyœlnie podpiêto funkcjê Save pod przycisk.");
+                    Debug.Log("Pomyï¿½lnie podpiï¿½to funkcjï¿½ Save pod przycisk.");
                 }
             }
 
-            // 2. Uruchomienie procedury wczytywania/generowania z opóŸnieniem
+            // 2. Uruchomienie procedury wczytywania/generowania z opï¿½nieniem
             StartCoroutine(LoadProcessRoutine());
+        }
+    }
+
+    private void Update()
+    {
+        // Liczymy tylko realny czas rozgrywki w scenie gry, niezaleï¿½nie od Time.timeScale.
+        Scene activeScene = SceneManager.GetActiveScene();
+        if (activeScene.name == "GameScene")
+        {
+            totalPlayTimeSeconds += Time.unscaledDeltaTime;
         }
     }
 
     private System.Collections.IEnumerator LoadProcessRoutine()
     {
-        // Czekamy jedn¹ klatkê, aby upewniæ siê, ¿e Awake() we wszystkich 
-        // nowych obiektach (np. PlayerInventory) zosta³ wykonany.
+        // Czekamy jednï¿½ klatkï¿½, aby upewniï¿½ siï¿½, ï¿½e Awake() we wszystkich 
+        // nowych obiektach (np. PlayerInventory) zostaï¿½ wykonany.
         yield return null;
 
         if (string.IsNullOrEmpty(saveToLoad))
         {
+            totalPlayTimeSeconds = 0f;
+
             // --- TUTAJ ZMIANA: Szukamy nowego WorldGeneratora zamiast ResourceGenerator ---
             WorldGenerator generator = Object.FindFirstObjectByType<WorldGenerator>();
             if (generator != null)
             {
                 generator.InitializeWorld();
-                Debug.Log("<color=green>SaveManager:</color> Rozpoczêto generowanie nowej mapy (System Chunkowy).");
+                Debug.Log("<color=green>SaveManager:</color> Rozpoczï¿½to generowanie nowej mapy (System Chunkowy).");
             }
             else
             {
@@ -84,11 +100,11 @@ public class SaveManager : MonoBehaviour
         }
         else
         {
-            // Wczytywanie istniej¹cej gry
+            // Wczytywanie istniejï¿½cej gry
             LoadGame(saveToLoad);
         }
 
-        yield return null; // Jeszcze jedna klatka, by UnlockManager zd¹¿y³ siê zainicjalizowaæ
+        yield return null; // Jeszcze jedna klatka, by UnlockManager zdï¿½ï¿½yï¿½ siï¿½ zainicjalizowaï¿½
         UnlockManager unlocker = Object.FindAnyObjectByType<UnlockManager>();
         if (unlocker != null) unlocker.RefreshUnlocks();
     }
@@ -142,13 +158,13 @@ public class SaveManager : MonoBehaviour
             saveData.researchedTechnologyIds = TechTreeManager.Instance.GetResearchedIds();
         }
 
-        // 2. Encje (Budynki, Przedmioty, Z³o¿a)
+        // 2. Encje (Budynki, Przedmioty, Zï¿½oï¿½a)
         SavableEntity[] entities = Object.FindObjectsByType<SavableEntity>(FindObjectsSortMode.None);
         foreach (SavableEntity entity in entities)
         {
             EntityData eData = entity.Save();
 
-            // DODAJ TÊ LINIÊ: Pobiera JSON z Pieca/Assemblera
+            // DODAJ Tï¿½ LINIï¿½: Pobiera JSON z Pieca/Assemblera
             eData.jsonComponentData = entity.GetSerializedData();
 
             saveData.entityDatas.Add(eData);
@@ -159,7 +175,10 @@ public class SaveManager : MonoBehaviour
         {
             saveData.seedX = worldGen.seedX;
             saveData.seedY = worldGen.seedY;
+            saveData.generatedResourceChunks = worldGen.GetGeneratedResourceChunksData();
         }
+
+        saveData.totalPlayTimeSeconds = totalPlayTimeSeconds;
 
         string json = JsonUtility.ToJson(saveData, true);
         File.WriteAllText(fullPath, json);
@@ -185,7 +204,10 @@ public class SaveManager : MonoBehaviour
         if (worldGen != null)
         {
             worldGen.LoadSeed(data.seedX, data.seedY);
+            worldGen.LoadGeneratedResourceChunksData(data.generatedResourceChunks);
         }
+
+        totalPlayTimeSeconds = Mathf.Max(0f, data.totalPlayTimeSeconds);
 
         // 1. Wczytaj Ekwipunek
         if (PlayerInventory.Instance != null && data.inventoryData != null)
@@ -193,25 +215,25 @@ public class SaveManager : MonoBehaviour
             PlayerInventory.Instance.LoadFromSave(data.inventoryData);
         }
 
-        // Szukamy WSZYSTKICH managerów na scenie, nawet tych nieaktywnych (true)
+        // Szukamy WSZYSTKICH managerï¿½w na scenie, nawet tych nieaktywnych (true)
         TechTreeManager tree = Object.FindObjectsByType<TechTreeManager>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault();
 
         if (tree != null)
         {
-            Debug.Log($"<color=green>[SaveManager]</color> Znaleziono drzewko! Przekazujê {data.researchedTechnologyIds.Count} ID.");
+            Debug.Log($"<color=green>[SaveManager]</color> Znaleziono drzewko! Przekazujï¿½ {data.researchedTechnologyIds.Count} ID.");
             tree.LoadFromSave(data.researchedTechnologyIds);
         }
         else
         {
-            // Jeœli to wyskoczy, to znaczy, ¿e w hierarchii sceny GameScene w ogóle nie ma skryptu TechTreeManager
-            Debug.LogError("<color=red>[SaveManager] KRYTYCZNY B£¥D:</color> Skrypt TechTreeManager nie zosta³ znaleziony nigdzie na scenie!");
+            // Jeï¿½li to wyskoczy, to znaczy, ï¿½e w hierarchii sceny GameScene w ogï¿½le nie ma skryptu TechTreeManager
+            Debug.LogError("<color=red>[SaveManager] KRYTYCZNY Bï¿½ï¿½D:</color> Skrypt TechTreeManager nie zostaï¿½ znaleziony nigdzie na scenie!");
         }
 
-        // 2. Wyczyœæ scenê
+        // 2. Wyczyï¿½ï¿½ scenï¿½
         SavableEntity[] existing = Object.FindObjectsByType<SavableEntity>(FindObjectsSortMode.None);
         foreach (var e in existing) Destroy(e.gameObject);
 
-        // 3. Spawnowanie obiektów
+        // 3. Spawnowanie obiektï¿½w
         foreach (EntityData entityData in data.entityDatas)
         {
             GameObject prefab = Resources.Load<GameObject>("Prefabs/" + entityData.prefabName);
@@ -220,7 +242,7 @@ public class SaveManager : MonoBehaviour
             {
                 Vector3 pos = new Vector3(entityData.worldPosition[0], entityData.worldPosition[1], entityData.worldPosition[2]);
 
-                // U¿ywamy rotacji z zapisu, jeœli jest dostêpna (wa¿ne dla taœmoci¹gów)
+                // Uï¿½ywamy rotacji z zapisu, jeï¿½li jest dostï¿½pna (waï¿½ne dla taï¿½mociï¿½gï¿½w)
                 Quaternion rot = Quaternion.identity;
                 if (entityData.worldRotation != null && entityData.worldRotation.Length == 3)
                 {
@@ -236,7 +258,7 @@ public class SaveManager : MonoBehaviour
                 {
                     savable.uniqueID = entityData.uniqueID;
 
-                    // --- KLUCZOWA KOLEJNOŒÆ DLA BUDYNKÓW ---
+                    // --- KLUCZOWA KOLEJNOï¿½ï¿½ DLA BUDYNKï¿½W ---
                     GridObject gridObj = newObj.GetComponent<GridObject>();
                     if (gridObj != null)
                     {
@@ -244,8 +266,8 @@ public class SaveManager : MonoBehaviour
                         gridObj.Initialize(gridPos); // Najpierw ustawiamy go na siatce
                     }
 
-                    // Na koñcu wczytujemy dane specyficzne (receptury, kierunki wyjœæ, ruch przedmiotów)
-                    // Robimy to po Initialize, ¿eby dane z zapisu mia³y "ostatnie s³owo"
+                    // Na koï¿½cu wczytujemy dane specyficzne (receptury, kierunki wyjï¿½ï¿½, ruch przedmiotï¿½w)
+                    // Robimy to po Initialize, ï¿½eby dane z zapisu miaï¿½y "ostatnie sï¿½owo"
                     savable.LoadComponentData(entityData.jsonComponentData);
                 }
             }
@@ -255,7 +277,32 @@ public class SaveManager : MonoBehaviour
             }
         }
 
+        CameraController camController = Object.FindFirstObjectByType<CameraController>();
+        if (camController != null)
+        {
+            camController.ForceRefreshChunks();
+        }
+
+        if (worldGen != null && (data.generatedResourceChunks == null || data.generatedResourceChunks.Count == 0))
+        {
+            worldGen.RebuildGeneratedResourceChunksFromSceneDeposits(true);
+        }
+
         saveToLoad = "";
-        Debug.Log("<color=blue>WCZYTYWANIE ZAKOÑCZONE!</color>");
+        Debug.Log("<color=blue>WCZYTYWANIE ZAKOï¿½CZONE!</color>");
+    }
+
+    public string GetFormattedTotalPlayTime()
+    {
+        return FormatSeconds(totalPlayTimeSeconds);
+    }
+
+    public static string FormatSeconds(float seconds)
+    {
+        int totalSeconds = Mathf.Max(0, Mathf.FloorToInt(seconds));
+        int hours = totalSeconds / 3600;
+        int minutes = (totalSeconds % 3600) / 60;
+        int secs = totalSeconds % 60;
+        return $"{hours:00}:{minutes:00}:{secs:00}";
     }
 }

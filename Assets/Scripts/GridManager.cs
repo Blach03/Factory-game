@@ -195,6 +195,12 @@ public class GridManager : MonoBehaviour
                             conveyor.OnNeighborChange();
                         }
                     }
+
+                    if (obj is PipeBuilding pipe)
+                    {
+                        pipe.UpdatePipeVisuals();
+                        pipe.RefreshNetwork();
+                    }
                 }
             }
         }

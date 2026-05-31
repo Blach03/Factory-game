@@ -218,6 +218,8 @@ public class RefineryBuilding : GridObject, IProductionBuilding
 
     private void NotifyNeighboringPipes()
     {
+        if (GridManager.Instance == null) return;
+
         // Sprawdzamy obwód budynku 3x3 (od -1 do 3)
         for (int x = -1; x <= size.x; x++)
         {
@@ -231,10 +233,20 @@ public class RefineryBuilding : GridObject, IProductionBuilding
                 if (pipe != null)
                 {
                     // Wywołaj metodę aktualizacji grafiki rury (nazwa zależy od Twojego skryptu rur, np. UpdatePipeVisuals)
-                    pipe.UpdatePipeVisuals(); 
+                    pipe.UpdatePipeVisuals();
+                    pipe.RefreshNetwork();
                 }
             }
         }
+    }
+
+    protected override void OnDestroy()
+    {
+        // Najpierw usuwamy rafineri� z siatki.
+        base.OnDestroy();
+
+        if (!gameObject.scene.isLoaded) return;
+        NotifyNeighboringPipes();
     }
 
     private void TryConsumeFluidFromNetwork()
@@ -451,5 +463,60 @@ public class RefineryBuilding : GridObject, IProductionBuilding
         Gizmos.color = Color.red;
         Vector3 outputWorld = GridManager.Instance.GridToWorld(GetOutputGridPosition()) + new Vector3(0.5f, 0.5f, 0);
         Gizmos.DrawWireCube(outputWorld, Vector3.one * 0.8f);
+    }
+
+    [System.Serializable]
+    public class BuildingSaveData
+    {
+        public int outputDirection;
+        public string activeRecipeName;
+        public float fluidAmount;
+        public int itemInput;
+        public int outputAmount;
+        public float currentTimer;
+        public bool processing;
+    }
+
+    public override string GetSerializedData()
+    {
+        BuildingSaveData data = new BuildingSaveData();
+        data.outputDirection = (int)outputDirection;
+        data.activeRecipeName = currentRecipe != null ? currentRecipe.name : string.Empty;
+        data.fluidAmount = currentFluidAmount;
+        data.itemInput = currentItemInput;
+        data.outputAmount = currentOutputAmount;
+        data.currentTimer = timer;
+        data.processing = isProcessing;
+
+        return JsonUtility.ToJson(data);
+    }
+
+    public override void LoadComponentData(string json)
+    {
+        if (string.IsNullOrEmpty(json)) return;
+
+        BuildingSaveData data = JsonUtility.FromJson<BuildingSaveData>(json);
+
+        outputDirection = (Direction)data.outputDirection;
+        RotateBuilding(outputDirection);
+
+        if (!string.IsNullOrEmpty(data.activeRecipeName))
+        {
+            RefineryRecipeData loadedRecipe = Resources.Load<RefineryRecipeData>("Recipes/Refinery/" + data.activeRecipeName);
+            if (loadedRecipe != null)
+            {
+                SetRecipe(loadedRecipe);
+
+                currentFluidAmount = data.fluidAmount;
+                currentItemInput = data.itemInput;
+                currentOutputAmount = data.outputAmount;
+                timer = data.currentTimer;
+                isProcessing = data.processing;
+            }
+            else
+            {
+                Debug.LogWarning($"[RefineryBuilding] Nie znaleziono receptury podczas load: {data.activeRecipeName}");
+            }
+        }
     }
 }

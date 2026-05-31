@@ -7,17 +7,17 @@ public class CraftingDetailsPanel : MonoBehaviour
     [Header("UI Elements")]
     public TextMeshProUGUI itemNameText;
     public Image itemIcon;
-    public GameObject recipeSection; // Kontener na sk³adniki
+    public GameObject recipeSection; // Kontener na skï¿½adniki
     public Button craftButton;
     public Button craftX10Button;
-    public TextMeshProUGUI outputCountText; // Przeci¹gnij nowe pole w Inspektorze
+    public TextMeshProUGUI outputCountText; // Przeciï¿½gnij nowe pole w Inspektorze
 
     [Header("Progress UI")]
     public Slider progressBar;
     public TextMeshProUGUI queueText;
 
     [Header("Recipe Visualization")]
-    public GameObject costElementPrefab; // Twój prefab z ikon¹ i tekstem
+    public GameObject costElementPrefab; // Twï¿½j prefab z ikonï¿½ i tekstem
     public Transform ingredientsParent;  // Obiekt z Vertical/Horizontal Layout Group
     public TextMeshProUGUI craftTimeText;
 
@@ -33,7 +33,7 @@ public class CraftingDetailsPanel : MonoBehaviour
 
         if (resource == null) return;
 
-        itemIcon.gameObject.SetActive(true); // Przywracamy widocznoœæ ikony
+        itemIcon.gameObject.SetActive(true); // Przywracamy widocznoï¿½ï¿½ ikony
 
         selectedResource = resource;
         itemNameText.text = resource.resourceName;
@@ -45,7 +45,7 @@ public class CraftingDetailsPanel : MonoBehaviour
         if (selectedRecipe != null)
         {
             recipeSection.SetActive(true);
-            // SprawdŸ research
+            // Sprawdï¿½ research
             if (outputCountText != null)
             {
                 outputCountText.text = $"Output Count: {selectedRecipe.outputAmount}";
@@ -55,17 +55,17 @@ public class CraftingDetailsPanel : MonoBehaviour
 
             bool isUnlocked = true;
 
-            // Próba znalezienia managera, jeœli instancja jest nullem
+            // Prï¿½ba znalezienia managera, jeï¿½li instancja jest nullem
             if (TechTreeManager.Instance == null)
             {
-                // Szukamy w ca³ej scenie, nawet obiektów nieaktywnych
+                // Szukamy w caï¿½ej scenie, nawet obiektï¿½w nieaktywnych
                 TechTreeManager foundManager = Resources.FindObjectsOfTypeAll<TechTreeManager>().Length > 0
                     ? Resources.FindObjectsOfTypeAll<TechTreeManager>()[0]
                     : null;
 
                 if (foundManager != null)
                 {
-                    // Jeœli znaleŸliœmy, wymuszamy przypisanie instancji (Singleton)
+                    // Jeï¿½li znaleï¿½liï¿½my, wymuszamy przypisanie instancji (Singleton)
                     TechTreeManager.Instance = foundManager;
                 }
             }
@@ -78,14 +78,14 @@ public class CraftingDetailsPanel : MonoBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning($"[CraftingPanel] Nie znaleziono TechTreeManager (nawet wy³¹czonego)! Blokujê recepturê: {selectedRecipe.recipeName}");
+                    Debug.LogWarning($"[CraftingPanel] Nie znaleziono TechTreeManager (nawet wyï¿½ï¿½czonego)! Blokujï¿½ recepturï¿½: {selectedRecipe.recipeName}");
                     isUnlocked = false;
                 }
             }
 
             craftButton.interactable = isUnlocked;
             craftX10Button.interactable = isUnlocked;
-            // Tutaj zaktualizuj ikony sk³adników (analogicznie do TooltipUI)
+            // Tutaj zaktualizuj ikony skï¿½adnikï¿½w (analogicznie do TooltipUI)
         }
         else
         {
@@ -113,12 +113,27 @@ public class CraftingDetailsPanel : MonoBehaviour
         if (selectedRecipe != null) HandCraftingManager.Instance.AddToQueue(selectedRecipe, amount);
     }
 
+    private void OnEnable()
+    {
+        // Gdy panel zostaje ponownie wÅ‚Ä…czony, odÅ›wieÅ¼ dane
+        if (selectedResource != null)
+        {
+            DisplayItem(selectedResource);
+        }
+    }
+
+    private void OnDisable()
+    {
+        // Panel zostaje zamkniÄ™ty - crafting powinien nadal postÄ™powaÄ‡ w tle
+        // (HandleCraftingManager bÄ™dzie go aktualizowaÄ‡ przez statyczne zmienne)
+    }
+
     private void Update()
     {
         // Sprawdzamy czy Manager istnieje
         if (HandCraftingManager.Instance == null) return;
 
-        // Sprawdzamy czy UI jest przypisane zanim go u¿yjemy
+        // Sprawdzamy czy UI jest przypisane zanim go uÅ¼yjemy
         if (progressBar != null)
         {
             progressBar.value = HandCraftingManager.Instance.GetProgress();
@@ -126,29 +141,31 @@ public class CraftingDetailsPanel : MonoBehaviour
 
         if (queueText != null)
         {
-            queueText.text = $"In Queue: {HandCraftingManager.Instance.GetQueueCount()}";
+            // Pobierz iloÅ›Ä‡ elementÃ³w w kolejce
+            int queueCount = HandCraftingManager.Instance.GetQueueCount();
+            queueText.text = $"In Queue: {queueCount}";
         }
     }
 
     private void UpdateRecipeUI(IBuildingRecipe recipe)
     {
-        // 1. Czyœcimy stare sk³adniki
+        // 1. Czyï¿½cimy stare skï¿½adniki
         foreach (Transform child in ingredientsParent)
         {
             Destroy(child.gameObject);
         }
 
-        // 2. Wyœwietlamy czas (Logika zale¿na od typu receptury)
+        // 2. Wyï¿½wietlamy czas (Logika zaleï¿½na od typu receptury)
         float time = 0;
         if (recipe is SmeltingRecipeData s) time = s.smeltingTime;
         else if (recipe is AssemblyRecipeData a) time = a.assemblyTime;
         craftTimeText.text = $"Time: {time:F1}s";
 
-        // 3. Tworzymy elementy dla sk³adników
+        // 3. Tworzymy elementy dla skï¿½adnikï¿½w
         CreateCostElement(recipe.primaryInput, recipe.primaryInputAmount);
         CreateCostElement(recipe.secondaryInput, recipe.secondaryInputAmount);
 
-        // Sprawdzamy trzeci sk³adnik tylko dla Assembly
+        // Sprawdzamy trzeci skï¿½adnik tylko dla Assembly
         if (recipe is AssemblyRecipeData assembly && assembly.tertiaryInput != null)
         {
             CreateCostElement(assembly.tertiaryInput, assembly.tertiaryInputAmount);
@@ -161,7 +178,7 @@ public class CraftingDetailsPanel : MonoBehaviour
 
         GameObject element = Instantiate(costElementPrefab, ingredientsParent);
 
-        // Szukamy komponentów wewn¹trz Twojego prefaba
+        // Szukamy komponentï¿½w wewnï¿½trz Twojego prefaba
         Image icon = element.GetComponentInChildren<Image>();
         TextMeshProUGUI text = element.GetComponentInChildren<TextMeshProUGUI>();
 
@@ -170,7 +187,7 @@ public class CraftingDetailsPanel : MonoBehaviour
         {
             int playerHas = PlayerInventory.Instance.GetItemCount(resource);
 
-            // Opcjonalnie: kolorowanie na czerwono, gdy brakuje surowców
+            // Opcjonalnie: kolorowanie na czerwono, gdy brakuje surowcï¿½w
             string colorTag = playerHas >= amount ? "<color=white>" : "<color=red>";
             text.text = $"{colorTag}{playerHas}/{amount}</color>";
         }
@@ -185,7 +202,7 @@ public class CraftingDetailsPanel : MonoBehaviour
         craftTimeText.text = "";
         if (outputCountText != null) outputCountText.text = "";
 
-        // Ukrywamy ikonê i sekcjê receptury
+        // Ukrywamy ikonï¿½ i sekcjï¿½ receptury
         itemIcon.gameObject.SetActive(false);
         recipeSection.SetActive(false);
 
@@ -193,7 +210,7 @@ public class CraftingDetailsPanel : MonoBehaviour
         craftButton.interactable = false;
         craftX10Button.interactable = false;
 
-        // Czyœcimy listê sk³adników (opcjonalnie)
+        // Czyï¿½cimy listï¿½ skï¿½adnikï¿½w (opcjonalnie)
         foreach (Transform child in ingredientsParent)
         {
             Destroy(child.gameObject);
@@ -204,7 +221,7 @@ public class CraftingDetailsPanel : MonoBehaviour
     {
         if (selectedResource != null)
         {
-            // Ponownie wywo³ujemy DisplayItem, aby odœwie¿yæ liczby sk³adników (np. 5/10)
+            // Ponownie wywoï¿½ujemy DisplayItem, aby odï¿½wieï¿½yï¿½ liczby skï¿½adnikï¿½w (np. 5/10)
             DisplayItem(selectedResource);
         }
     }
@@ -217,12 +234,12 @@ public class CraftingDetailsPanel : MonoBehaviour
         bool canAfford1 = CanAffordAmount(recipe, 1);
         bool canAfford10 = CanAffordAmount(recipe, 10);
 
-        // Sprawdzamy czy technologia jest odblokowana (u¿ywamy Twojej zmiennej isUnlocked)
+        // Sprawdzamy czy technologia jest odblokowana (uï¿½ywamy Twojej zmiennej isUnlocked)
         bool isUnlocked = true;
         if (!string.IsNullOrEmpty(recipe.techRequirementId) && TechTreeManager.Instance != null)
             isUnlocked = TechTreeManager.Instance.IsResearched(recipe.techRequirementId);
 
-        // Ustawiamy interaktywnoœæ
+        // Ustawiamy interaktywnoï¿½ï¿½
         craftButton.interactable = canAfford1 && isUnlocked;
         craftX10Button.interactable = canAfford10 && isUnlocked;
 

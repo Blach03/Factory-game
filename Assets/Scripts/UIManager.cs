@@ -55,7 +55,7 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
-        // Je�li gracz klika/pisze w jakimkolwiek InputField, nie reaguj na skr�ty klawiszowe
+        // Jeśli gracz klika/pisze w jakimkolwiek InputField, nie reaguj na skróty klawiszowe
         if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
         {
             if (EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() != null)
@@ -74,12 +74,15 @@ public class UIManager : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.T))
         {
-            // Tutaj r�wnie� warto doda� warunek, aby nie otwiera� drzewka, 
-            // gdy inne panele s� ju� otwarte (podobnie jak robisz to z inventory)
+            // Tutaj również warto dodać warunek, aby nie otwierać drzewka, 
+            // gdy inne panele są już otwarte (podobnie jak robisz to z inventory)
             if (!isTechTreeOpen && IsAnyPanelOpen()) return;
 
             ToggleTechnologyTree();
         }
+
+        // Aktualizuj crafting w tle, nawet jeśli HandCraftingManager jest wyłączony
+        HandCraftingManager.UpdateCraftingBackground(Time.deltaTime);
     }
 
     /// <summary>
