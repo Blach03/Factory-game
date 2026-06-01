@@ -41,9 +41,9 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
     private static LayerMask itemLayerMask;
     private AssemblyRecipeData runtimeRecipe;
 
-    [Header("Ustawienia Startu Wyk³adniczego")]
-    public float startSpeed = 0.01f; // Prêdkoœæ pocz¹tkowa
-    public float multiplierPerSecond = 2f; // Mno¿nik (podwajanie)
+    [Header("Ustawienia Startu Wykï¿½adniczego")]
+    public float startSpeed = 0.01f; // Prï¿½dkoï¿½ï¿½ poczï¿½tkowa
+    public float multiplierPerSecond = 2f; // Mnoï¿½nik (podwajanie)
     private float launchTimer = 0f; // Czas od startu
 
     public IBuildingRecipe GetCurrentRecipe() => GetOrCreateRuntimeRecipe();
@@ -67,7 +67,7 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
         size = new Vector2Int(5, 5);
         if (itemLayerMask == 0) itemLayerMask = LayerMask.GetMask("Item");
 
-        // Zapamiêtujemy startow¹ pozycjê rakiety (wewn¹trz silosu)
+        // Zapamiï¿½tujemy startowï¿½ pozycjï¿½ rakiety (wewnï¿½trz silosu)
         if (flyingRocketRenderer != null)
         {
             initialRocketLocalPos = flyingRocketRenderer.transform.localPosition;
@@ -87,13 +87,12 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
         {
             launchTimer += Time.deltaTime;
 
-            // Wzór: prêdkoœæ = startSpeed * (2 ^ czas)
+            // Wzï¿½r: prï¿½dkoï¿½ï¿½ = startSpeed * (2 ^ czas)
             float currentLaunchSpeed = startSpeed * Mathf.Pow(multiplierPerSecond, launchTimer);
 
-            // Przesuniêcie (v * dt)
+            // Przesuniï¿½cie (v * dt)
             flyingRocketRenderer.transform.localPosition += Vector3.up * currentLaunchSpeed * Time.deltaTime;
 
-            // Limit wysokoœci lub czasu (20 sekund zgodnie z proœb¹)
             if (launchTimer > 40f || flyingRocketRenderer.transform.localPosition.y > 10000f)
             {
                 isLaunching = false;
@@ -139,14 +138,24 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
                 flyingRocketRenderer.transform.localPosition = initialRocketLocalPos;
                 flyingRocketRenderer.gameObject.SetActive(true);
                 isLaunching = true;
-                launchTimer = 0f; // Resetujemy licznik czasu dla potêgowania
+                launchTimer = 0f; // Resetujemy licznik czasu dla potï¿½gowania
             }
 
             rocketCount = 0;
             timer = buildTime;
             UpdateVisuals();
-            Debug.Log("RAKIETA WYSTARTOWA£A WYK£ADNICZO!");
+            Debug.Log("RAKIETA WYSTARTOWAï¿½A WYKï¿½ADNICZO!");
             UIManager.Instance.CloseAllUI();
+
+            WinScreenUI winScreen = Object.FindFirstObjectByType<WinScreenUI>(FindObjectsInactive.Include);
+            if (winScreen != null)
+            {
+                winScreen.ScheduleShowAfterRocketLaunch();
+            }
+            else
+            {
+                Debug.LogWarning("[RocketSiloBuilding] WinScreenUI not found. Win screen was not scheduled.");
+            }
         }
     }
 

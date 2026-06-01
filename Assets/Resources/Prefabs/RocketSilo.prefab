@@ -216,11 +216,11 @@ MonoBehaviour:
   - resource: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
     amount: 100
   inputA:
-    resource: {fileID: 11400000, guid: 822fa23858ccfd74cb6cfde1a23f204d, type: 2}
+    resource: {fileID: 11400000, guid: 3aa122ddda6a6134095b040e1c356217, type: 2}
     requiredAmount: 500
     currentAmount: 0
   inputB:
-    resource: {fileID: 11400000, guid: 3aa122ddda6a6134095b040e1c356217, type: 2}
+    resource: {fileID: 11400000, guid: 822fa23858ccfd74cb6cfde1a23f204d, type: 2}
     requiredAmount: 500
     currentAmount: 0
   inputC:

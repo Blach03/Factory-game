@@ -58,6 +58,11 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
+        if (WinScreenUI.Instance != null && WinScreenUI.Instance.IsVisible)
+        {
+            return;
+        }
+
         // Jeśli gracz klika/pisze w jakimkolwiek InputField, nie reaguj na skróty klawiszowe
         if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
         {
