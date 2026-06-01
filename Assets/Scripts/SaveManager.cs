@@ -3,22 +3,53 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine.SceneManagement;
-using Unity.VisualScripting.Antlr3.Runtime.Tree;
+using TMPro;
+using UnityEngine.UI;
 
 public class SaveManager : MonoBehaviour
 {
     public static SaveManager Instance { get; private set; }
 
+    public event System.Action<bool, string> GameLoadCompleted;
+
     [HideInInspector]
     public string saveToLoad = ""; // Nazwa pliku przekazana z Main Menu
 
+    [Header("Loading Screen (Optional)")]
+    [SerializeField] private GameObject loadingScreenRoot;
+    [SerializeField] private Slider loadingProgressBar;
+    [SerializeField] private TextMeshProUGUI loadingStatusText;
+
     private float totalPlayTimeSeconds = 0f;
+    private bool isLoadInProgress = false;
+
+    private static bool hasPendingLoadRequest = false;
+    private static string pendingSaveToLoad = "";
 
     private string baseSaveFolder;
 
     public string SaveFolderPath => baseSaveFolder;
 
     public float TotalPlayTimeSeconds => totalPlayTimeSeconds;
+    public bool IsLoadInProgress => isLoadInProgress;
+
+    public static SaveManager EnsureInstanceExists()
+    {
+        if (Instance != null)
+        {
+            return Instance;
+        }
+
+        SaveManager existingInScene = Object.FindFirstObjectByType<SaveManager>(FindObjectsInactive.Include);
+        if (existingInScene != null)
+        {
+            Instance = existingInScene;
+            return Instance;
+        }
+
+        GameObject go = new GameObject("SaveManager_AutoCreated");
+        return go.AddComponent<SaveManager>();
+    }
 
     private void Awake()
     {
@@ -33,6 +64,10 @@ public class SaveManager : MonoBehaviour
             {
                 Directory.CreateDirectory(baseSaveFolder);
             }
+
+            // Fallback: jeśli request ładowania przyszedł przed utworzeniem instancji,
+            // zastosuj go od razu po starcie SaveManagera.
+            ConsumePendingLoadRequest();
         }
         else
         {
@@ -78,6 +113,17 @@ public class SaveManager : MonoBehaviour
 
     private System.Collections.IEnumerator LoadProcessRoutine()
     {
+        bool loadSucceeded = true;
+        string failReason = string.Empty;
+
+        ShowLoadingScreen(true);
+
+        if (!isLoadInProgress)
+        {
+            isLoadInProgress = true;
+            SetLoadingProgress(0.5f, "Preparing data...");
+        }
+
         // Czekamy jedn� klatk�, aby upewni� si�, �e Awake() we wszystkich 
         // nowych obiektach (np. PlayerInventory) zosta� wykonany.
         yield return null;
@@ -87,6 +133,7 @@ public class SaveManager : MonoBehaviour
         if (isNewGame)
         {
             totalPlayTimeSeconds = 0f;
+            SetLoadingProgress(0.6f, "Generating world...");
 
             // --- TUTAJ ZMIANA: Szukamy nowego WorldGeneratora zamiast ResourceGenerator ---
             WorldGenerator generator = Object.FindFirstObjectByType<WorldGenerator>();
@@ -94,16 +141,27 @@ public class SaveManager : MonoBehaviour
             {
                 generator.InitializeWorld();
                 Debug.Log("<color=green>SaveManager:</color> Rozpocz�to generowanie nowej mapy (System Chunkowy).");
+                SetLoadingProgress(0.8f, "World generated.");
             }
             else
             {
+                loadSucceeded = false;
+                failReason = "WorldGenerator was not found in the scene.";
                 Debug.LogError("<color=red>SaveManager:</color> Nie znaleziono WorldGenerator na scenie!");
             }
         }
         else
         {
             // Wczytywanie istniej�cej gry
-            LoadGame(saveToLoad);
+            SetLoadingProgress(0.6f, "Loading save file...");
+            loadSucceeded = LoadGame(saveToLoad);
+
+            if (!loadSucceeded)
+            {
+                failReason = "There was a problem while loading the save file.";
+            }
+
+            SetLoadingProgress(0.85f, "Finalizing load...");
         }
 
         yield return null; // Jeszcze jedna klatka, by UnlockManager zd��y� si� zainicjalizowa�
@@ -119,6 +177,97 @@ public class SaveManager : MonoBehaviour
             {
                 tutorialMgr.StartTutorial();
             }
+        }
+
+        SetLoadingProgress(1f, loadSucceeded ? "Ready!" : "Load incomplete.");
+
+        GameLoadCompleted?.Invoke(loadSucceeded, failReason);
+
+        // Krótkie opóźnienie, aby gracz zdążył zobaczyć 100%.
+        yield return null;
+
+        isLoadInProgress = false;
+        ShowLoadingScreen(false);
+    }
+
+    public void StartNewGameFromMenu()
+    {
+        if (isLoadInProgress)
+        {
+            return;
+        }
+
+        QueueNewGameRequest();
+        saveToLoad = "";
+        StartCoroutine(LoadGameSceneAsync());
+    }
+
+    public void StartLoadGameFromMenu(string fileName)
+    {
+        if (isLoadInProgress)
+        {
+            return;
+        }
+
+        QueueLoadGameRequest(fileName);
+        SetSaveToLoad(fileName);
+        StartCoroutine(LoadGameSceneAsync());
+    }
+
+    public static void QueueNewGameRequest()
+    {
+        hasPendingLoadRequest = true;
+        pendingSaveToLoad = "";
+    }
+
+    public static void QueueLoadGameRequest(string fileName)
+    {
+        hasPendingLoadRequest = true;
+        pendingSaveToLoad = fileName ?? "";
+    }
+
+    private void ConsumePendingLoadRequest()
+    {
+        if (!hasPendingLoadRequest)
+        {
+            return;
+        }
+
+        saveToLoad = pendingSaveToLoad;
+        hasPendingLoadRequest = false;
+        pendingSaveToLoad = "";
+    }
+
+    private System.Collections.IEnumerator LoadGameSceneAsync()
+    {
+        isLoadInProgress = true;
+        ShowLoadingScreen(true);
+        SetLoadingProgress(0f, "Loading scene...");
+
+        AsyncOperation sceneLoad = SceneManager.LoadSceneAsync("GameScene");
+        if (sceneLoad == null)
+        {
+            isLoadInProgress = false;
+            ShowLoadingScreen(false);
+            Debug.LogError("Nie udało się rozpocząć asynchronicznego ładowania sceny GameScene.");
+            yield break;
+        }
+
+        sceneLoad.allowSceneActivation = false;
+
+        while (sceneLoad.progress < 0.9f)
+        {
+            float normalized = Mathf.Clamp01(sceneLoad.progress / 0.9f);
+            SetLoadingProgress(normalized * 0.5f, "Loading scene...");
+            yield return null;
+        }
+
+        SetLoadingProgress(0.5f, "Scene ready, starting...");
+        sceneLoad.allowSceneActivation = true;
+
+        while (!sceneLoad.isDone)
+        {
+            yield return null;
         }
     }
 
@@ -201,13 +350,13 @@ public class SaveManager : MonoBehaviour
 
     // --- LOGIKA WCZYTYWANIA ---
 
-    public void LoadGame(string fileName)
+    public bool LoadGame(string fileName)
     {
         string fullPath = Path.Combine(baseSaveFolder, fileName);
         if (!File.Exists(fullPath))
         {
             Debug.LogError("Plik zapisu nie istnieje: " + fullPath);
-            return;
+            return false;
         }
 
         string json = File.ReadAllText(fullPath);
@@ -303,6 +452,28 @@ public class SaveManager : MonoBehaviour
 
         saveToLoad = "";
         Debug.Log("<color=blue>WCZYTYWANIE ZAKO�CZONE!</color>");
+        return true;
+    }
+
+    private void ShowLoadingScreen(bool visible)
+    {
+        if (loadingScreenRoot != null)
+        {
+            loadingScreenRoot.SetActive(visible);
+        }
+    }
+
+    private void SetLoadingProgress(float value01, string status)
+    {
+        if (loadingProgressBar != null)
+        {
+            loadingProgressBar.value = Mathf.Clamp01(value01);
+        }
+
+        if (loadingStatusText != null && !string.IsNullOrEmpty(status))
+        {
+            loadingStatusText.text = status;
+        }
     }
 
     public string GetFormattedTotalPlayTime()

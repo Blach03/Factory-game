@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using System.IO;
 using TMPro;
 using UnityEngine.UI;
@@ -29,8 +28,9 @@ public class MainMenuManager : MonoBehaviour
 
     public void NewGame()
     {
-        SaveManager.Instance.saveToLoad = ""; // Czyœcimy, aby gra wiedzia³a, ¿e to nowa gra
-        SceneManager.LoadScene("GameScene"); // Zmieñ na nazwê Twojej sceny z gr¹
+        SaveManager saveManager = SaveManager.EnsureInstanceExists();
+        SaveManager.QueueNewGameRequest();
+        saveManager.StartNewGameFromMenu();
     }
 
     public void OpenLoadWindow()
@@ -41,7 +41,7 @@ public class MainMenuManager : MonoBehaviour
         {
             saveLocationText.text = $"Save location: {SaveManager.Instance.SaveFolderPath}";
         }
-        // Czyœcimy star¹ listê
+        // Czyï¿½cimy starï¿½ listï¿½
         foreach (Transform child in saveListContainer) { Destroy(child.gameObject); }
 
         // Pobieramy pliki z SaveManagera
@@ -51,7 +51,7 @@ public class MainMenuManager : MonoBehaviour
         {
             GameObject slot = Instantiate(saveSlotPrefab, saveListContainer);
 
-            // Formatowanie wyœwietlanej nazwy (usuwamy .json dla estetyki)
+            // Formatowanie wyï¿½wietlanej nazwy (usuwamy .json dla estetyki)
             string displayName = save.Name.Replace(".json", "");
             slot.GetComponentInChildren<TextMeshProUGUI>().text =
                 $"{displayName}\n<size=50%>{save.LastWriteTime}</size>";
@@ -64,8 +64,9 @@ public class MainMenuManager : MonoBehaviour
 
     private void SelectSave(string fileName)
     {
-        SaveManager.Instance.SetSaveToLoad(fileName);
-        SceneManager.LoadScene("GameScene");
+        SaveManager saveManager = SaveManager.EnsureInstanceExists();
+        SaveManager.QueueLoadGameRequest(fileName);
+        saveManager.StartLoadGameFromMenu(fileName);
     }
 
     public void CloseLoadWindow() => loadWindow.SetActive(false);

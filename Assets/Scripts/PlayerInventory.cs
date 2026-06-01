@@ -39,11 +39,13 @@ public class PlayerInventory : MonoBehaviour
 
     private void InitializeStartingItems()
     {
+        SaveManager saveManager = SaveManager.EnsureInstanceExists();
+
         // Sprawdzamy, czy SaveManager nie ma ustawionego save'a do wczytania.
-        // Jeœli saveToLoad jest pusty, oznacza to Now¹ Grê.
-        if (SaveManager.Instance != null && string.IsNullOrEmpty(SaveManager.Instance.saveToLoad))
+        // Jeï¿½li saveToLoad jest pusty, oznacza to Nowï¿½ Grï¿½.
+        if (saveManager != null && string.IsNullOrEmpty(saveManager.saveToLoad))
         {
-            Debug.Log("Nowa gra wykryta - dodajê przedmioty startowe.");
+            Debug.Log("Nowa gra wykryta - dodajï¿½ przedmioty startowe.");
             foreach (var item in startingInventory)
             {
                 if (item.resource != null && item.amount > 0)
@@ -131,7 +133,7 @@ public class PlayerInventory : MonoBehaviour
     {
         itemAmounts.Clear();
 
-        // £adujemy wszystkie ResourceData z folderu Resources, aby móc je dopasowaæ po nazwie
+        // ï¿½adujemy wszystkie ResourceData z folderu Resources, aby mï¿½c je dopasowaï¿½ po nazwie
         ResourceData[] allResources = Resources.LoadAll<ResourceData>("Items");
 
         for (int i = 0; i < data.resourceNames.Count; i++)
@@ -139,7 +141,7 @@ public class PlayerInventory : MonoBehaviour
             string rName = data.resourceNames[i];
             int rAmount = data.amounts[i];
 
-            // Szukamy zasobu, którego nazwa (resourceName) zgadza siê z t¹ z JSONa
+            // Szukamy zasobu, ktï¿½rego nazwa (resourceName) zgadza siï¿½ z tï¿½ z JSONa
             ResourceData matchingResource = System.Array.Find(allResources, r => r.resourceName == rName);
 
             if (matchingResource != null)
@@ -148,7 +150,7 @@ public class PlayerInventory : MonoBehaviour
             }
         }
 
-        Debug.Log("Inwentarz gracza zosta³ wczytany.");
-        // Jeœli masz UI, tutaj wywo³aj jego odœwie¿enie
+        Debug.Log("Inwentarz gracza zostaï¿½ wczytany.");
+        // Jeï¿½li masz UI, tutaj wywoï¿½aj jego odï¿½wieï¿½enie
     }
 }
