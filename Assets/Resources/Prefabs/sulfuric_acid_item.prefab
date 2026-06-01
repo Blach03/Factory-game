@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &318098591679718673
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2525760622779214161, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 2578569608679771785, guid: 735950387228efe4dbadc90146b59e7e, type: 3}
+    - target: {fileID: 2643496372401596179, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: itemData
+      value: 
+      objectReference: {fileID: 11400000, guid: 946824f7928333a40a307fa19124578c, type: 2}
+    - target: {fileID: 2643496372401596179, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: prefabNameForSave
+      value: sulfuric_acid_item
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4194199157638621854, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5923965017393603584, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}
+      propertyPath: m_Name
+      value: sulfuric_acid_item
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f0c1d9652d328884b870e630f1fe47d6, type: 3}

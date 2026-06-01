@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7cf623b634c6cc745a6fb671b256a1d5, type: 3}
+  m_Name: BatteryRecipe
+  m_EditorClassIdentifier: Assembly-CSharp::RefineryRecipeData
+  recipeName: Battery Recipe
+  techRequirementId: t14
+  processTime: 15
+  inputItem: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+  inputItemAmount: 2
+  tetriaryinputItem: {fileID: 11400000, guid: 298849fcb2578c24885207651710a0ae, type: 2}
+  tetriaryinputItemAmount: 2
+  fluidResource: {fileID: 11400000, guid: 946824f7928333a40a307fa19124578c, type: 2}
+  fluidAmount: 10
+  outputResource: {fileID: 11400000, guid: 736dac994f4bf624fb6926c1ad73fbd2, type: 2}
+  outputResultAmount: 1
+  powerRequirement: 3
