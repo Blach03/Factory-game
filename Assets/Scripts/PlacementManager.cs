@@ -116,6 +116,11 @@ public class PlacementManager : MonoBehaviour
 
     private Texture2D selectionBorderTexture;
 
+    private bool tutorialAreaCopySelectionMultiUsed = false;
+    private bool tutorialAreaMultiPlaced = false;
+    private bool tutorialPipetteUsed = false;
+    private bool tutorialAreaDeleteUsed = false;
+
     private const string BuildingsContainerName = "--BUILDINGS--";
 
     [System.Serializable]
@@ -360,6 +365,9 @@ public class PlacementManager : MonoBehaviour
             return;
         }
 
+        if (objects.Count > 1)
+            tutorialAreaCopySelectionMultiUsed = true;
+
         BuildAreaClipboardFromObjects(objects);
         PrepareAreaPreviewObjects();
 
@@ -392,7 +400,10 @@ public class PlacementManager : MonoBehaviour
             Destroy(obj.gameObject);
         }
 
-        PickupItemsInSelectionRect(areaDragStartGrid, areaDragCurrentGrid);
+        int removedItemsCount = PickupItemsInSelectionRect(areaDragStartGrid, areaDragCurrentGrid);
+
+        if (objects.Count > 0 || removedItemsCount > 0)
+            tutorialAreaDeleteUsed = true;
 
         if (areaDeleteUndo.removed.Count > 0)
             PushUndoAction(areaDeleteUndo);
@@ -520,12 +531,14 @@ public class PlacementManager : MonoBehaviour
         areaPreviewObjects.Clear();
     }
 
-    private void PickupItemsInSelectionRect(Vector2Int a, Vector2Int b)
+    private int PickupItemsInSelectionRect(Vector2Int a, Vector2Int b)
     {
         int minX = Mathf.Min(a.x, b.x);
         int maxX = Mathf.Max(a.x, b.x);
         int minY = Mathf.Min(a.y, b.y);
         int maxY = Mathf.Max(a.y, b.y);
+
+        int removedCount = 0;
 
         Item[] items = FindObjectsOfType<Item>();
         foreach (Item item in items)
@@ -538,8 +551,11 @@ public class PlacementManager : MonoBehaviour
             {
                 PlayerInventory.Instance.AddItem(item.itemData, 1);
                 Destroy(item.gameObject);
+                removedCount++;
             }
         }
+
+        return removedCount;
     }
 
 
@@ -909,6 +925,9 @@ public class PlacementManager : MonoBehaviour
 
         if (placedObjects.Count > 0)
         {
+            if (placedObjects.Count > 1)
+                tutorialAreaMultiPlaced = true;
+
             var areaPlaceUndo = new UndoAction();
             foreach (var obj in placedObjects)
             {
@@ -958,8 +977,33 @@ public class PlacementManager : MonoBehaviour
         SelectBuildingInternal(prefabToSelect, false);
         CopyPlacementStateFromSource(sourceObject);
 
+        tutorialPipetteUsed = true;
+
         currentRotationIndex = pipetteRotationIndex;
         ApplyCurrentRotationToPreviewObject();
+    }
+
+    public void ResetTutorialShortcutMilestones()
+    {
+        tutorialAreaCopySelectionMultiUsed = false;
+        tutorialAreaMultiPlaced = false;
+        tutorialPipetteUsed = false;
+        tutorialAreaDeleteUsed = false;
+    }
+
+    public bool HasTutorialMultiObjectCopyPasteDone()
+    {
+        return tutorialAreaCopySelectionMultiUsed && tutorialAreaMultiPlaced;
+    }
+
+    public bool HasTutorialPipetteBeenUsed()
+    {
+        return tutorialPipetteUsed;
+    }
+
+    public bool HasTutorialAreaDeleteBeenUsed()
+    {
+        return tutorialAreaDeleteUsed;
     }
 
     private GridObject GetTopPlaceableObjectAt(Vector2Int gridPosition)

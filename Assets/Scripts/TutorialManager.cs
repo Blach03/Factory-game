@@ -9,6 +9,7 @@ public class TutorialManager : MonoBehaviour
     private TutorialPanel tutorialPanel;
     private bool isTutorialActive = false;
     private int currentStepIndex = 0;
+    private bool finalSummaryTimerElapsed = false;
 
     private List<TutorialStep> tutorialSteps = new List<TutorialStep>();
 
@@ -177,7 +178,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 8: Craft Science Packs in Inventory",
-            description = "Open inventory again with E. First craft Copper Wire, then craft Basic Science Pack until you create at least 10 in total (you can use multiple clicks, not only x10).",
+            description = "Open inventory again with E. First craft Copper Wires, then craft 10 Basic Science Packs.",
             onStepStart = () =>
             {
                 Debug.Log("[Tutorial] Step 8 started - Craft science packs in inventory");
@@ -208,7 +209,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 10: Build Assembler for Copper Wire",
-            description = "Place an Assembler (highlighted on the bottom bar), select the Copper Wire recipe, and deliver Copper Bars into the assembler. This step completes when Copper Bar enters the assembler.",
+            description = "Place an Assembler, select the Copper Wire recipe, and deliver Copper Bars into the assembler.",
             onStepStart = () =>
             {
                 Debug.Log("[Tutorial] Step 10 started - Assembler + Copper Wire");
@@ -226,7 +227,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 11: Fix Power Shortage",
-            description = "As you can notice in the top-right corner, we do not have enough power, so the assembler will not process this recipe until power is sufficient. Place a Pumpjack on a Water deposit.",
+            description = "As you can notice in the top-right corner, we do not have enough power, so the assembler will not process this recipe until power is sufficient. Place a Pumpjack on a Water deposit to start extracting water.",
             onStepStart = () =>
             {
                 Debug.Log("[Tutorial] Step 11 started - Pumpjack on Water");
@@ -237,6 +238,97 @@ public class TutorialManager : MonoBehaviour
                 );
             },
             onCheckComplete = () => CheckPumpjackOnWater()
+        });
+
+        // STEP 12: Build pipe near pumpjack and open pipe info
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 12: Connect a Pipe to the Pumpjack",
+            description = "Build a Pipe next to your Pumpjack so the extracted water can enter a pipe network. Tip: you can inspect fluid info by clicking a pipe.",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 12 started - Pipe near Pumpjack + open network info");
+                TutorialUIHighlight.Instance?.HighlightFirstExisting(
+                    "PipeButton",
+                    "Pipe",
+                    "MainCanvas/BottomBar/PipeButton"
+                );
+            },
+            onCheckComplete = () => CheckPipeNetworkWindowOpen()
+        });
+
+        // STEP 13: Build refinery, select steam recipe and feed coal
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 13: Build a Refinery and Produce Steam",
+            description = "Place a Refinery near your pipe network. Open its recipe selection and choose the Steam recipe, then connect Coal so the refinery can process and produce Steam.",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 13 started - Refinery + Steam recipe");
+                TutorialUIHighlight.Instance?.HighlightFirstExisting(
+                    "RefineryButton",
+                    "Refinery",
+                    "MainCanvas/BottomBar/RefineryButton"
+                );
+            },
+            onCheckComplete = () => CheckAnyRefineryProducedSteam()
+        });
+
+        // STEP 14: Build steam turbine and connect steam
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 14: Build a Steam Turbine",
+            description = "Place a Steam Turbine. Refineries output fluids and gases to connections on the 3 tiles in front of their output side, so make sure your pipe is attached there. Connect the produced Steam to the turbine with pipe and start generating electricity.",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 14 started - Steam Turbine");
+                TutorialUIHighlight.Instance?.HighlightFirstExisting(
+                    "SteamTurbineButton",
+                    "TurbineButton",
+                    "SteamTurbine",
+                    "MainCanvas/BottomBar/SteamTurbineButton"
+                );
+            },
+            onCheckComplete = () => CheckAnyPowerProduction()
+        });
+
+        // STEP 15: Keyboard shortcuts - copy blueprint + pipette
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 15: Copy Blueprint and Use Pipette",
+            description = "Press Ctrl+C to enter area copy mode, then drag the mouse to select an area. You will get a blueprint of the whole selected area that you can rotate and place in one action. Also use pipette with Q: hover a machine and press Q to copy that machine with its configured recipe. Tip: if you make a mistake, you can always press Ctrl+Z to undo previous actions.",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 15 started - Ctrl+C area copy and Q pipette");
+                PlacementManager.Instance?.ResetTutorialShortcutMilestones();
+            },
+            onCheckComplete = () => CheckCopyAndPipetteShortcuts()
+        });
+
+        // STEP 16: Keyboard shortcuts - area delete
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 16: Delete an Area with Ctrl+X",
+            description = "Press Ctrl+X to enter area delete mode. Drag with the mouse around a selected area to remove all machines and items inside that area.",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 16 started - Ctrl+X area delete");
+            },
+            onCheckComplete = () => CheckAreaDeleteShortcut()
+        });
+
+        // STEP 17: Final summary
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 17: Tutorial Complete",
+            description = "That's all the basic stuff. Progress through the game by researching new technologies, and have fun!",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 17 started - Final summary");
+                finalSummaryTimerElapsed = false;
+                StartCoroutine(CompleteFinalSummaryAfterDelay(10f));
+            },
+            onCheckComplete = () => finalSummaryTimerElapsed
         });
     }
 
@@ -252,6 +344,7 @@ public class TutorialManager : MonoBehaviour
 
         isTutorialActive = true;
         currentStepIndex = 0;
+        finalSummaryTimerElapsed = false;
         ShowCurrentStep();
     }
 
@@ -259,6 +352,7 @@ public class TutorialManager : MonoBehaviour
     {
         isTutorialActive = false;
         currentStepIndex = 0;
+        finalSummaryTimerElapsed = false;
         if (tutorialPanel != null)
             tutorialPanel.HidePanel();
         TutorialUIHighlight.Instance?.ClearHighlight();
@@ -294,6 +388,7 @@ public class TutorialManager : MonoBehaviour
         // Dla kroków wyboru receptury ukrywamy overlay, gdy jest otwarte okno Choose Recipe.
         bool isFurnaceRecipeStep = currentStepIndex == 4;
         bool isAssemblerRecipeStep = currentStepIndex == 9;
+        bool isRefineryRecipeStep = currentStepIndex == 12;
         bool chooseRecipeOpen = UIManager.Instance != null &&
                                 UIManager.Instance.recipeSelectionPanel != null &&
                                 UIManager.Instance.recipeSelectionPanel.gameObject.activeSelf;
@@ -307,7 +402,7 @@ public class TutorialManager : MonoBehaviour
         if (tutorialPanel != null)
         {
             bool hideOverlay = (isInventoryStep && inventoryOpen) ||
-                               ((isFurnaceRecipeStep || isAssemblerRecipeStep) && chooseRecipeOpen) ||
+                               ((isFurnaceRecipeStep || isAssemblerRecipeStep || isRefineryRecipeStep) && chooseRecipeOpen) ||
                                (isTechTreeStep && techTreeOpen);
             tutorialPanel.SetOverlayVisible(!hideOverlay);
         }
@@ -321,8 +416,9 @@ public class TutorialManager : MonoBehaviour
                 Debug.Log($"[Tutorial] Krok {currentStepIndex + 1} ukończony!");
                 TutorialUIHighlight.Instance?.ClearHighlight();
                 
-                // Przejdź do następnego kroku po 1 sekundzie
-                StartCoroutine(NextStepAfterDelay(1f));
+                // Przejdź do następnego kroku po 1 sekundzie (ostatni krok zamknij od razu)
+                float completionDelay = currentStepIndex == tutorialSteps.Count - 1 ? 0f : 1f;
+                StartCoroutine(NextStepAfterDelay(completionDelay));
             }
         }
     }
@@ -332,6 +428,16 @@ public class TutorialManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
         currentStepIndex++;
         ShowCurrentStep();
+    }
+
+    private System.Collections.IEnumerator CompleteFinalSummaryAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (!isTutorialActive) yield break;
+        if (currentStepIndex >= tutorialSteps.Count) yield break;
+
+        finalSummaryTimerElapsed = true;
     }
 
     private bool CheckMinerOnCoal()
@@ -474,9 +580,107 @@ public class TutorialManager : MonoBehaviour
         return false;
     }
 
+    private bool CheckPipeNetworkWindowOpen()
+    {
+        if (PipeNetworkUI.Instance == null || PipeNetworkUI.Instance.windowPanel == null)
+            return false;
+
+        return PipeNetworkUI.Instance.windowPanel.activeSelf;
+    }
+
+    private bool CheckAnyRefineryProducedSteam()
+    {
+        RefineryBuilding[] refineries = FindObjectsOfType<RefineryBuilding>();
+
+        foreach (RefineryBuilding refinery in refineries)
+        {
+            if (refinery == null || refinery.currentRecipe == null) continue;
+
+            bool hasSteamRecipeName = !string.IsNullOrEmpty(refinery.currentRecipe.recipeName) &&
+                                      refinery.currentRecipe.recipeName.IndexOf("Steam", StringComparison.OrdinalIgnoreCase) >= 0;
+            bool hasSteamOutput = refinery.currentRecipe.outputResource != null &&
+                                  !string.IsNullOrEmpty(refinery.currentRecipe.outputResource.resourceName) &&
+                                  refinery.currentRecipe.outputResource.resourceName.IndexOf("Steam", StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (!hasSteamRecipeName && !hasSteamOutput) continue;
+
+            if (refinery.currentOutputAmount > 0)
+                return true;
+
+            if (IsSteamStoredInOutputNetwork(refinery))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsSteamStoredInOutputNetwork(RefineryBuilding refinery)
+    {
+        if (refinery == null || GridManager.Instance == null) return false;
+
+        for (int i = 0; i < 3; i++)
+        {
+            Vector2Int checkPos = refinery.occupiedPosition;
+            switch (refinery.outputDirection)
+            {
+                case RefineryBuilding.Direction.Right:
+                    checkPos += new Vector2Int(3, i);
+                    break;
+                case RefineryBuilding.Direction.Down:
+                    checkPos += new Vector2Int(i, -1);
+                    break;
+                case RefineryBuilding.Direction.Left:
+                    checkPos += new Vector2Int(-1, i);
+                    break;
+                case RefineryBuilding.Direction.Up:
+                    checkPos += new Vector2Int(i, 3);
+                    break;
+            }
+
+            var objectsAtPos = GridManager.Instance.GetGridObjects(checkPos);
+            if (objectsAtPos == null) continue;
+
+            for (int j = 0; j < objectsAtPos.Count; j++)
+            {
+                PipeBuilding pipe = objectsAtPos[j] as PipeBuilding;
+                if (pipe == null || pipe.CurrentNetwork == null) continue;
+
+                PipeNetwork network = pipe.CurrentNetwork;
+                if (network.storedFluid <= 0f || network.FluidType == null) continue;
+
+                string fluidName = network.FluidType.resourceName;
+                if (!string.IsNullOrEmpty(fluidName) && fluidName.IndexOf("Steam", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CheckAnyPowerProduction()
+    {
+        return PowerManager.Instance != null && PowerManager.Instance.GlobalProduction > 0f;
+    }
+
+    private bool CheckCopyAndPipetteShortcuts()
+    {
+        if (PlacementManager.Instance == null) return false;
+
+        return PlacementManager.Instance.HasTutorialMultiObjectCopyPasteDone() &&
+               PlacementManager.Instance.HasTutorialPipetteBeenUsed();
+    }
+
+    private bool CheckAreaDeleteShortcut()
+    {
+        if (PlacementManager.Instance == null) return false;
+
+        return PlacementManager.Instance.HasTutorialAreaDeleteBeenUsed();
+    }
+
     private void CompleteTutorial()
     {
         isTutorialActive = false;
+        finalSummaryTimerElapsed = false;
         if (tutorialPanel != null)
             tutorialPanel.HidePanel();
         TutorialUIHighlight.Instance?.ClearHighlight();
