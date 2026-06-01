@@ -8,6 +8,8 @@ public class UnlockManager : MonoBehaviour
     [Header("UI Buttons")]
     [SerializeField] private GameObject assemblerButton;
     [SerializeField] private GameObject overheadConveyorButton; // Nowe pole dla t2
+    [SerializeField] private GameObject minerExtenderButton; // t11
+    [SerializeField] private GameObject rocketSiloButton; // t25
 
     void Start()
     {
@@ -51,6 +53,18 @@ public class UnlockManager : MonoBehaviour
             overheadConveyorButton.SetActive(tree.IsResearched("t2"));
         }
 
-        Debug.Log("<color=green>[UnlockManager]</color> Stan przycisków odœwie¿ony.");
+        // Technologia t11 -> Miner Extender
+        if (minerExtenderButton != null)
+        {
+            minerExtenderButton.SetActive(tree.IsResearched("t11"));
+        }
+
+        // Technologia t25 -> Rocket Silo
+        if (rocketSiloButton != null)
+        {
+            rocketSiloButton.SetActive(tree.IsResearched("t25"));
+        }
+
+        Debug.Log("<color=green>[UnlockManager]</color> Stan przyciskï¿½w odï¿½wieï¿½ony.");
     }
 }

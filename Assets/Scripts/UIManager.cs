@@ -9,6 +9,9 @@ public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
 
+    [Header("Display")]
+    [SerializeField] private bool autoFullscreenOnStart = true;
+
     private const int CompactCostTypesThreshold = 5;
     private const float CompactCostScaleMultiplier = 0.7f;
 
@@ -49,11 +52,23 @@ public class UIManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+
+            if (autoFullscreenOnStart)
+            {
+                ApplyNativeFullscreen();
+            }
         }
         else
         {
             Destroy(gameObject);
         }
+    }
+
+    private void ApplyNativeFullscreen()
+    {
+        Resolution current = Screen.currentResolution;
+        Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+        Screen.SetResolution(current.width, current.height, FullScreenMode.FullScreenWindow, current.refreshRate);
     }
 
     void Update()
