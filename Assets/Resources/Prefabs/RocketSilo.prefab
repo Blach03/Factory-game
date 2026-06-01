@@ -204,7 +204,17 @@ MonoBehaviour:
   isBlockingPlacement: 0
   occupiedPosition: {x: 0, y: 0}
   size: {x: 5, y: 5}
-  constructionCost: []
+  constructionCost:
+  - resource: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+    amount: 1000
+  - resource: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
+    amount: 200
+  - resource: {fileID: 11400000, guid: 31bc856968d48dc44ab611c2c126d7e1, type: 2}
+    amount: 100
+  - resource: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
+    amount: 200
+  - resource: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
+    amount: 100
   inputA:
     resource: {fileID: 11400000, guid: 822fa23858ccfd74cb6cfde1a23f204d, type: 2}
     requiredAmount: 500

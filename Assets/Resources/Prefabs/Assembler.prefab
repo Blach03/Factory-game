@@ -207,13 +207,13 @@ MonoBehaviour:
   size: {x: 3, y: 3}
   constructionCost:
   - resource: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
-    amount: 5
+    amount: 2
   - resource: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
-    amount: 2
+    amount: 1
   - resource: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
-    amount: 5
+    amount: 3
   - resource: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
-    amount: 2
+    amount: 1
   currentRecipe: {fileID: 0}
   outputDirection: 0
   outputIndicatorObject: {fileID: 6600973262347648792}

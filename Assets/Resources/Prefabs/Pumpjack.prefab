@@ -112,9 +112,14 @@ MonoBehaviour:
   isBlockingPlacement: 0
   occupiedPosition: {x: 0, y: 0}
   size: {x: 1, y: 1}
-  constructionCost: []
+  constructionCost:
+  - resource: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+    amount: 2
+  - resource: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
+    amount: 1
   oilResourceData: {fileID: 11400000, guid: f88c8852c0b8c1c46a0d8b9fc0d316f6, type: 2}
   productionPerSecond: 0.2
+  currentExtractedResource: {fileID: 0}
 --- !u!50 &8221079315720050751
 Rigidbody2D:
   serializedVersion: 5

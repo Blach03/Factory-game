@@ -4,6 +4,7 @@ public static class TutorialItemTracker
     public static bool AnyItemMovedByStorageToInventory { get; private set; }
     public static bool CopperBarMovedByStorageToInventory { get; private set; }
     public static bool PressedCraftX10IronGear { get; private set; }
+    public static bool CopperBarEnteredAssembler { get; private set; }
 
     public static void Reset()
     {
@@ -11,6 +12,7 @@ public static class TutorialItemTracker
         AnyItemMovedByStorageToInventory = false;
         CopperBarMovedByStorageToInventory = false;
         PressedCraftX10IronGear = false;
+        CopperBarEnteredAssembler = false;
     }
 
     public static void ResetStorageToInventory()
@@ -26,6 +28,11 @@ public static class TutorialItemTracker
     public static void ResetCraftX10IronGear()
     {
         PressedCraftX10IronGear = false;
+    }
+
+    public static void ResetCopperBarEnteredAssembler()
+    {
+        CopperBarEnteredAssembler = false;
     }
 
     public static void OnItemMovedByConveyor()
@@ -46,5 +53,10 @@ public static class TutorialItemTracker
     public static void OnPressedCraftX10IronGear()
     {
         PressedCraftX10IronGear = true;
+    }
+
+    public static void OnCopperBarEnteredAssembler()
+    {
+        CopperBarEnteredAssembler = true;
     }
 }

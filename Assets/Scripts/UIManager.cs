@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
-using System;
 using TMPro;
 using UnityEngine.UI; // <-- TO JEST KLUCZOWE DLA KOMPONENTU IMAGE
 using UnityEngine.EventSystems; // DODAJ T� DYREKTYW� NA G�RZE PLIKU
@@ -9,6 +8,9 @@ using UnityEngine.EventSystems; // DODAJ T� DYREKTYW� NA G�RZE PLIKU
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance { get; private set; }
+
+    private const int CompactCostTypesThreshold = 5;
+    private const float CompactCostScaleMultiplier = 0.7f;
 
     [Header("Panele UI - Budynki")]
     public RecipeSelectionUI recipeSelectionPanel;
@@ -93,15 +95,31 @@ public class UIManager : MonoBehaviour
     /// 
     public void ToggleTechnologyTree()
     {
-
         if (!isTechTreeOpen)
         {
             // Je�li otwieramy drzewko, zamknijmy inne panele (np. piec, assembler)
             CloseAllUI();
+
+            // Defensive init: czasem Start() TechTreeManager nie zdąży wykonać pełnej inicjalizacji
+            // przed pierwszym otwarciem panelu.
+            TechTreeManager mgr = ResolveTechTreeManager();
+            if (mgr != null)
+            {
+                mgr.EnsureTreeInitialized();
+            }
+            else
+            {
+                Debug.LogWarning("[UIManager] ToggleTechnologyTree: TechTreeManager.Instance is null while opening panel.");
+            }
         }
 
         isTechTreeOpen = !isTechTreeOpen;
         technologyPanel.SetActive(isTechTreeOpen);
+
+        if (isTechTreeOpen)
+        {
+            StartCoroutine(VerifyTechTreeAfterOpen());
+        }
 
         // Opcjonalnie: Zablokuj ruch kamery lub budowanie, gdy drzewko jest otwarte
         if (isTechTreeOpen)
@@ -113,6 +131,36 @@ public class UIManager : MonoBehaviour
         {
             Time.timeScale = 1f; // Wznowienie gry
         }
+    }
+
+    private System.Collections.IEnumerator VerifyTechTreeAfterOpen()
+    {
+        yield return new WaitForEndOfFrame();
+
+        TechTreeManager mgr = ResolveTechTreeManager();
+
+        // Self-heal: jeśli panel jest otwarty, ale drzewko puste, wymuś regenerację.
+        if (technologyPanel != null && technologyPanel.activeSelf && mgr != null && mgr.contentTransform != null && mgr.contentTransform.childCount == 0)
+        {
+            Debug.LogWarning("[UIManager] Tech tree panel opened with 0 nodes. Forcing reinitialize.");
+            mgr.EnsureTreeInitialized();
+            Canvas.ForceUpdateCanvases();
+        }
+    }
+
+    private TechTreeManager ResolveTechTreeManager()
+    {
+        TechTreeManager mgr = TechTreeManager.Instance;
+        if (mgr != null) return mgr;
+
+        mgr = TechTreeManager.EnsureInstanceFromPanel(technologyPanel);
+
+        if (mgr != null)
+        {
+            TechTreeManager.Instance = mgr;
+        }
+
+        return mgr;
     }
 
     private void HandleEscapeLogic()
@@ -349,12 +397,24 @@ public class UIManager : MonoBehaviour
             return;
         }
 
+        if (selectedBuilding.constructionCost == null || selectedBuilding.constructionCost.Count == 0)
+        {
+            costPanel.SetActive(false);
+            return;
+        }
+
         if (costPanel != null) costPanel.SetActive(true);
         // Wyczy�� stare ikony
         foreach (Transform child in costContainer) Destroy(child.gameObject);
 
+        int costTypesCount = selectedBuilding.constructionCost == null
+            ? 0
+            : selectedBuilding.constructionCost.Count(cost => cost.resource != null && cost.amount > 0);
+
         foreach (var cost in selectedBuilding.constructionCost)
         {
+            if (cost.resource == null || cost.amount <= 0) continue;
+
             GameObject go = Instantiate(costElementPrefab, costContainer);
             var icon = go.GetComponentInChildren<Image>(); // Znajd� obrazek ikony
             var text = go.GetComponentInChildren<TextMeshProUGUI>(); // Znajd� tekst
@@ -363,6 +423,7 @@ public class UIManager : MonoBehaviour
 
             icon.sprite = cost.resource.icon; // Upewnij si�, �e ResourceData ma pole 'icon'
             text.text = $"{invCount}/{cost.amount}";
+            ApplyCompactCostScaleIfNeeded(go.transform, costTypesCount);
 
             // Kolorowanie tekstu
             text.color = invCount >= cost.amount ? Color.green : Color.red;
@@ -380,6 +441,8 @@ public class UIManager : MonoBehaviour
         if (costPanel != null) costPanel.SetActive(true);
         foreach (Transform child in costContainer) Destroy(child.gameObject);
 
+        int costTypesCount = costs.Count(kv => kv.Key != null && kv.Value > 0);
+
         foreach (var kv in costs)
         {
             ResourceData resource = kv.Key;
@@ -394,8 +457,17 @@ public class UIManager : MonoBehaviour
 
             icon.sprite = resource.icon;
             text.text = $"{invCount}/{amount}";
+            ApplyCompactCostScaleIfNeeded(go.transform, costTypesCount);
             text.color = invCount >= amount ? Color.green : Color.red;
         }
+    }
+
+    private void ApplyCompactCostScaleIfNeeded(Transform elementTransform, int costTypesCount)
+    {
+        if (elementTransform == null) return;
+        if (costTypesCount <= CompactCostTypesThreshold) return;
+
+        elementTransform.localScale *= CompactCostScaleMultiplier;
     }
 
     public void UpdateMachineSelection(int selectedIndex)

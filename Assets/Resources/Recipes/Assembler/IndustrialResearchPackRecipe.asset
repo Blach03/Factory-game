@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: IndustrialResearchPackRecipe
   m_EditorClassIdentifier: 
   _recipeName: Industrial Research Pack Recipe
-  _techRequirementId: 
+  _techRequirementId: t6
   _primaryInput: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
   _primaryInputAmount: 3
   _secondaryInput: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}

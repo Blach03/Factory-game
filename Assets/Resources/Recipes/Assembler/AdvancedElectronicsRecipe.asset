@@ -20,7 +20,7 @@ MonoBehaviour:
   _secondaryInputAmount: 5
   tertiaryInput: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
   tertiaryInputAmount: 3
-  _outputItem: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
+  _outputItem: {fileID: 11400000, guid: 0495c53f59dd08b44bac3b1d8e010bb4, type: 2}
   _outputAmount: 1
   assemblyTime: 15
   powerRequirement: 3

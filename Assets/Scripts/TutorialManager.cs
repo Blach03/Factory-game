@@ -203,6 +203,41 @@ public class TutorialManager : MonoBehaviour
             },
             onCheckComplete = () => CheckAssemblerTechResearched()
         });
+
+        // STEP 10: Build assembler and feed Copper Bar
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 10: Build Assembler for Copper Wire",
+            description = "Place an Assembler (highlighted on the bottom bar), select the Copper Wire recipe, and deliver Copper Bars into the assembler. This step completes when Copper Bar enters the assembler.",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 10 started - Assembler + Copper Wire");
+                TutorialItemTracker.ResetCopperBarEnteredAssembler();
+                TutorialUIHighlight.Instance?.HighlightFirstExisting(
+                    "AssemblerButton",
+                    "Assembler",
+                    "MainCanvas/BottomBar/AssemblerButton"
+                );
+            },
+            onCheckComplete = () => CheckAnyAssemblerHasCopperWireRecipe() && TutorialItemTracker.CopperBarEnteredAssembler
+        });
+
+        // STEP 11: Power shortage and pumpjack on water
+        tutorialSteps.Add(new TutorialStep
+        {
+            title = "Step 11: Fix Power Shortage",
+            description = "As you can notice in the top-right corner, we do not have enough power, so the assembler will not process this recipe until power is sufficient. Place a Pumpjack on a Water deposit.",
+            onStepStart = () =>
+            {
+                Debug.Log("[Tutorial] Step 11 started - Pumpjack on Water");
+                TutorialUIHighlight.Instance?.HighlightFirstExisting(
+                    "PumpjackButton",
+                    "Pumpjack",
+                    "MainCanvas/BottomBar/PumpjackButton"
+                );
+            },
+            onCheckComplete = () => CheckPumpjackOnWater()
+        });
     }
 
     public void StartTutorial()
@@ -256,8 +291,9 @@ public class TutorialManager : MonoBehaviour
                              UIManager.Instance.inventoryPanel != null &&
                              UIManager.Instance.inventoryPanel.activeSelf;
 
-        // Dla kroku wyboru receptury pieca ukrywamy overlay, gdy jest otwarte okno Choose Recipe.
+        // Dla kroków wyboru receptury ukrywamy overlay, gdy jest otwarte okno Choose Recipe.
         bool isFurnaceRecipeStep = currentStepIndex == 4;
+        bool isAssemblerRecipeStep = currentStepIndex == 9;
         bool chooseRecipeOpen = UIManager.Instance != null &&
                                 UIManager.Instance.recipeSelectionPanel != null &&
                                 UIManager.Instance.recipeSelectionPanel.gameObject.activeSelf;
@@ -271,7 +307,7 @@ public class TutorialManager : MonoBehaviour
         if (tutorialPanel != null)
         {
             bool hideOverlay = (isInventoryStep && inventoryOpen) ||
-                               (isFurnaceRecipeStep && chooseRecipeOpen) ||
+                               ((isFurnaceRecipeStep || isAssemblerRecipeStep) && chooseRecipeOpen) ||
                                (isTechTreeStep && techTreeOpen);
             tutorialPanel.SetOverlayVisible(!hideOverlay);
         }
@@ -399,6 +435,43 @@ public class TutorialManager : MonoBehaviour
     private bool CheckAssemblerTechResearched()
     {
         return TechTreeManager.Instance != null && TechTreeManager.Instance.IsResearched("t1");
+    }
+
+    private bool CheckAnyAssemblerHasCopperWireRecipe()
+    {
+        AssemblerBuilding[] assemblers = FindObjectsOfType<AssemblerBuilding>();
+        foreach (AssemblerBuilding assembler in assemblers)
+        {
+            if (assembler == null) continue;
+
+            AssemblyRecipeData recipe = assembler.currentRecipe;
+            if (recipe == null) continue;
+
+            bool isCopperWireByItem = recipe.outputItem != null && recipe.outputItem.resourceName == "Copper Wire";
+            bool isCopperWireByName = !string.IsNullOrEmpty(recipe.recipeName) && recipe.recipeName.Contains("Copper Wire");
+
+            if (isCopperWireByItem || isCopperWireByName)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool CheckPumpjackOnWater()
+    {
+        PumpjackBuilding[] pumpjacks = FindObjectsOfType<PumpjackBuilding>();
+        foreach (PumpjackBuilding pumpjack in pumpjacks)
+        {
+            if (pumpjack == null) continue;
+            if (pumpjack.currentExtractedResource != null && pumpjack.currentExtractedResource.resourceName == "Water")
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void CompleteTutorial()

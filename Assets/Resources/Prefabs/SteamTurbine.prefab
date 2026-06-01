@@ -110,7 +110,13 @@ MonoBehaviour:
   isBlockingPlacement: 0
   occupiedPosition: {x: 0, y: 0}
   size: {x: 2, y: 2}
-  constructionCost: []
+  constructionCost:
+  - resource: {fileID: 11400000, guid: f9beaccf35641ea40babb506377a9f83, type: 2}
+    amount: 5
+  - resource: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+    amount: 2
+  - resource: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
+    amount: 1
   steamConsumptionRate: 0.25
   powerOutput: 10
   steamResource: {fileID: 11400000, guid: cc36fa906134216409ddd953367ccb3c, type: 2}

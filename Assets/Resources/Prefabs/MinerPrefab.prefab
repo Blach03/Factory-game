@@ -53,18 +53,18 @@ MonoBehaviour:
   size: {x: 1, y: 1}
   constructionCost:
   - resource: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}
-    amount: 5
-  - resource: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
-    amount: 1
+    amount: 3
   - resource: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
-    amount: 2
+    amount: 1
   baseProductionSpeed: 0.1
   currentProductionSpeed: 0
   outputSpeed: 3
+  outputBufferCapacity: 3
   outputDirection: 1
   boostPerExtender: 1
 --- !u!212 &5989467973945908517
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -80,6 +80,11 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -101,9 +106,11 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 3
+  m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: 711a299a6f147b14d9f2902686992dac, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -113,5 +120,4 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0

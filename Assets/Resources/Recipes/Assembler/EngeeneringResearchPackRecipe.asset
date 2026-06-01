@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: EngeeneringResearchPackRecipe
   m_EditorClassIdentifier: 
   _recipeName: Engeenering Research Pack Recipe
-  _techRequirementId: 
+  _techRequirementId: t13
   _primaryInput: {fileID: 11400000, guid: 6de9e5805abcb8d41a36dd1089de8cdc, type: 2}
   _primaryInputAmount: 1
   _secondaryInput: {fileID: 11400000, guid: 0495c53f59dd08b44bac3b1d8e010bb4, type: 2}

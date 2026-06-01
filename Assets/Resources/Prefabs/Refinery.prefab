@@ -146,7 +146,11 @@ MonoBehaviour:
   isBlockingPlacement: 0
   occupiedPosition: {x: 0, y: 0}
   size: {x: 3, y: 3}
-  constructionCost: []
+  constructionCost:
+  - resource: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+    amount: 2
+  - resource: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
+    amount: 1
   currentRecipe: {fileID: 0}
   outputDirection: 0
   outputIndicatorObject: {fileID: 8193887086305155322}

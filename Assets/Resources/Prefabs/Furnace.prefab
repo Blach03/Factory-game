@@ -190,8 +190,6 @@ MonoBehaviour:
   constructionCost:
   - resource: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
     amount: 2
-  - resource: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}
-    amount: 5
   - resource: {fileID: 11400000, guid: 76c5c0e139816944a872c29754cb1b03, type: 2}
     amount: 5
   currentRecipe: {fileID: 0}

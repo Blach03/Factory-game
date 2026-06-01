@@ -58,10 +58,9 @@ public class CraftingDetailsPanel : MonoBehaviour
             // Pr�ba znalezienia managera, je�li instancja jest nullem
             if (TechTreeManager.Instance == null)
             {
-                // Szukamy w ca�ej scenie, nawet obiekt�w nieaktywnych
-                TechTreeManager foundManager = Resources.FindObjectsOfTypeAll<TechTreeManager>().Length > 0
-                    ? Resources.FindObjectsOfTypeAll<TechTreeManager>()[0]
-                    : null;
+                // Szukamy WY��CZNIE obiektu scenowego (tak�e nieaktywnego),
+                // aby nie podpi�� przypadkiem referencji spoza aktywnej sceny.
+                TechTreeManager foundManager = Object.FindFirstObjectByType<TechTreeManager>(FindObjectsInactive.Include);
 
                 if (foundManager != null)
                 {

@@ -1,47 +1,196 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.UI;
 
 public class TechTreeManager : MonoBehaviour
 {
     public static TechTreeManager Instance;
+    private static TextAsset cachedJsonFile;
+    private static GameObject cachedTechNodePrefab;
+    private static GameObject cachedLinePrefab;
+    private static Vector2 cachedStartPosition;
+    private static float cachedYSpacing;
+    private static bool hasCachedLayoutSettings;
     public TextAsset jsonFile; // Przypisz plik JSON w inspektorze
     public GameObject techNodePrefab; // Prefab okienka technologii
     public RectTransform contentTransform; // Content ze Scroll View
-    public GameObject linePrefab; // Prosty Image (czarny), który bêdzie lini¹
+    public GameObject linePrefab; // Prosty Image (czarny), ktï¿½ry bï¿½dzie liniï¿½
 
     private List<TechnologyNode> allNodes;
     private Dictionary<string, GameObject> spawnedNodes = new Dictionary<string, GameObject>();
 
     private HashSet<string> researchedIds = new HashSet<string>();
+    private bool treeGenerated = false;
 
     void Awake()
     {
+        CacheRuntimeConfig();
+
         if (Instance == null)
         {
             Instance = this;
-            // Opcjonalnie: DontDestroyOnLoad(gameObject); // Jeœli chcesz, by drzewko ¿y³o miêdzy scenami
+            // Opcjonalnie: DontDestroyOnLoad(gameObject); // Jeï¿½li chcesz, by drzewko ï¿½yï¿½o miï¿½dzy scenami
         }
         else
         {
             Destroy(gameObject);
         }
     }
+
+    private void OnEnable()
+    {
+        CacheRuntimeConfig();
+
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Instance = null;
+        }
+    }
+
+    private void CacheRuntimeConfig()
+    {
+        if (jsonFile != null)
+        {
+            cachedJsonFile = jsonFile;
+        }
+
+        if (techNodePrefab != null)
+        {
+            cachedTechNodePrefab = techNodePrefab;
+        }
+
+        if (linePrefab != null)
+        {
+            cachedLinePrefab = linePrefab;
+        }
+
+        // Preserve inspector-tuned layout so runtime self-heal does not reset it to defaults.
+        if (!hasCachedLayoutSettings || startPosition != new Vector2(0f, -100f) || !Mathf.Approximately(ySpacing, 200f))
+        {
+            cachedStartPosition = startPosition;
+            cachedYSpacing = ySpacing;
+            hasCachedLayoutSettings = true;
+        }
+    }
+
+    public static TechTreeManager EnsureInstanceFromPanel(GameObject technologyPanel)
+    {
+        if (Instance != null)
+        {
+            return Instance;
+        }
+
+        TechTreeManager mgr = Object.FindFirstObjectByType<TechTreeManager>(FindObjectsInactive.Include);
+        if (mgr != null)
+        {
+            Instance = mgr;
+            return mgr;
+        }
+
+        if (technologyPanel == null)
+        {
+            return null;
+        }
+
+        mgr = technologyPanel.GetComponentInChildren<TechTreeManager>(true);
+        if (mgr != null)
+        {
+            Instance = mgr;
+            return mgr;
+        }
+
+        Transform viewport = technologyPanel.transform.Find("ViewPort");
+        if (viewport == null)
+        {
+            viewport = technologyPanel.transform.Find("Viewport");
+        }
+
+        if (viewport == null)
+        {
+            Debug.LogError("<color=red>[TechTreeManager]</color> EnsureInstanceFromPanel: ViewPort/Viewport not found.");
+            return null;
+        }
+
+        Transform content = viewport.Find("Content");
+        if (content == null)
+        {
+            GameObject contentGO = new GameObject("Content", typeof(RectTransform));
+            RectTransform contentRT = contentGO.GetComponent<RectTransform>();
+            contentRT.SetParent(viewport, false);
+            ApplyContentRectDefaults(contentRT);
+
+            RectTransform viewportRect = viewport as RectTransform ?? viewport.GetComponent<RectTransform>();
+            if (viewportRect != null)
+            {
+                contentRT.sizeDelta = new Vector2(viewportRect.rect.width, viewportRect.rect.height);
+            }
+            else
+            {
+                contentRT.sizeDelta = new Vector2(1920f, 1080f);
+            }
+
+            content = contentRT;
+            Debug.LogWarning("<color=yellow>[TechTreeManager]</color> EnsureInstanceFromPanel: recreated missing Content.");
+        }
+
+        mgr = content.GetComponent<TechTreeManager>();
+        if (mgr == null)
+        {
+            mgr = content.gameObject.AddComponent<TechTreeManager>();
+            Debug.LogWarning("<color=yellow>[TechTreeManager]</color> EnsureInstanceFromPanel: recreated missing TechTreeManager component on Content.");
+        }
+
+        if (mgr.contentTransform == null)
+        {
+            mgr.contentTransform = content as RectTransform ?? content.GetComponent<RectTransform>();
+        }
+
+        if (mgr.jsonFile == null)
+        {
+            mgr.jsonFile = cachedJsonFile;
+        }
+
+        if (mgr.techNodePrefab == null)
+        {
+            mgr.techNodePrefab = cachedTechNodePrefab;
+        }
+
+        if (mgr.linePrefab == null)
+        {
+            mgr.linePrefab = cachedLinePrefab;
+        }
+
+        if (hasCachedLayoutSettings)
+        {
+            mgr.startPosition = cachedStartPosition;
+            mgr.ySpacing = cachedYSpacing;
+        }
+
+        Instance = mgr;
+        return mgr;
+    }
     void Start()
     {
-        Debug.Log("<color=cyan>[TechTreeManager]</color> Start: Generowanie drzewka...");
-        GenerateTree();
+        EnsureTreeInitialized();
 
         if (pendingLoadIds != null)
         {
-            Debug.Log($"<color=cyan>[TechTreeManager]</color> Start: Wczytujê dane z poczekalni ({pendingLoadIds.Count} ID).");
             researchedIds = new HashSet<string>(pendingLoadIds);
             pendingLoadIds = null;
         }
 
         RefreshAllNodes();
 
-        // DODAJ TO NA KOÑCU STARTU:
+        // DODAJ TO NA KOï¿½CU STARTU:
         UnlockManager unlocker = Object.FindAnyObjectByType<UnlockManager>();
         if (unlocker != null)
         {
@@ -49,15 +198,244 @@ public class TechTreeManager : MonoBehaviour
         }
     }
 
+    public void EnsureTreeInitialized()
+    {
+        if (jsonFile == null)
+        {
+            Debug.LogError("<color=red>[TechTreeManager]</color> EnsureTreeInitialized: jsonFile is null.");
+            return;
+        }
+
+        if (!EnsureContentTransformReady())
+        {
+            Debug.LogError("<color=red>[TechTreeManager]</color> EnsureTreeInitialized: contentTransform is not ready.");
+            return;
+        }
+
+        // JeÅ›li drzewko juÅ¼ istnieje i wÄ™zÅ‚y sÄ… obecne, tylko odÅ›wieÅ¼amy kolory.
+        if (treeGenerated && spawnedNodes != null && spawnedNodes.Count > 0)
+        {
+            RefreshAllNodes();
+            return;
+        }
+
+        // JeÅ›li coÅ› wyczyÅ›ciÅ‚o Content lub sÅ‚ownik, regenerujemy od zera.
+        if (spawnedNodes == null)
+        {
+            spawnedNodes = new Dictionary<string, GameObject>();
+        }
+
+        foreach (Transform child in contentTransform)
+        {
+            if (child == transform)
+            {
+                continue;
+            }
+
+            Destroy(child.gameObject);
+        }
+        spawnedNodes.Clear();
+
+        GenerateTree();
+        treeGenerated = true;
+    }
+
+    private bool EnsureContentTransformReady()
+    {
+        Transform viewport = transform.Find("ViewPort");
+        if (viewport == null)
+        {
+            viewport = transform.Find("Viewport");
+        }
+
+        NormalizeContentReference(viewport);
+
+        // JeÅ›li mamy referencjÄ™, ale ktoÅ› odpiÄ…Å‚ Content od hierarchii ViewPort, napraw.
+        if (contentTransform != null)
+        {
+            if (viewport != null && contentTransform.parent != viewport)
+            {
+                contentTransform.SetParent(viewport, false);
+            }
+
+            ApplyContentRectDefaults(contentTransform);
+
+            RebindScrollRectContent();
+            return true;
+        }
+
+        // SprÃ³buj znaleÅºÄ‡ istniejÄ…cy Content pod viewportem.
+        if (viewport != null)
+        {
+            Transform content = viewport.Find("Content");
+            if (content != null)
+            {
+                contentTransform = content as RectTransform ?? content.GetComponent<RectTransform>();
+                if (contentTransform != null)
+                {
+                    ApplyContentRectDefaults(contentTransform);
+                    RebindScrollRectContent();
+                    return true;
+                }
+            }
+
+            // JeÅ›li Content zniknÄ…Å‚, twÃ³rz go automatycznie.
+            GameObject contentGO = new GameObject("Content", typeof(RectTransform));
+            RectTransform rt = contentGO.GetComponent<RectTransform>();
+            rt.SetParent(viewport, false);
+            ApplyContentRectDefaults(rt);
+
+            RectTransform viewportRect = viewport as RectTransform ?? viewport.GetComponent<RectTransform>();
+            if (viewportRect != null)
+            {
+                rt.sizeDelta = new Vector2(viewportRect.rect.width, viewportRect.rect.height);
+            }
+            else
+            {
+                rt.sizeDelta = new Vector2(1920f, 1080f);
+            }
+
+            contentTransform = rt;
+            Debug.LogWarning("<color=yellow>[TechTreeManager]</color> Content was missing. Created new ViewPort/Content at runtime.");
+            RebindScrollRectContent();
+            return true;
+        }
+
+        Debug.LogError("<color=red>[TechTreeManager]</color> Could not find ViewPort/Viewport under TechnologyMenu.");
+        return false;
+    }
+
+    private void NormalizeContentReference(Transform viewport)
+    {
+        if (contentTransform == null)
+        {
+            return;
+        }
+
+        if (transform is RectTransform selfRect && selfRect.name == "Content" && transform.IsChildOf(contentTransform))
+        {
+            contentTransform = selfRect;
+            return;
+        }
+
+        if (viewport != null && contentTransform == viewport)
+        {
+            Transform found = viewport.Find("Content");
+            if (found is RectTransform foundRect)
+            {
+                contentTransform = foundRect;
+                return;
+            }
+        }
+
+        if (contentTransform.name != "Content")
+        {
+            Transform nested = contentTransform.Find("Content");
+            if (nested is RectTransform nestedRect)
+            {
+                contentTransform = nestedRect;
+            }
+        }
+    }
+
+    private void RebindScrollRectContent()
+    {
+        ScrollRect scrollRect = GetComponentInParent<ScrollRect>(true);
+        if (scrollRect == null)
+        {
+            Transform parentTransform = transform.parent;
+            if (parentTransform != null)
+            {
+                scrollRect = parentTransform.GetComponent<ScrollRect>();
+                if (scrollRect == null)
+                {
+                    scrollRect = parentTransform.GetComponentInChildren<ScrollRect>(true);
+                }
+            }
+        }
+
+        if (scrollRect == null || contentTransform == null)
+        {
+            Debug.LogWarning("<color=yellow>[TechTreeManager]</color> RebindScrollRectContent: ScrollRect not found or contentTransform missing.");
+            return;
+        }
+
+        if (scrollRect.content != contentTransform)
+        {
+            scrollRect.content = contentTransform;
+        }
+
+        Transform viewportTransform = contentTransform.parent;
+        if (viewportTransform == null)
+        {
+            viewportTransform = scrollRect.transform.Find("ViewPort");
+        }
+        if (viewportTransform == null)
+        {
+            viewportTransform = scrollRect.transform.Find("Viewport");
+        }
+
+        RectTransform viewportRect = viewportTransform as RectTransform ?? viewportTransform?.GetComponent<RectTransform>();
+        if (viewportRect != null && scrollRect.viewport != viewportRect)
+        {
+            scrollRect.viewport = viewportRect;
+        }
+
+        // Ensure drag + wheel scrolling behaves correctly after runtime self-heal.
+        scrollRect.enabled = true;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.inertia = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        scrollRect.scrollSensitivity = 60f;
+        scrollRect.decelerationRate = 0.12f;
+
+        // Keep X locked to eliminate tiny horizontal jitter while dragging vertically.
+        Vector2 lockedPos = contentTransform.anchoredPosition;
+        if (!Mathf.Approximately(lockedPos.x, 0f))
+        {
+            lockedPos.x = 0f;
+            contentTransform.anchoredPosition = lockedPos;
+        }
+
+        // Rebuild + reset internal bounds so drag/wheel starts working immediately.
+        LayoutRebuilder.ForceRebuildLayoutImmediate(contentTransform);
+        Canvas.ForceUpdateCanvases();
+        scrollRect.StopMovement();
+        scrollRect.Rebuild(CanvasUpdate.PostLayout);
+    }
+
+    private static void ApplyContentRectDefaults(RectTransform rect)
+    {
+        if (rect == null)
+        {
+            return;
+        }
+
+        // Keep content centered horizontally and top-aligned for predictable node placement.
+        rect.anchorMin = new Vector2(0.5f, 1f);
+        rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 1f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.localScale = Vector3.one;
+    }
+
     void GenerateTree()
     {
         TechnologyTreeData data = JsonUtility.FromJson<TechnologyTreeData>(jsonFile.text);
         allNodes = data.technologies;
 
+        if (allNodes == null)
+        {
+            Debug.LogError("<color=red>[TechTreeManager]</color> GenerateTree: allNodes is null after JSON parse.");
+            allNodes = new List<TechnologyNode>();
+        }
+
         CalculateDepths();
         CalculateXPositions();
         SpawnNodes();
         DrawConnections();
+        RebindScrollRectContent();
     }
 
     private void CalculateDepths()
@@ -83,7 +461,7 @@ public class TechTreeManager : MonoBehaviour
 
     private void CalculateXPositions()
     {
-        // 1. Ustawiamy pozycjê X dla technologii startowych (depth 0) na œrodku (0)
+        // 1. Ustawiamy pozycjï¿½ X dla technologii startowych (depth 0) na ï¿½rodku (0)
         var rootNodes = allNodes.Where(n => n.depth == 0).ToList();
         float rootSpacing = 300f;
         float startX = -(rootNodes.Count - 1) * rootSpacing / 2f;
@@ -92,7 +470,7 @@ public class TechTreeManager : MonoBehaviour
             rootNodes[i].xPos = startX + (i * rootSpacing);
         }
 
-        // 2. Przechodzimy przez kolejne poziomy (od 1 w górê)
+        // 2. Przechodzimy przez kolejne poziomy (od 1 w gï¿½rï¿½)
         int maxDepth = allNodes.Max(n => n.depth);
         for (int d = 1; d <= maxDepth; d++)
         {
@@ -100,12 +478,12 @@ public class TechTreeManager : MonoBehaviour
 
             foreach (var parentNode in allNodes.Where(n => n.depth == d - 1))
             {
-                // ZnajdŸ dzieci tego konkretnego rodzica
+                // Znajdï¿½ dzieci tego konkretnego rodzica
                 var children = allNodes.Where(n => n.requiredIds.Contains(parentNode.id) && n.depth == d).ToList();
 
                 if (children.Count == 0) continue;
 
-                // Rozsuñ dzieci symetrycznie pod rodzicem
+                // Rozsuï¿½ dzieci symetrycznie pod rodzicem
                 float childSpacing = 450f;
                 float offset = -(children.Count - 1) * childSpacing / 2f;
 
@@ -115,7 +493,7 @@ public class TechTreeManager : MonoBehaviour
                     children[i].xPos = parentNode.xPos + offset + (i * childSpacing);
                 }
 
-                // Opcjonalne: Wyœrodkowanie dla technologii z wieloma rodzicami
+                // Opcjonalne: Wyï¿½rodkowanie dla technologii z wieloma rodzicami
                 foreach (var node in allNodes.Where(n => n.requiredIds.Count > 1))
                 {
                     float sumX = 0;
@@ -148,7 +526,7 @@ public class TechTreeManager : MonoBehaviour
         if (!researchedIds.Contains(node.id))
         {
             researchedIds.Add(node.id);
-            RefreshAllNodes(); // Odœwie¿a kolory w drzewku
+            RefreshAllNodes(); // Odï¿½wieï¿½a kolory w drzewku
         }
 
         UnlockManager unlocker = Object.FindAnyObjectByType<UnlockManager>();
@@ -168,21 +546,29 @@ public class TechTreeManager : MonoBehaviour
 
     [Header("Position Settings")]
     public Vector2 startPosition = new Vector2(0, -100); // Punkt startowy (x, y)
-    public float ySpacing = 200f; // Odstêp miêdzy poziomami
+    public float ySpacing = 200f; // Odstï¿½p miï¿½dzy poziomami
 
     private void SpawnNodes()
     {
-        float minHeight = 0; // Przechowuje najni¿szy punkt (najbardziej ujemny Y)
+        if (contentTransform == null)
+        {
+            Debug.LogError("<color=red>[TechTreeManager]</color> SpawnNodes: contentTransform is null.");
+            return;
+        }
+
+        float minHeight = 0f; // Przechowuje najniÅ¼szy punkt (najbardziej ujemny Y)
+        float minX = 0f;
+        float maxX = 0f;
 
         foreach (var node in allNodes)
         {
-            // Dodajemy startPosition do wyliczonych koordynatów
+            // Dodajemy startPosition do wyliczonych koordynatï¿½w
             Vector2 pos = new Vector2(node.xPos + startPosition.x, (-node.depth * ySpacing) + startPosition.y);
 
             GameObject go = Instantiate(techNodePrefab, contentTransform);
             RectTransform rt = go.GetComponent<RectTransform>();
 
-            // Upewniamy siê, ¿e kotwice s¹ na œrodku u góry, aby pozycjonowanie by³o przewidywalne
+            // Upewniamy siï¿½, ï¿½e kotwice sï¿½ na ï¿½rodku u gï¿½ry, aby pozycjonowanie byï¿½o przewidywalne
             rt.anchorMin = new Vector2(0.5f, 1f);
             rt.anchorMax = new Vector2(0.5f, 1f);
             rt.pivot = new Vector2(0.5f, 0.5f);
@@ -198,10 +584,19 @@ public class TechTreeManager : MonoBehaviour
             spawnedNodes.Add(node.id, go);
 
             if (pos.y < minHeight) minHeight = pos.y;
+            if (pos.x < minX) minX = pos.x;
+            if (pos.x > maxX) maxX = pos.x;
         }
 
-        float finalHeight = Mathf.Abs(minHeight) + 200f;
-        contentTransform.sizeDelta = new Vector2(contentTransform.sizeDelta.x, finalHeight);
+        RectTransform viewport = contentTransform.parent as RectTransform;
+        float viewportWidth = viewport != null ? viewport.rect.width : 1920f;
+        float viewportHeight = viewport != null ? viewport.rect.height : 1080f;
+
+        float horizontalSpan = maxX - minX;
+        float finalWidth = Mathf.Max(viewportWidth, horizontalSpan + 600f);
+        float finalHeight = Mathf.Max(viewportHeight, Mathf.Abs(minHeight) + 300f);
+
+        contentTransform.sizeDelta = new Vector2(finalWidth, finalHeight);
     }
 
     private void DrawConnections()
@@ -230,17 +625,17 @@ public class TechTreeManager : MonoBehaviour
         rect.anchorMax = new Vector2(0.5f, 1f);
         rect.pivot = new Vector2(0.5f, 0.5f);
 
-        // Obliczamy wektor kierunku i odleg³oœæ
+        // Obliczamy wektor kierunku i odlegï¿½oï¿½ï¿½
         Vector2 dir = (end.anchoredPosition - start.anchoredPosition).normalized;
         float distance = Vector2.Distance(start.anchoredPosition, end.anchoredPosition);
 
-        // Ustawiamy pozycjê dok³adnie w po³owie drogi miêdzy startem a koñcem
+        // Ustawiamy pozycjï¿½ dokï¿½adnie w poï¿½owie drogi miï¿½dzy startem a koï¿½cem
         rect.anchoredPosition = start.anchoredPosition + (end.anchoredPosition - start.anchoredPosition) / 2;
 
-        // Szerokoœæ linii to odleg³oœæ miêdzy punktami, wysokoœæ to gruboœæ linii (np. 5px)
+        // Szerokoï¿½ï¿½ linii to odlegï¿½oï¿½ï¿½ miï¿½dzy punktami, wysokoï¿½ï¿½ to gruboï¿½ï¿½ linii (np. 5px)
         rect.sizeDelta = new Vector2(distance, 5f);
 
-        // Obracamy liniê w stronê celu
+        // Obracamy liniï¿½ w stronï¿½ celu
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         rect.rotation = Quaternion.Euler(0, 0, angle);
     }
@@ -250,29 +645,26 @@ public class TechTreeManager : MonoBehaviour
         return researchedIds.ToList();
     }
 
-    // Ta metoda przyjmuje listê z wczytanego pliku i aktualizuje stan drzewka
+    // Ta metoda przyjmuje listï¿½ z wczytanego pliku i aktualizuje stan drzewka
     private List<string> pendingLoadIds = null;
 
     public void LoadFromSave(List<string> loadedIds)
     {
         if (loadedIds != null && loadedIds.Count > 0)
         {
-            Debug.Log($"<color=cyan>[TechTreeManager]</color> Otrzymano z zapisu {loadedIds.Count} technologii: {string.Join(", ", loadedIds)}");
             researchedIds = new HashSet<string>(loadedIds);
 
             if (spawnedNodes != null && spawnedNodes.Count > 0)
             {
-                Debug.Log("<color=cyan>[TechTreeManager]</color> Drzewko ju¿ istnieje, odœwie¿am kolory.");
                 RefreshAllNodes();
             }
             else
             {
-                Debug.Log("<color=cyan>[TechTreeManager]</color> Drzewko jeszcze nie istnieje, zapisujê ID do poczekalni.");
                 pendingLoadIds = loadedIds;
             }
 
             // DODAJ TO TUTAJ:
-            // Wymuszamy odœwie¿enie przycisków zaraz po za³adowaniu listy ID
+            // Wymuszamy odï¿½wieï¿½enie przyciskï¿½w zaraz po zaï¿½adowaniu listy ID
             UnlockManager unlocker = Object.FindAnyObjectByType<UnlockManager>();
             if (unlocker != null)
             {
@@ -289,7 +681,7 @@ public class TechTreeManager : MonoBehaviour
     {
         float multiplier = 1.0f;
 
-        // Sprawdzamy konkretne technologie ulepszaj¹ce prêdkoœæ
+        // Sprawdzamy konkretne technologie ulepszajï¿½ce prï¿½dkoï¿½ï¿½
         if (IsResearched("t9")) multiplier += 0.5f;
         if (IsResearched("t19")) multiplier += 0.5f;
         if (IsResearched("t20")) multiplier += 0.5f;
@@ -297,7 +689,7 @@ public class TechTreeManager : MonoBehaviour
         return multiplier;
     }
 
-    // Wewn¹trz klasy TechTreeManager
+    // Wewnï¿½trz klasy TechTreeManager
     public float GetProductionSpeedMultiplier()
     {
         float multiplier = 1.0f;

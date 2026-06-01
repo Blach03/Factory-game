@@ -300,6 +300,10 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
             if (itemData == currentRecipe.primaryInput && currentPrimaryInput < inputCapacity)
             {
                 currentPrimaryInput++;
+                if (itemData != null && itemData.resourceName == "Copper Bar")
+                {
+                    TutorialItemTracker.OnCopperBarEnteredAssembler();
+                }
                 Destroy(item.gameObject);
                 continue;
             }
@@ -307,6 +311,10 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
             if (currentRecipe.secondaryInput != null && itemData == currentRecipe.secondaryInput && currentSecondaryInput < inputCapacity)
             {
                 currentSecondaryInput++;
+                if (itemData != null && itemData.resourceName == "Copper Bar")
+                {
+                    TutorialItemTracker.OnCopperBarEnteredAssembler();
+                }
                 Destroy(item.gameObject);
                 continue;
             }
@@ -314,6 +322,10 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
             if (currentRecipe.tertiaryInput != null && itemData == currentRecipe.tertiaryInput && currentTertiaryInput < inputCapacity)
             {
                 currentTertiaryInput++;
+                if (itemData != null && itemData.resourceName == "Copper Bar")
+                {
+                    TutorialItemTracker.OnCopperBarEnteredAssembler();
+                }
                 Destroy(item.gameObject);
                 continue;
             }
