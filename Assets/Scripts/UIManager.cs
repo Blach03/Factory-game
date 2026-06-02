@@ -185,9 +185,16 @@ public class UIManager : MonoBehaviour
 
     private void HandleEscapeLogic()
     {
-        // 1. Je�li otwarte jest Menu Pauzy - zamknij je
+        // 1. Je�li otwarte jest Menu Pauzy, najpierw zamknij jego pod-okna (np. Settings),
+        // a dopiero potem całą pauzę.
         if (pauseMenuPanel != null && pauseMenuPanel.activeSelf)
         {
+            PauseMenuUI pauseMenuUI = pauseMenuPanel.GetComponentInChildren<PauseMenuUI>(true);
+            if (pauseMenuUI != null && pauseMenuUI.HandleEscapeInPauseMenu())
+            {
+                return;
+            }
+
             ClosePauseMenu();
             return;
         }

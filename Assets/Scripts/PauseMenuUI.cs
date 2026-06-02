@@ -6,16 +6,18 @@ using UnityEngine.UI;
 public class PauseMenuUI : MonoBehaviour
 {
     [Header("UI Components")]
-    public GameObject mainPanel; // Opcjonalne, jeœli skrypt jest na panelu nadrzêdnym
-    public GameObject saveWindow; // Przeci¹gnij tutaj panel zapisu
-    public GameObject overwriteConfirmPanel; // Przeci¹gnij tutaj panel potwierdzenia
+    public GameObject mainPanel; // Opcjonalne, jeï¿½li skrypt jest na panelu nadrzï¿½dnym
+    public GameObject saveWindow; // Przeciï¿½gnij tutaj panel zapisu
+    public GameObject overwriteConfirmPanel; // Przeciï¿½gnij tutaj panel potwierdzenia
+    public GameObject settingsPanel;
+    public AudioSettingsUI audioSettingsUI;
 
     [Header("Save List Settings")]
     public Transform saveListContainer;
     public GameObject saveSlotPrefab;
     public TMP_InputField newSaveInputField;
 
-    private string selectedFileName; // Przechowuje nazwê wybranego save'a do nadpisania
+    private string selectedFileName; // Przechowuje nazwï¿½ wybranego save'a do nadpisania
 
     public void OnCancelClicked()
     {
@@ -24,7 +26,10 @@ public class PauseMenuUI : MonoBehaviour
 
     public void OnResumeClicked()
     {
-        // Wywo³ujemy funkcjê z UIManager, która przywróci Time.timeScale = 1
+        if (settingsPanel != null) settingsPanel.SetActive(false);
+        if (mainPanel != null) mainPanel.SetActive(true);
+
+        // Wywoï¿½ujemy funkcjï¿½ z UIManager, ktï¿½ra przywrï¿½ci Time.timeScale = 1
         UIManager.Instance.ClosePauseMenu();
     }
 
@@ -57,7 +62,7 @@ public class PauseMenuUI : MonoBehaviour
         overwriteConfirmPanel.SetActive(true);
     }
 
-    // Wywo³ywane przez przycisk "TAK" w oknie potwierdzenia
+    // Wywoï¿½ywane przez przycisk "TAK" w oknie potwierdzenia
     public void ConfirmOverwrite()
     {
         SaveManager.Instance.SaveGameWithName(selectedFileName);
@@ -77,15 +82,86 @@ public class PauseMenuUI : MonoBehaviour
         if (string.IsNullOrWhiteSpace(newName)) return;
 
         SaveManager.Instance.SaveGameWithName(newName);
-        newSaveInputField.text = ""; // Wyczyœæ pole
+        newSaveInputField.text = ""; // Wyczyï¿½ï¿½ pole
         RefreshSaveList();
         saveWindow.SetActive(false);
     }
 
     public void OnSettingsClicked()
     {
-        // Miejsce na przysz³¹ logikê ustawieñ (dŸwiêk, grafika)
-        Debug.Log("Otwieranie ustawieñ (funkcja w przygotowaniu).");
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(true);
+        }
+
+        if (ShouldHideMainPanelWhenOpeningSettings())
+        {
+            mainPanel.SetActive(false);
+        }
+
+        audioSettingsUI?.RefreshFromAudioManager();
+    }
+
+    public void OnSettingsBackClicked()
+    {
+        if (settingsPanel != null)
+        {
+            settingsPanel.SetActive(false);
+        }
+
+        if (mainPanel != null)
+        {
+            mainPanel.SetActive(true);
+        }
+    }
+
+    public bool HandleEscapeInPauseMenu()
+    {
+        if (overwriteConfirmPanel != null && overwriteConfirmPanel.activeSelf)
+        {
+            DeclineOverwrite();
+            return true;
+        }
+
+        if (saveWindow != null && saveWindow.activeSelf)
+        {
+            OnCancelClicked();
+            return true;
+        }
+
+        if (settingsPanel != null && settingsPanel.activeSelf)
+        {
+            OnSettingsBackClicked();
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool ShouldHideMainPanelWhenOpeningSettings()
+    {
+        if (mainPanel == null)
+        {
+            return false;
+        }
+
+        if (settingsPanel == null)
+        {
+            return true;
+        }
+
+        if (mainPanel == settingsPanel)
+        {
+            return false;
+        }
+
+        // If settings is nested under main panel, hiding main would also hide settings.
+        if (settingsPanel.transform.IsChildOf(mainPanel.transform))
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public void OnSaveandExitClicked()
@@ -93,12 +169,12 @@ public class PauseMenuUI : MonoBehaviour
         Debug.Log("Zamykanie aplikacji...");
         SaveManager.Instance.SaveGame();
 
-        // Zapisz przed wyjœciem (opcjonalnie)
+        // Zapisz przed wyjï¿½ciem (opcjonalnie)
         // SaveManager.Instance.SaveGame("AutoSave_Exit.json");
 
         Application.Quit();
 
-        // Jeœli testujesz wewn¹trz Unity Editor:
+        // Jeï¿½li testujesz wewnï¿½trz Unity Editor:
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #endif

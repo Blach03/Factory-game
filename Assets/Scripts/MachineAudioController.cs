@@ -4,6 +4,18 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public class MachineAudioController : MonoBehaviour
 {
+    private static float globalVolumeMultiplier = 1f;
+
+    public static void SetGlobalVolumeMultiplier(float value)
+    {
+        globalVolumeMultiplier = Mathf.Clamp01(value);
+    }
+
+    public static float GetGlobalVolumeMultiplier()
+    {
+        return globalVolumeMultiplier;
+    }
+
     [Header("Machine Sound")]
     public AudioClip machineLoopClip;
     [Range(0f, 1f)] public float baseVolume = 0.7f;
@@ -31,7 +43,7 @@ public class MachineAudioController : MonoBehaviour
         source.playOnAwake = false;
         source.loop = true;
         source.clip = machineLoopClip;
-        source.volume = baseVolume;
+        source.volume = baseVolume * globalVolumeMultiplier;
         source.pitch = basePitch;
 
         // 3D settings for distance-based attenuation in top-down world.

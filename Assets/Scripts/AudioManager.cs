@@ -7,6 +7,12 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
 
+    private const string MasterVolumeKey = "audio.master";
+    private const string UiSfxVolumeKey = "audio.ui";
+    private const string BuildSfxVolumeKey = "audio.build";
+    private const string MachineVolumeKey = "audio.machine";
+    private const string MusicVolumeKey = "audio.music";
+
     [Header("UI SFX")]
     public AudioClip uiClickClip;
     [Range(0f, 1f)] public float uiClickVolume = 0.8f;
@@ -33,6 +39,18 @@ public class AudioManager : MonoBehaviour
     private float uiScanTimer;
     private int currentTrackIndex = -1;
 
+    private float masterVolume = 1f;
+    private float uiSfxCategoryVolume = 1f;
+    private float buildSfxCategoryVolume = 1f;
+    private float machineCategoryVolume = 1f;
+    private float musicCategoryVolume = 1f;
+
+    public float MasterVolume => masterVolume;
+    public float UiSfxCategoryVolume => uiSfxCategoryVolume;
+    public float BuildSfxCategoryVolume => buildSfxCategoryVolume;
+    public float MachineCategoryVolume => machineCategoryVolume;
+    public float MusicCategoryVolume => musicCategoryVolume;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -44,7 +62,9 @@ public class AudioManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        LoadAudioSettings();
         SetupSources();
+        ApplyAudioSettings();
     }
 
     private void OnEnable()
@@ -82,7 +102,7 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        uiSource.PlayOneShot(uiClickClip, uiClickVolume);
+        uiSource.PlayOneShot(uiClickClip, uiClickVolume * uiSfxCategoryVolume);
     }
 
     public void PlayPlaceBuildingSfx()
@@ -92,7 +112,7 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        uiSource.PlayOneShot(placeBuildingClip, placeBuildingVolume);
+        uiSource.PlayOneShot(placeBuildingClip, placeBuildingVolume * buildSfxCategoryVolume);
     }
 
     public void PlayRotateBuildingSfx()
@@ -102,7 +122,7 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        uiSource.PlayOneShot(rotateBuildingClip, rotateBuildingVolume);
+        uiSource.PlayOneShot(rotateBuildingClip, rotateBuildingVolume * buildSfxCategoryVolume);
     }
 
     public void PlayDestroyBuildingSfx()
@@ -112,7 +132,56 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        uiSource.PlayOneShot(destroyBuildingClip, destroyBuildingVolume);
+        uiSource.PlayOneShot(destroyBuildingClip, destroyBuildingVolume * buildSfxCategoryVolume);
+    }
+
+    public void SetMasterVolume(float value)
+    {
+        masterVolume = Mathf.Clamp01(value);
+        AudioListener.volume = masterVolume;
+        PlayerPrefs.SetFloat(MasterVolumeKey, masterVolume);
+        PlayerPrefs.Save();
+    }
+
+    public void SetUiSfxCategoryVolume(float value)
+    {
+        uiSfxCategoryVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(UiSfxVolumeKey, uiSfxCategoryVolume);
+        PlayerPrefs.Save();
+    }
+
+    public void SetBuildSfxCategoryVolume(float value)
+    {
+        buildSfxCategoryVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(BuildSfxVolumeKey, buildSfxCategoryVolume);
+        PlayerPrefs.Save();
+    }
+
+    public void SetMachineCategoryVolume(float value)
+    {
+        machineCategoryVolume = Mathf.Clamp01(value);
+        MachineAudioController.SetGlobalVolumeMultiplier(machineCategoryVolume);
+        PlayerPrefs.SetFloat(MachineVolumeKey, machineCategoryVolume);
+        PlayerPrefs.Save();
+    }
+
+    public void SetMusicCategoryVolume(float value)
+    {
+        musicCategoryVolume = Mathf.Clamp01(value);
+        PlayerPrefs.SetFloat(MusicVolumeKey, musicCategoryVolume);
+        PlayerPrefs.Save();
+        ApplyBackgroundMusic();
+    }
+
+    public void ApplyAudioSettings()
+    {
+        AudioListener.volume = masterVolume;
+        MachineAudioController.SetGlobalVolumeMultiplier(machineCategoryVolume);
+
+        if (musicSource != null)
+        {
+            musicSource.volume = backgroundMusicVolume * musicCategoryVolume;
+        }
     }
 
     public void RefreshMusic()
@@ -164,7 +233,7 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        musicSource.volume = backgroundMusicVolume;
+        musicSource.volume = backgroundMusicVolume * musicCategoryVolume;
         musicSource.loop = false;
 
         if (backgroundMusicPlaylist == null || backgroundMusicPlaylist.Count == 0)
@@ -213,7 +282,7 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        musicSource.volume = backgroundMusicVolume;
+        musicSource.volume = backgroundMusicVolume * musicCategoryVolume;
 
         if (backgroundMusicPlaylist == null || backgroundMusicPlaylist.Count == 0)
         {
@@ -311,7 +380,7 @@ public class AudioManager : MonoBehaviour
         {
             if (uiSource != null)
             {
-                uiSource.PlayOneShot(custom.clickClip, custom.volume);
+                uiSource.PlayOneShot(custom.clickClip, custom.volume * uiSfxCategoryVolume);
             }
 
             if (!custom.alsoPlayDefaultClick)
@@ -321,5 +390,14 @@ public class AudioManager : MonoBehaviour
         }
 
         PlayUIClick();
+    }
+
+    private void LoadAudioSettings()
+    {
+        masterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MasterVolumeKey, 1f));
+        uiSfxCategoryVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(UiSfxVolumeKey, 1f));
+        buildSfxCategoryVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(BuildSfxVolumeKey, 1f));
+        machineCategoryVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MachineVolumeKey, 1f));
+        musicCategoryVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(MusicVolumeKey, 1f));
     }
 }
