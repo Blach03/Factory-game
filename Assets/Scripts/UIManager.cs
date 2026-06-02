@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine.UI; // <-- TO JEST KLUCZOWE DLA KOMPONENTU IMAGE
 using UnityEngine.EventSystems; // DODAJ T� DYREKTYW� NA G�RZE PLIKU
+using UnityEngine.SceneManagement;
 
 public class UIManager : MonoBehaviour
 {
@@ -11,6 +12,11 @@ public class UIManager : MonoBehaviour
 
     [Header("Display")]
     [SerializeField] private bool autoFullscreenOnStart = true;
+
+    [Header("Global Font Override")]
+    [SerializeField] private TMP_FontAsset globalFontOverride;
+    [SerializeField] private bool includeInactiveTextInFontOverride = true;
+    [SerializeField] private float fontOverrideRefreshInterval = 0.5f;
 
     private const int CompactCostTypesThreshold = 5;
     private const float CompactCostScaleMultiplier = 0.7f;
@@ -31,6 +37,7 @@ public class UIManager : MonoBehaviour
 
     private StorageContainer currentStorage;
     private bool isInventoryOpen = false;
+    private float nextFontOverrideRefreshTime;
 
     public GameObject costPanel; // Przypisz w inspektorze
     public GameObject costElementPrefab; // Przypisz w inspektorze
@@ -57,10 +64,53 @@ public class UIManager : MonoBehaviour
             {
                 ApplyNativeFullscreen();
             }
+
+            ApplyGlobalFontOverride();
         }
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        ApplyGlobalFontOverride();
+    }
+
+    public void ApplyGlobalFontOverride()
+    {
+        if (globalFontOverride == null)
+        {
+            return;
+        }
+
+        FindObjectsInactive includeInactive = includeInactiveTextInFontOverride
+            ? FindObjectsInactive.Include
+            : FindObjectsInactive.Exclude;
+
+        TMP_Text[] textComponents = FindObjectsByType<TMP_Text>(includeInactive, FindObjectsSortMode.None);
+
+        foreach (TMP_Text textComponent in textComponents)
+        {
+            if (textComponent == null || textComponent.font == globalFontOverride)
+            {
+                continue;
+            }
+
+            textComponent.font = globalFontOverride;
+            textComponent.UpdateMeshPadding();
+            textComponent.SetAllDirty();
         }
     }
 
@@ -73,6 +123,8 @@ public class UIManager : MonoBehaviour
 
     void Update()
     {
+        RefreshGlobalFontOverrideIfNeeded();
+
         if (WinScreenUI.Instance != null && WinScreenUI.Instance.IsVisible)
         {
             return;
@@ -106,6 +158,22 @@ public class UIManager : MonoBehaviour
 
         // Aktualizuj crafting w tle, nawet jeśli HandCraftingManager jest wyłączony
         HandCraftingManager.UpdateCraftingBackground(Time.deltaTime);
+    }
+
+    private void RefreshGlobalFontOverrideIfNeeded()
+    {
+        if (globalFontOverride == null || fontOverrideRefreshInterval <= 0f)
+        {
+            return;
+        }
+
+        if (Time.unscaledTime < nextFontOverrideRefreshTime)
+        {
+            return;
+        }
+
+        nextFontOverrideRefreshTime = Time.unscaledTime + fontOverrideRefreshInterval;
+        ApplyGlobalFontOverride();
     }
 
     /// <summary>

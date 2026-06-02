@@ -12,9 +12,9 @@ public class PowerUI : MonoBehaviour
         float prod = PowerManager.Instance.GlobalProduction;
         float cons = PowerManager.Instance.GlobalConsumption;
 
-        // Kolorowanie tekstu: czerwony jeœli brakuje pr¹du
+        // Kolorowanie tekstu: czerwony jeï¿½li brakuje prï¿½du
         string color = prod >= cons ? "white" : "red";
 
-        powerText.text = $"Power: <color={color}>{cons:F1}</color> / {prod:F1} MW";
+        powerText.text = $"<color={color}>{cons:F0}</color> / {prod:F0} MW";
     }
 }
