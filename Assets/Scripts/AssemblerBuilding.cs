@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.EventSystems;
 
-public class AssemblerBuilding : GridObject, IProductionBuilding 
+public class AssemblerBuilding : GridObject, IProductionBuilding, IMachineWorkStateProvider 
 {
     // --- IMPLEMENTACJA INTERFEJSU ---
     public IBuildingRecipe GetCurrentRecipe() => currentRecipe;
@@ -56,6 +56,8 @@ public class AssemblerBuilding : GridObject, IProductionBuilding
     public float timer;
     private bool isAssembling = false;
     private static LayerMask itemLayerMask;
+
+    public bool IsMachineWorking => isAssembling;
 
     public int GetPrimaryInputCount() { return currentPrimaryInput; }
     public int GetSecondaryInputCount() { return currentSecondaryInput; }

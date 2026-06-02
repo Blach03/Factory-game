@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Linq;
 
-public class SteamTurbineBuilding : GridObject
+public class SteamTurbineBuilding : GridObject, IMachineWorkStateProvider
 {
     [Header("Ustawienia Turbiny")]
     public float steamConsumptionRate = 0.25f;
@@ -19,6 +19,7 @@ public class SteamTurbineBuilding : GridObject
     [Header("Stan")]
     public bool isRunning;
     public PipeNetwork AttachedNetwork;
+    public bool IsMachineWorking => isRunning;
 
     protected override void Awake()
     {

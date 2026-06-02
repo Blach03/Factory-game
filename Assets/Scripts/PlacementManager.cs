@@ -379,6 +379,7 @@ public class PlacementManager : MonoBehaviour
     private void CommitAreaDeleteSelection()
     {
         List<GridObject> objects = GetUniqueObjectsInSelectionRect(areaDragStartGrid, areaDragCurrentGrid);
+        int removedBuildingsCount = 0;
 
         var areaDeleteUndo = new UndoAction();
         foreach (GridObject obj in objects)
@@ -398,6 +399,7 @@ public class PlacementManager : MonoBehaviour
 
             GridManager.Instance.RemoveGridObject(obj, obj.GetGridPosition());
             Destroy(obj.gameObject);
+            removedBuildingsCount++;
         }
 
         int removedItemsCount = PickupItemsInSelectionRect(areaDragStartGrid, areaDragCurrentGrid);
@@ -407,6 +409,9 @@ public class PlacementManager : MonoBehaviour
 
         if (areaDeleteUndo.removed.Count > 0)
             PushUndoAction(areaDeleteUndo);
+
+        if (removedBuildingsCount > 0)
+            AudioManager.Instance?.PlayDestroyBuildingSfx();
 
         areaToolMode = AreaToolMode.None;
     }
@@ -582,6 +587,7 @@ public class PlacementManager : MonoBehaviour
         }
 
         ApplyCurrentRotationToPreviewObject();
+        AudioManager.Instance?.PlayRotateBuildingSfx();
     }
 
     private void ApplyCurrentRotationToPreviewObject()
@@ -636,6 +642,7 @@ public class PlacementManager : MonoBehaviour
     {
         areaRotationIndex = (areaRotationIndex + 1) % 4;
         UpdateAreaPreview();
+        AudioManager.Instance?.PlayRotateBuildingSfx();
     }
 
     private Vector2Int RotateOffset(AreaClipboardEntry entry, int rot)
@@ -943,6 +950,8 @@ public class PlacementManager : MonoBehaviour
                 });
             }
             PushUndoAction(areaPlaceUndo);
+
+            AudioManager.Instance?.PlayPlaceBuildingSfx();
         }
 
         // Zachowujemy tryb AreaPaste, aby stawia� kolejne kopie obszaru bez ponownego zaznaczania.
@@ -1146,6 +1155,7 @@ public class PlacementManager : MonoBehaviour
 
         if (targetObject != null)
         {
+            bool didRotate = false;
             MinerBuilding miner = targetObject.GetComponent<MinerBuilding>();
             ConveyorBelt belt = targetObject.GetComponent<ConveyorBelt>();
             OverheadConveyor overhead = targetObject.GetComponent<OverheadConveyor>();
@@ -1156,6 +1166,7 @@ public class PlacementManager : MonoBehaviour
             if (extender != null)
             {
                 extender.RotateBuilding(GetNextDirection(extender.outputDirection));
+                didRotate = true;
             }
 
             if (miner != null)
@@ -1163,36 +1174,47 @@ public class PlacementManager : MonoBehaviour
                 MinerBuilding.Direction currentDir = miner.outputDirection;
                 MinerBuilding.Direction newDir = GetNextDirection(currentDir);
                 miner.RotateMiner(newDir);
+                didRotate = true;
             }
             else if (belt != null)
             {
                 ConveyorBelt.Direction currentDir = belt.travelDirection;
                 ConveyorBelt.Direction newDir = GetNextDirection(currentDir);
                 belt.RotateBelt(newDir);
+                didRotate = true;
             }
             else if (overhead != null)
             {
                 ConveyorBelt.Direction currentDir = overhead.travelDirection;
                 ConveyorBelt.Direction newDir = GetNextDirection(currentDir);
                 overhead.RotateBelt(newDir);
+                didRotate = true;
             }
             else if (furnace != null)
             {
                 FurnaceBuilding.Direction currentDir = furnace.outputDirection;
                 FurnaceBuilding.Direction newDir = GetNextDirection(currentDir);
                 furnace.RotateFurnace(newDir);
+                didRotate = true;
             }
             else if (assembler != null)
             {
                 AssemblerBuilding.Direction currentDir = assembler.outputDirection;
                 AssemblerBuilding.Direction newDir = GetNextDirection(currentDir);
                 assembler.RotateBuilding(newDir);
+                didRotate = true;
             }
             else if (refinery != null)
             {
                 RefineryBuilding.Direction currentDir = refinery.outputDirection;
                 RefineryBuilding.Direction newDir = GetNextDirection(currentDir);
                 refinery.RotateBuilding(newDir);
+                didRotate = true;
+            }
+
+            if (didRotate)
+            {
+                AudioManager.Instance?.PlayRotateBuildingSfx();
             }
         }
     }
@@ -1339,6 +1361,7 @@ public class PlacementManager : MonoBehaviour
             }
 
             UpdateCostUI();
+            AudioManager.Instance?.PlayPlaceBuildingSfx();
             return true;
         }
         else
@@ -1500,6 +1523,7 @@ public class PlacementManager : MonoBehaviour
 
                 GridManager.Instance.RemoveGridObject(objectToRemove, gridPosition);
                 Destroy(objectToRemove.gameObject);
+                AudioManager.Instance?.PlayDestroyBuildingSfx();
 
                 if (snap != null)
                 {

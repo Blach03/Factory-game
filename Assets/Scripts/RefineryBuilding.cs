@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.EventSystems;
 
-public class RefineryBuilding : GridObject, IProductionBuilding 
+public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkStateProvider 
 {
     // --- IMPLEMENTACJA INTERFEJSU ---
     public IBuildingRecipe GetCurrentRecipe() => currentRecipe;
@@ -49,6 +49,8 @@ public class RefineryBuilding : GridObject, IProductionBuilding
     public float timer;
     private bool isProcessing = false;
     private static LayerMask itemLayerMask;
+
+    public bool IsMachineWorking => isProcessing;
 
     protected override void Awake()
     {

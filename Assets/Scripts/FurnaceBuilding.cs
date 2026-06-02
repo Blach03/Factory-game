@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.EventSystems;
 
-public class FurnaceBuilding : GridObject
+public class FurnaceBuilding : GridObject, IMachineWorkStateProvider
 {
     [Header("Receptura Pieca")]
     public SmeltingRecipeData currentRecipe;
@@ -37,6 +37,8 @@ public class FurnaceBuilding : GridObject
     public float timer;
     private bool isSmelting = false;
     private static LayerMask itemLayerMask;
+
+    public bool IsMachineWorking => isSmelting;
 
     public ResourceData ironOreResource;
     public ResourceData coalOreResource;
@@ -84,7 +86,7 @@ public class FurnaceBuilding : GridObject
         furnaceAnimFrames = Resources.LoadAll<Sprite>("FurnaceAnim");
         if (furnaceSpriteRenderer == null)
         {
-            // Spróbuj znaleŸæ SpriteRenderer automatycznie, jeœli nie przypisano w Inspectorze
+            // Sprï¿½buj znaleï¿½ï¿½ SpriteRenderer automatycznie, jeï¿½li nie przypisano w Inspectorze
             furnaceSpriteRenderer = GetComponent<SpriteRenderer>();
         }
         if (furnaceAnimFrames != null && furnaceAnimFrames.Length > 0 && furnaceSpriteRenderer != null)
@@ -116,7 +118,7 @@ public class FurnaceBuilding : GridObject
         TryConsumeFromWorld();
         TrySmelt();
 
-        // --- OBS£UGA ANIMACJI PIECA ---
+        // --- OBSï¿½UGA ANIMACJI PIECA ---
         if (furnaceAnimFrames != null && furnaceAnimFrames.Length > 0 && furnaceSpriteRenderer != null)
         {
             if (isSmelting)
@@ -131,7 +133,7 @@ public class FurnaceBuilding : GridObject
             }
             else
             {
-                // Zatrzymaj animacjê na pierwszej klatce
+                // Zatrzymaj animacjï¿½ na pierwszej klatce
                 currentAnimFrame = 0;
                 animTimer = 0f;
                 furnaceSpriteRenderer.sprite = furnaceAnimFrames[0];
@@ -168,7 +170,7 @@ public class FurnaceBuilding : GridObject
                 }
                 else
                 {
-                    timer = 0.001f; // Czekamy, a¿ zwolni siê miejsce w ekwipunku
+                    timer = 0.001f; // Czekamy, aï¿½ zwolni siï¿½ miejsce w ekwipunku
                 }
             }
         }
@@ -178,14 +180,14 @@ public class FurnaceBuilding : GridObject
     {
         if (currentRecipe == null) return 1f;
 
-        // Pobieramy mno¿nik z managera (domyœlnie 1.0)
+        // Pobieramy mnoï¿½nik z managera (domyï¿½lnie 1.0)
         float speedMultiplier = 1.0f;
         if (TechTreeManager.Instance != null)
         {
             speedMultiplier = TechTreeManager.Instance.GetProductionSpeedMultiplier();
         }
 
-        // Czas bazowy dzielimy przez mno¿nik (np. 5s / 1.2 = 4.16s)
+        // Czas bazowy dzielimy przez mnoï¿½nik (np. 5s / 1.2 = 4.16s)
         return currentRecipe.smeltingTime / speedMultiplier;
     }
 

@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 
-public class RocketSiloBuilding : GridObject, IProductionBuilding
+public class RocketSiloBuilding : GridObject, IProductionBuilding, IMachineWorkStateProvider
 {
     [System.Serializable]
     public class SiloInput
@@ -47,6 +47,12 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
     private float launchTimer = 0f; // Czas od startu
 
     public IBuildingRecipe GetCurrentRecipe() => GetOrCreateRuntimeRecipe();
+    public bool IsMachineWorking => isBuilding;
+
+    [Header("Audio")]
+    public AudioClip launchSfx;
+    [Range(0f, 1f)] public float launchSfxVolume = 1f;
+    private AudioSource launchSfxSource;
 
     public int GetInputCount(int slotIndex)
     {
@@ -66,6 +72,26 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
         base.Awake();
         size = new Vector2Int(5, 5);
         if (itemLayerMask == 0) itemLayerMask = LayerMask.GetMask("Item");
+
+        Transform launchAudioTransform = transform.Find("LaunchSfxSource");
+        if (launchAudioTransform == null)
+        {
+            GameObject launchAudioObject = new GameObject("LaunchSfxSource");
+            launchAudioObject.transform.SetParent(transform, false);
+            launchAudioTransform = launchAudioObject.transform;
+        }
+
+        launchSfxSource = launchAudioTransform.GetComponent<AudioSource>();
+        if (launchSfxSource == null)
+        {
+            launchSfxSource = launchAudioTransform.gameObject.AddComponent<AudioSource>();
+        }
+
+        launchSfxSource.playOnAwake = false;
+        launchSfxSource.loop = false;
+        launchSfxSource.spatialBlend = 1f;
+        launchSfxSource.rolloffMode = AudioRolloffMode.Linear;
+        launchSfxSource.dopplerLevel = 0f;
 
         // Zapami�tujemy startow� pozycj� rakiety (wewn�trz silosu)
         if (flyingRocketRenderer != null)
@@ -133,6 +159,8 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
     {
         if (rocketCount >= 1 && !isLaunching)
         {
+            PlayLaunchSfx();
+
             if (flyingRocketRenderer != null)
             {
                 flyingRocketRenderer.transform.localPosition = initialRocketLocalPos;
@@ -157,6 +185,16 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding
                 Debug.LogWarning("[RocketSiloBuilding] WinScreenUI not found. Win screen was not scheduled.");
             }
         }
+    }
+
+    private void PlayLaunchSfx()
+    {
+        if (launchSfxSource == null || launchSfx == null)
+        {
+            return;
+        }
+
+        launchSfxSource.PlayOneShot(launchSfx, launchSfxVolume);
     }
 
     // --- RESZTA LOGIKI (BEZ ZMIAN) ---

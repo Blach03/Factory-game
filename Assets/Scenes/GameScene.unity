@@ -2730,6 +2730,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b8cd90c0c4cddc4ab440ae0c85d8288, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  autoFullscreenOnStart: 1
   recipeSelectionPanel: {fileID: 1348768847}
   furnaceStatusPanel: {fileID: 2055987194}
   productionStatusPanel: {fileID: 1608971292}
@@ -7220,6 +7221,66 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 300, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &793245837
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 793245839}
+  - component: {fileID: 793245838}
+  m_Layer: 0
+  m_Name: SoundManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &793245838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793245837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dccdf63af46a99a458b0db18daf0fe8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  uiClickClip: {fileID: 8300000, guid: 32fa6bb198c44eb4a959b1dfdf9d7f3d, type: 3}
+  uiClickVolume: 0.6
+  placeBuildingClip: {fileID: 8300000, guid: d9d07536207eb7f459f7e7ab6faba395, type: 3}
+  placeBuildingVolume: 0.5
+  rotateBuildingClip: {fileID: 8300000, guid: 3f1cbda414d779f4aba5e243888463f6, type: 3}
+  rotateBuildingVolume: 0.5
+  destroyBuildingClip: {fileID: 8300000, guid: 877cf8e7c7aa02d46a11b4315834bb9b, type: 3}
+  destroyBuildingVolume: 0.3
+  backgroundMusicPlaylist:
+  - {fileID: 8300000, guid: ef7c70a625df37c46ae09ac372405f1a, type: 3}
+  - {fileID: 8300000, guid: 87be2e462e900654c9089302f7746556, type: 3}
+  - {fileID: 8300000, guid: 65b706a067f2a544ab0f25107bbf8cdb, type: 3}
+  - {fileID: 8300000, guid: 62aedb44f50c6e34da83bb67605dba07, type: 3}
+  - {fileID: 8300000, guid: 32c3c84ae90571c478e429ec422a4a2f, type: 3}
+  backgroundMusicVolume: 0.5
+  uiScanInterval: 0.75
+--- !u!4 &793245839
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 793245837}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1033.3689, y: 553.4732, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &794109950
 GameObject:
   m_ObjectHideFlags: 0
@@ -11843,6 +11904,7 @@ GameObject:
   - component: {fileID: 1221071963}
   - component: {fileID: 1221071962}
   - component: {fileID: 1221071961}
+  - component: {fileID: 1221071964}
   m_Layer: 5
   m_Name: UnlockButton
   m_TagString: Untagged
@@ -11964,6 +12026,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1221071959}
   m_CullTransparentMesh: 1
+--- !u!114 &1221071964
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1221071959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e8132f177a5d0b744bed0aa018f8c10d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ButtonAudioOverride
+  clickClip: {fileID: 8300000, guid: fee29193f3bb2da4d80771828e077aae, type: 3}
+  volume: 1
+  alsoPlayDefaultClick: 0
 --- !u!1 &1229941798
 GameObject:
   m_ObjectHideFlags: 0
@@ -20121,3 +20198,4 @@ SceneRoots:
   - {fileID: 1590000089}
   - {fileID: 1475115469}
   - {fileID: 1875961527}
+  - {fileID: 793245839}
