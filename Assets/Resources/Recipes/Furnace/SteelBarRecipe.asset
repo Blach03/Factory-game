@@ -12,12 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 458c46361551fa048b65acf3009abae5, type: 3}
   m_Name: SteelBarRecipe
   m_EditorClassIdentifier: 
-  recipeName: Steel Bar Recipe
+  _recipeName: Steel Bar Recipe
   _techRequirementId: t5
-  primaryInput: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}
-  primaryInputAmount: 5
-  secondaryInput: {fileID: 11400000, guid: 9759673b777f7c444b191c21b7a732bd, type: 2}
-  secondaryInputAmount: 1
-  outputItem: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
-  outputAmount: 1
-  smeltingTime: 20
+  _primaryInput: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}
+  _primaryInputAmount: 3
+  _secondaryInput: {fileID: 11400000, guid: 9759673b777f7c444b191c21b7a732bd, type: 2}
+  _secondaryInputAmount: 1
+  _outputItem: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
+  _outputAmount: 1
+  smeltingTime: 10
+  powerRequirement: 0

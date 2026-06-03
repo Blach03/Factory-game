@@ -339,33 +339,19 @@ public class AssemblerBuilding : GridObject, IProductionBuilding, IMachineWorkSt
         HashSet<Item> foundItems = new HashSet<Item>();
         if (GridManager.Instance == null) return foundItems.ToList();
 
-        Vector2 scanSize = new Vector2(GridManager.Instance.tileSize, GridManager.Instance.tileSize);
-
         for (int x = 0; x < size.x; x++)
         {
             for (int y = 0; y < size.y; y++)
             {
                 Vector2Int tileGridPos = occupiedPosition + new Vector2Int(x, y);
-                Vector3 tileWorldPos = GridManager.Instance.GridToWorld(tileGridPos) + new Vector3(GridManager.Instance.tileSize / 2f, GridManager.Instance.tileSize / 2f, 0f);
-
-                Collider2D[] foundColliders = Physics2D.OverlapBoxAll(
-                    tileWorldPos,
-                    scanSize * 0.9f,
-                    0f,
-                    itemLayerMask
-                );
-
-                foreach (Collider2D col in foundColliders)
+                Item item = GridManager.Instance.GetItemAtGridSpot(tileGridPos);
+                if (item != null && !item.isBeingMoved && item.itemData != null)
                 {
-                    Item item = col.GetComponent<Item>();
-                    if (item != null && !item.isBeingMoved)
+                    if (item.itemData == currentRecipe.primaryInput ||
+                        item.itemData == currentRecipe.secondaryInput ||
+                        item.itemData == currentRecipe.tertiaryInput)
                     {
-                        if (item.itemData == currentRecipe.primaryInput ||
-                            item.itemData == currentRecipe.secondaryInput ||
-                            item.itemData == currentRecipe.tertiaryInput)
-                        {
-                            foundItems.Add(item);
-                        }
+                        foundItems.Add(item);
                     }
                 }
             }
@@ -498,16 +484,8 @@ public class AssemblerBuilding : GridObject, IProductionBuilding, IMachineWorkSt
     private bool IsOutputBlocked(Vector3 outputWorldPosition)
     {
         Vector2Int outputGridPosition = GridManager.Instance.WorldToGrid(outputWorldPosition);
-
-        if (GridManager.Instance.IsGridSpotReserved(outputGridPosition))
-        {
-            return true;
-        }
-
-        float overlapRadius = 0.1f;
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(outputWorldPosition, overlapRadius, itemLayerMask);
-
-        return colliders.Length > 0;
+        return GridManager.Instance.IsGridSpotReserved(outputGridPosition) ||
+               GridManager.Instance.IsGridSpotOccupied(outputGridPosition);
     }
 
     [System.Serializable]

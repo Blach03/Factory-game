@@ -65,12 +65,22 @@ public class InventoryUI : MonoBehaviour
         if (string.IsNullOrEmpty(resource.requiredTechId)) return true;
 
         // Sprawdzamy w Twoim TechTreeManager
+        if (TechTreeManager.Instance == null)
+        {
+            TechTreeManager foundManager = Object.FindFirstObjectByType<TechTreeManager>(FindObjectsInactive.Include);
+            if (foundManager != null)
+            {
+                TechTreeManager.Instance = foundManager;
+            }
+        }
+
         if (TechTreeManager.Instance != null)
         {
             return TechTreeManager.Instance.IsResearched(resource.requiredTechId);
         }
 
-        return false; // Jeśli managera nie ma, ukryj przedmiot dla bezpieczeństwa
+        // Fallback to cached state loaded by SaveManager, even if the tech tree UI is not active yet.
+        return TechTreeManager.GetResearchedIdsSnapshot().Contains(resource.requiredTechId);
     }
 
 

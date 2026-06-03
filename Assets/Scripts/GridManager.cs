@@ -12,6 +12,9 @@ public class GridManager : MonoBehaviour
     private Dictionary<Vector2Int, GridObject> blockingObjects = new Dictionary<Vector2Int, GridObject>();
     private Dictionary<Vector2Int, ResourceDeposit> resourceDeposits = new Dictionary<Vector2Int, ResourceDeposit>();
     private Dictionary<Vector2Int, Item> reservedGridSpots = new Dictionary<Vector2Int, Item>(); // NOWE POLE
+    private Dictionary<Vector2Int, Item> reservedOverheadGridSpots = new Dictionary<Vector2Int, Item>();
+    private Dictionary<Vector2Int, Item> occupiedGridSpots = new Dictionary<Vector2Int, Item>();
+    private Dictionary<Vector2Int, Item> occupiedOverheadGridSpots = new Dictionary<Vector2Int, Item>();
     private Dictionary<Vector2Int, List<GridObject>> allPlacedObjects = new Dictionary<Vector2Int, List<GridObject>>();
     void Awake()
     {
@@ -66,20 +69,112 @@ public class GridManager : MonoBehaviour
         return reservedGridSpots.ContainsKey(gridPosition);
     }
 
+    public bool IsOverheadGridSpotReserved(Vector2Int gridPosition)
+    {
+        return reservedOverheadGridSpots.ContainsKey(gridPosition);
+    }
+
     public void ReserveGridSpot(Vector2Int gridPosition, Item item)
     {
+        if (item != null && item.gameObject.layer == 11)
+        {
+            if (!reservedOverheadGridSpots.ContainsKey(gridPosition))
+            {
+                reservedOverheadGridSpots.Add(gridPosition, item);
+            }
+            return;
+        }
+
         if (!reservedGridSpots.ContainsKey(gridPosition))
         {
             reservedGridSpots.Add(gridPosition, item);
         }
     }
 
-    public void FinalizeItemPlacement(Vector2Int gridPosition)
+    public void FinalizeItemPlacement(Vector2Int gridPosition, Item item = null)
     {
-        if (reservedGridSpots.ContainsKey(gridPosition))
+        if (item == null)
         {
             reservedGridSpots.Remove(gridPosition);
+            reservedOverheadGridSpots.Remove(gridPosition);
+            return;
         }
+
+        if (item.gameObject.layer == 11)
+        {
+            if (reservedOverheadGridSpots.TryGetValue(gridPosition, out Item current) && current == item)
+            {
+                reservedOverheadGridSpots.Remove(gridPosition);
+            }
+        }
+        else
+        {
+            if (reservedGridSpots.TryGetValue(gridPosition, out Item current) && current == item)
+            {
+                reservedGridSpots.Remove(gridPosition);
+            }
+        }
+    }
+
+    // --- Grid occupancy (stationary items) ---
+    public void OccupyGridSpot(Vector2Int gridPosition, Item item)
+    {
+        occupiedGridSpots[gridPosition] = item;
+    }
+
+    public void ClearOccupiedGridSpot(Vector2Int gridPosition, Item item = null)
+    {
+        if (item == null)
+        {
+            occupiedGridSpots.Remove(gridPosition);
+            return;
+        }
+
+        if (occupiedGridSpots.TryGetValue(gridPosition, out Item current) && current == item)
+        {
+            occupiedGridSpots.Remove(gridPosition);
+        }
+    }
+
+    public bool IsGridSpotOccupied(Vector2Int gridPosition)
+    {
+        return occupiedGridSpots.ContainsKey(gridPosition);
+    }
+
+    public Item GetItemAtGridSpot(Vector2Int gridPosition)
+    {
+        occupiedGridSpots.TryGetValue(gridPosition, out Item item);
+        return item;
+    }
+
+    public void OccupyOverheadGridSpot(Vector2Int gridPosition, Item item)
+    {
+        occupiedOverheadGridSpots[gridPosition] = item;
+    }
+
+    public void ClearOccupiedOverheadGridSpot(Vector2Int gridPosition, Item item = null)
+    {
+        if (item == null)
+        {
+            occupiedOverheadGridSpots.Remove(gridPosition);
+            return;
+        }
+
+        if (occupiedOverheadGridSpots.TryGetValue(gridPosition, out Item current) && current == item)
+        {
+            occupiedOverheadGridSpots.Remove(gridPosition);
+        }
+    }
+
+    public bool IsOverheadGridSpotOccupied(Vector2Int gridPosition)
+    {
+        return occupiedOverheadGridSpots.ContainsKey(gridPosition);
+    }
+
+    public Item GetOverheadItemAtGridSpot(Vector2Int gridPosition)
+    {
+        occupiedOverheadGridSpots.TryGetValue(gridPosition, out Item item);
+        return item;
     }
 
 
@@ -146,6 +241,16 @@ public class GridManager : MonoBehaviour
 
     public bool TryReserveGridSpot(Vector2Int gridPosition, Item item)
     {
+        if (item != null && item.gameObject.layer == 11)
+        {
+            if (!reservedOverheadGridSpots.ContainsKey(gridPosition))
+            {
+                reservedOverheadGridSpots.Add(gridPosition, item);
+                return true;
+            }
+            return false;
+        }
+
         if (!reservedGridSpots.ContainsKey(gridPosition))
         {
             reservedGridSpots.Add(gridPosition, item);

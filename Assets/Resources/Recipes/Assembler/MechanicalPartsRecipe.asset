@@ -15,11 +15,11 @@ MonoBehaviour:
   _recipeName: Mechanical Parts Recipe
   _techRequirementId: t3
   _primaryInput: {fileID: 11400000, guid: 76c5c0e139816944a872c29754cb1b03, type: 2}
-  _primaryInputAmount: 10
+  _primaryInputAmount: 5
   _secondaryInput: {fileID: 11400000, guid: f9beaccf35641ea40babb506377a9f83, type: 2}
-  _secondaryInputAmount: 10
+  _secondaryInputAmount: 4
   tertiaryInput: {fileID: 11400000, guid: 019195acccaa6974eb3f142c6c4d3162, type: 2}
-  tertiaryInputAmount: 3
+  tertiaryInputAmount: 2
   _outputItem: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
   _outputAmount: 1
   assemblyTime: 10

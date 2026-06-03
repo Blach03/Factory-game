@@ -178,7 +178,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 8: Craft Science Packs in Inventory",
-            description = "Open inventory again with E. First craft Copper Wires, then craft 10 Basic Science Packs.",
+            description = "Open inventory again with E. First craft Copper Wires, then craft 5 Basic Science Packs.",
             onStepStart = () =>
             {
                 Debug.Log("[Tutorial] Step 8 started - Craft science packs in inventory");
@@ -190,7 +190,7 @@ public class TutorialManager : MonoBehaviour
                     "MainCanvas/InventoryPanel"
                 );
             },
-            onCheckComplete = () => CheckBasicSciencePackCraftedInInventory(10)
+            onCheckComplete = () => CheckBasicSciencePackCraftedInInventory(5)
         });
 
         // STEP 9: Open tech tree and research Assembler

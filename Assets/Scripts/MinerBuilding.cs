@@ -168,21 +168,8 @@ public class MinerBuilding : GridObject
     private bool IsOutputBlocked(Vector3 outputWorldPosition)
     {
         Vector2Int outputGridPosition = GridManager.Instance.WorldToGrid(outputWorldPosition);
-
-        if (GridManager.Instance.IsGridSpotReserved(outputGridPosition))
-        {
-            return true;
-        }
-
-        float overlapRadius = 0.1f;
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(outputWorldPosition, overlapRadius, itemLayerMask);
-
-        if (colliders.Length > 0)
-        {
-            return true;
-        }
-
-        return false;
+        return GridManager.Instance.IsGridSpotReserved(outputGridPosition) ||
+               GridManager.Instance.IsGridSpotOccupied(outputGridPosition);
     }
 
     public void RotateMiner(Direction newDirection)

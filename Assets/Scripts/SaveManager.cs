@@ -30,8 +30,13 @@ public class SaveManager : MonoBehaviour
     [SerializeField] private Slider loadingProgressBar;
     [SerializeField] private TextMeshProUGUI loadingStatusText;
 
+    [Header("Auto Save")]
+    [SerializeField] private bool autoSaveEnabled = true;
+    [SerializeField] private float autoSaveIntervalMinutes = 15f;
+
     private float totalPlayTimeSeconds = 0f;
     private bool isLoadInProgress = false;
+    private Coroutine autoSaveCoroutine;
 
     private static bool hasPendingLoadRequest = false;
     private static string pendingSaveToLoad = "";
@@ -82,6 +87,11 @@ public class SaveManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+        }
+
+        if (autoSaveCoroutine == null)
+        {
+            autoSaveCoroutine = StartCoroutine(AutoSaveRoutine());
         }
     }
 
@@ -178,6 +188,11 @@ public class SaveManager : MonoBehaviour
         yield return null; // Jeszcze jedna klatka, by UnlockManager zd��y� si� zainicjalizowa�
         UnlockManager unlocker = Object.FindAnyObjectByType<UnlockManager>();
         if (unlocker != null) unlocker.RefreshUnlocks();
+
+        if (UIManager.Instance != null && UIManager.Instance.inventoryUI != null)
+        {
+            UIManager.Instance.inventoryUI.SetupInventory();
+        }
 
         // Uruchom tutorial TYLKO dla nowej gry
         if (isNewGame)
@@ -556,5 +571,21 @@ public class SaveManager : MonoBehaviour
         }
 
         return new List<string>();
+    }
+
+    private System.Collections.IEnumerator AutoSaveRoutine()
+    {
+        while (true)
+        {
+            float intervalSeconds = Mathf.Max(60f, autoSaveIntervalMinutes * 60f);
+            yield return new WaitForSecondsRealtime(intervalSeconds);
+
+            if (!autoSaveEnabled) continue;
+            if (isLoadInProgress) continue;
+            if (SceneManager.GetActiveScene().name != "GameScene") continue;
+
+            SaveGameWithName("latest_save");
+            Debug.Log("[AutoSave] Saved to latest_save.");
+        }
     }
 }

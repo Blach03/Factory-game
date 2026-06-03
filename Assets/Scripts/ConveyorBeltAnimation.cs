@@ -4,44 +4,84 @@ public class ConveyorBeltAnimation : MonoBehaviour
 {
     public Vector2 direction = new Vector2(0, -1);
 
-    private Material mat;
+    private SpriteRenderer spriteRenderer;
+    private MaterialPropertyBlock propertyBlock;
     private ConveyorBelt standardBelt;
     private OverheadConveyor overheadBelt;
-    private static readonly int MainTexOffset = Shader.PropertyToID("_MainTex");
+    private bool isVisible = true;
+    private static readonly int MainTexST = Shader.PropertyToID("_MainTex_ST");
+    private float cachedSpeed;
 
     void Start()
     {
-        // Próbujemy pobraæ jeden lub drugi komponent
+        // Prï¿½bujemy pobraï¿½ jeden lub drugi komponent
         standardBelt = GetComponent<ConveyorBelt>();
         overheadBelt = GetComponent<OverheadConveyor>();
 
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
-            mat = spriteRenderer.material;
+            propertyBlock = new MaterialPropertyBlock();
         }
 
         if (standardBelt == null && overheadBelt == null)
         {
             Debug.LogWarning($"[ConveyorAnim] Brak skryptu pasa na {gameObject.name}!");
         }
+
+        cachedSpeed = GetCurrentSpeed();
+        ConveyorBeltAnimationManager.Register(this);
     }
 
-    void Update()
+    void OnEnable()
     {
-        if (mat == null) return;
+        ConveyorBeltAnimationManager.Register(this);
+    }
 
-        float currentSpeed = 0f;
+    void OnDisable()
+    {
+        ConveyorBeltAnimationManager.Unregister(this);
+    }
 
-        // Pobieramy prêdkoœæ z dostêpnego komponentu
+    public void ApplyScrollOffset()
+    {
+        if (!isVisible || spriteRenderer == null || propertyBlock == null) return;
+
+        float currentSpeed = GetCurrentSpeed();
+        if (!Mathf.Approximately(currentSpeed, cachedSpeed))
+        {
+            cachedSpeed = currentSpeed;
+        }
+
+        Vector2 globalOffset = direction * (Time.time * cachedSpeed);
+
+        spriteRenderer.GetPropertyBlock(propertyBlock);
+        propertyBlock.SetVector(MainTexST, new Vector4(1f, 1f, globalOffset.x, globalOffset.y));
+        spriteRenderer.SetPropertyBlock(propertyBlock);
+    }
+
+    private float GetCurrentSpeed()
+    {
         if (standardBelt != null)
-            currentSpeed = standardBelt.CurrentBeltSpeed;
-        else if (overheadBelt != null)
-            currentSpeed = overheadBelt.CurrentBeltSpeed; // Upewnij siê, ¿e OverheadConveyor te¿ ma tê w³aœciwoœæ
-        else
-            return;
+        {
+            return standardBelt.CurrentBeltSpeed;
+        }
 
-        Vector2 globalOffset = direction * (Time.time * currentSpeed);
-        mat.SetTextureOffset(MainTexOffset, globalOffset);
+        if (overheadBelt != null)
+        {
+            return overheadBelt.CurrentBeltSpeed;
+        }
+
+        return 0f;
+    }
+
+    void OnBecameVisible()
+    {
+        isVisible = true;
+    }
+
+    void OnBecameInvisible()
+    {
+        isVisible = false;
     }
 }

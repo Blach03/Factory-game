@@ -26,6 +26,7 @@ public class ConveyorBelt : GridObject
     private const int OVERHEAD_LAYER_ID = 11;
 
     private bool isHoldingItem = false;
+    private Item heldItem = null;
     private int overheadDelayFrames = 0;
     private const int MAX_OVERHEAD_DELAY_FRAMES = 20;
     private float checkTimer = 0f;
@@ -65,6 +66,28 @@ public class ConveyorBelt : GridObject
     void Start()
     {
         UpdateVisualRotation();
+        // Check for a stationary item already on this belt (e.g. after loading a save).
+        StartCoroutine(CheckForExistingItemDelayed());
+    }
+
+    private System.Collections.IEnumerator CheckForExistingItemDelayed()
+    {
+        yield return null; // wait one frame so all Items have registered their occupation in Start
+        if (GridManager.Instance != null)
+        {
+            Item existing = GridManager.Instance.GetItemAtGridSpot(GetGridPosition());
+            if (existing != null && !existing.isBeingMoved)
+                NotifyItemArrived(existing);
+        }
+    }
+
+    /// <summary>Called by Item when it finishes moving onto this belt's grid cell.</summary>
+    public void NotifyItemArrived(Item item)
+    {
+        heldItem = item;
+        isHoldingItem = true;
+        checkTimer = 0f; // trigger an immediate check
+        ForceCheckForMovement();
     }
 
     public void RotateBelt(Direction newDirection)
@@ -86,7 +109,13 @@ public class ConveyorBelt : GridObject
 
     private bool CanOverheadAcceptItem(OverheadConveyor overhead)
     {
-        if (overhead == null) return false;
+        if (overhead == null || GridManager.Instance == null) return false;
+
+        if (GridManager.Instance.IsOverheadGridSpotOccupied(overhead.GetGridPosition()) ||
+            GridManager.Instance.IsOverheadGridSpotReserved(overhead.GetGridPosition()))
+        {
+            return false;
+        }
 
         Vector2Int nextGridPosition = GetPositionInDirection(overhead.GetGridPosition(), overhead.travelDirection);
 
@@ -94,7 +123,8 @@ public class ConveyorBelt : GridObject
 
         if (nextConveyor != null && nextConveyor.travelDirection == overhead.travelDirection)
         {
-            return nextConveyor.itemOnOverheadLayer == null;
+            return !GridManager.Instance.IsOverheadGridSpotOccupied(nextGridPosition) &&
+                   !GridManager.Instance.IsOverheadGridSpotReserved(nextGridPosition);
         }
         return true;
     }
@@ -125,24 +155,21 @@ public class ConveyorBelt : GridObject
 
     private void ForceCheckForMovement()
     {
-        float overlapRadius = 0.1f;
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, overlapRadius, itemLayerMask);
-
-        Item itemToMove = null;
-
-        foreach (Collider2D col in colliders)
+        // Use the stored reference; fall back to grid lookup if needed.
+        Item itemToMove = heldItem;
+        if (itemToMove == null || itemToMove.isBeingMoved || itemToMove.gameObject.layer != 8)
         {
-            Item item = col.GetComponent<Item>();
-            if (item != null && !item.isBeingMoved && item.gameObject.layer == 8)
-            {
-                itemToMove = item;
-                break;
-            }
+            itemToMove = GridManager.Instance != null
+                ? GridManager.Instance.GetItemAtGridSpot(GetGridPosition())
+                : null;
+            if (itemToMove != null && (itemToMove.isBeingMoved || itemToMove.gameObject.layer != 8))
+                itemToMove = null;
         }
 
         if (itemToMove == null)
         {
             isHoldingItem = false;
+            heldItem = null;
             overheadDelayFrames = 0;
             return;
         }
@@ -170,7 +197,7 @@ public class ConveyorBelt : GridObject
                 {
                     Debug.Log($"[CB-OH-BLOCKED] Overhead jest ZAJ�TY. Pcham dalej.");
                 }
-                else
+                else if (overhead.IsStartSegment && CanOverheadAcceptItem(overhead))
                 {
                     overheadDelayFrames = MAX_OVERHEAD_DELAY_FRAMES;
                     Debug.Log($"[CB-OH-ACCEPT] Overhead jest WOLNY. Rozpoczynam op�nienie ({MAX_OVERHEAD_DELAY_FRAMES} klatek).");
@@ -191,58 +218,14 @@ public class ConveyorBelt : GridObject
         itemToMove.SetTargetPosition(nextWorldPosition, CurrentBeltSpeed);
         TutorialItemTracker.OnItemMovedByConveyor();
         isHoldingItem = false;
+        heldItem = null;
     }
-
-    void OnTriggerStay2D(Collider2D other)
-    {
-        Item item = other.GetComponent<Item>();
-        if (item == null) return;
-
-        if (item.gameObject.layer == OVERHEAD_LAYER_ID)
-        {
-            return;
-        }
-
-        if (item.isBeingMoved && Vector3.Distance(item.transform.position, transform.position) > 0.1f)
-        {
-            return;
-        }
-
-        if (Vector3.Distance(item.transform.position, transform.position) > 0.1f)
-        {
-            return;
-        }
-
-        isHoldingItem = true;
-        ForceCheckForMovement();
-    }
-
 
     private bool IsOutputBlocked(Vector3 outputWorldPosition)
     {
         Vector2Int outputGridPosition = GridManager.Instance.WorldToGrid(outputWorldPosition);
-
-        if (GridManager.Instance.IsGridSpotReserved(outputGridPosition))
-        {
-            return true;
-        }
-
-        float overlapRadius = 0.1f;
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(outputWorldPosition, overlapRadius, itemLayerMask);
-
-        if (colliders.Length > 0)
-        {
-            foreach (Collider2D col in colliders)
-            {
-                Item item = col.GetComponent<Item>();
-                if (item != null && item.gameObject.layer == 8)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return GridManager.Instance.IsGridSpotReserved(outputGridPosition) ||
+               GridManager.Instance.IsGridSpotOccupied(outputGridPosition);
     }
 
     private void UpdateVisualRotation()

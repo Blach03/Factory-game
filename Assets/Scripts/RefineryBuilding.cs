@@ -48,7 +48,6 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
     public float outputSpeed = 3.0f;
     public float timer;
     private bool isProcessing = false;
-    private static LayerMask itemLayerMask;
 
     public bool IsMachineWorking => isProcessing;
 
@@ -57,7 +56,6 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
         base.Awake();
         size = new Vector2Int(3, 3);
         objectType = GridObjectType.Building;
-        if (itemLayerMask == 0) itemLayerMask = LayerMask.GetMask("Item");
     }
 
     void Start()
@@ -308,6 +306,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
     private void TryConsumeItemsFromWorld()
     {
         if (currentItemInput >= inputCapacity) return;
+        if (GridManager.Instance == null || currentRecipe == null) return;
 
         // Skanujemy obszar 3x3 budynku
         for (int x = 0; x < size.x; x++)
@@ -315,18 +314,13 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
             for (int y = 0; y < size.y; y++)
             {
                 Vector2Int tilePos = occupiedPosition + new Vector2Int(x, y);
-                Vector3 worldPos = GridManager.Instance.GridToWorld(tilePos) + new Vector3(0.5f, 0.5f, 0f);
-                
-                Collider2D col = Physics2D.OverlapBox(worldPos, Vector2.one * 0.8f, 0, itemLayerMask);
-                if (col != null)
+
+                Item item = GridManager.Instance.GetItemAtGridSpot(tilePos);
+                if (item != null && !item.isBeingMoved && item.itemData == currentRecipe.inputItem)
                 {
-                    Item item = col.GetComponent<Item>();
-                    if (item != null && !item.isBeingMoved && item.itemData == currentRecipe.inputItem)
-                    {
-                        currentItemInput++;
-                        Destroy(item.gameObject);
-                        if (currentItemInput >= inputCapacity) return;
-                    }
+                    currentItemInput++;
+                    Destroy(item.gameObject);
+                    if (currentItemInput >= inputCapacity) return;
                 }
             }
         }
@@ -449,7 +443,11 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
 
     private bool IsOutputBlocked(Vector3 pos)
     {
-        return Physics2D.OverlapCircle(pos, 0.1f, itemLayerMask) != null;
+        if (GridManager.Instance == null) return false;
+
+        Vector2Int outputGridPosition = GridManager.Instance.WorldToGrid(pos);
+        return GridManager.Instance.IsGridSpotReserved(outputGridPosition) ||
+               GridManager.Instance.IsGridSpotOccupied(outputGridPosition);
     }
 
     private void OnDrawGizmos()

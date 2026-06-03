@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using System.Linq;
 
 public class Item : SavableEntity
 {
@@ -16,14 +17,59 @@ public class Item : SavableEntity
     public bool isOnOverheadLayer = false;
 
     private SpriteRenderer spriteRenderer;
+    private Rigidbody2D rb;
+    private Collider2D itemCollider;
 
     private Vector3 targetWorldPosition;
     private float currentMoveSpeed;
+    private Vector2Int currentReservedGridPos = Vector2Int.zero;
 
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
-        SetLayerAndSortingOrderForConveyor();
+
+        // Preserve the serialized layer set by SaveManager during load.
+        // If this object was saved on overhead, do not force it back to conveyor.
+        if (gameObject.layer == OVERHEAD_LAYER_ID)
+        {
+            SetLayerAndSortingOrderForOverhead();
+        }
+        else
+        {
+            SetLayerAndSortingOrderForConveyor();
+        }
+
+        // Make items kinematic so Unity doesn't run physics island simulation on them.
+        rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.simulated = false;
+        }
+
+        // Physics-based detection is no longer used; disable collider to remove contact cost.
+        itemCollider = GetComponent<Collider2D>();
+        if (itemCollider != null)
+        {
+            itemCollider.enabled = false;
+        }
+
+        // Register occupation for items that start stationary (e.g. loaded from a save).
+        if (!isBeingMoved)
+        {
+            RegisterCurrentGridOccupation();
+
+            // Kick-start belts after load so stationary items don't wait for incidental updates.
+            if (gameObject.layer == CONVEYOR_LAYER_ID && GridManager.Instance != null)
+            {
+                Vector2Int gridPos = GridManager.Instance.WorldToGrid(transform.position);
+                ConveyorBelt belt = GetConveyorAtGridPosition(gridPos);
+                if (belt != null)
+                {
+                    belt.NotifyItemArrived(this);
+                }
+            }
+        }
     }
 
     public void Initialize(ResourceData data)
@@ -41,6 +87,11 @@ public class Item : SavableEntity
             spriteRenderer.sortingOrder = CONVEYOR_SORTING_ORDER;
         }
         gameObject.layer = CONVEYOR_LAYER_ID;
+
+        if (!isBeingMoved)
+        {
+            RegisterCurrentGridOccupation();
+        }
     }
 
     public void SetLayerAndSortingOrderForOverhead()
@@ -51,6 +102,11 @@ public class Item : SavableEntity
             spriteRenderer.sortingOrder = OVERHEAD_SORTING_ORDER;
         }
         gameObject.layer = OVERHEAD_LAYER_ID;
+
+        if (!isBeingMoved)
+        {
+            RegisterCurrentGridOccupation();
+        }
     }
 
     public bool IsOnOverheadLayer()
@@ -58,14 +114,55 @@ public class Item : SavableEntity
         return isOnOverheadLayer;
     }
 
-    private Vector2Int currentReservedGridPos = Vector2Int.zero;
+    private ConveyorBelt GetConveyorAtGridPosition(Vector2Int gridPos)
+    {
+        if (GridManager.Instance == null) return null;
+
+        return GridManager.Instance.GetAllGridObjects(gridPos)
+            .OfType<ConveyorBelt>()
+            .FirstOrDefault();
+    }
+
+    private void RegisterCurrentGridOccupation()
+    {
+        if (GridManager.Instance == null) return;
+
+        Vector2Int gridPos = GridManager.Instance.WorldToGrid(transform.position);
+        if (gameObject.layer == OVERHEAD_LAYER_ID)
+        {
+            GridManager.Instance.OccupyOverheadGridSpot(gridPos, this);
+            GridManager.Instance.ClearOccupiedGridSpot(gridPos, this);
+        }
+        else
+        {
+            GridManager.Instance.OccupyGridSpot(gridPos, this);
+            GridManager.Instance.ClearOccupiedOverheadGridSpot(gridPos, this);
+        }
+    }
+
+    private void ClearCurrentGridOccupation()
+    {
+        if (GridManager.Instance == null) return;
+
+        Vector2Int gridPos = GridManager.Instance.WorldToGrid(transform.position);
+        if (gameObject.layer == OVERHEAD_LAYER_ID)
+        {
+            GridManager.Instance.ClearOccupiedOverheadGridSpot(gridPos, this);
+        }
+        else
+        {
+            GridManager.Instance.ClearOccupiedGridSpot(gridPos, this);
+        }
+    }
 
     public void SetTargetPosition(Vector3 worldPosition, float speed = 0f)
     {
         if (GridManager.Instance != null)
         {
-            Vector2Int targetGridPos = GridManager.Instance.WorldToGrid(worldPosition);
+            // Release the grid cell this item is currently occupying.
+            ClearCurrentGridOccupation();
 
+            Vector2Int targetGridPos = GridManager.Instance.WorldToGrid(worldPosition);
             GridManager.Instance.ReserveGridSpot(targetGridPos, this);
             currentReservedGridPos = targetGridPos;
         }
@@ -87,21 +184,54 @@ public class Item : SavableEntity
 
     void Update()
     {
-        if (isBeingMoved)
+        if (!isBeingMoved) return;
+
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            targetWorldPosition,
+            currentMoveSpeed * Time.deltaTime
+        );
+
+        if (Vector3.Distance(transform.position, targetWorldPosition) < 0.001f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetWorldPosition, currentMoveSpeed * Time.deltaTime);
+            transform.position = targetWorldPosition;
 
-            if (Vector3.Distance(transform.position, targetWorldPosition) < 0.001f)
+            // Mark as stationary before notifying conveyor logic.
+            isBeingMoved = false;
+            Vector2Int arrivedGridPos = currentReservedGridPos;
+
+            if (GridManager.Instance != null)
             {
-                transform.position = targetWorldPosition;
+                RegisterCurrentGridOccupation();
+                GridManager.Instance.FinalizeItemPlacement(arrivedGridPos, this);
 
-                if (GridManager.Instance != null)
+                // Notify lower conveyor only for lower-layer items.
+                if (gameObject.layer == CONVEYOR_LAYER_ID)
                 {
-                    GridManager.Instance.FinalizeItemPlacement(currentReservedGridPos);
-                    currentReservedGridPos = Vector2Int.zero;
+                    ConveyorBelt belt = GetConveyorAtGridPosition(arrivedGridPos);
+                    if (belt != null)
+                    {
+                        belt.NotifyItemArrived(this);
+                    }
                 }
+            }
 
-                isBeingMoved = false;
+            // If conveyor logic already scheduled a new move, do not wipe the new reservation.
+            if (currentReservedGridPos == arrivedGridPos)
+            {
+                currentReservedGridPos = Vector2Int.zero;
+            }
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (GridManager.Instance != null)
+        {
+            ClearCurrentGridOccupation();
+            if (currentReservedGridPos != Vector2Int.zero)
+            {
+                GridManager.Instance.FinalizeItemPlacement(currentReservedGridPos, this);
             }
         }
     }
@@ -110,13 +240,12 @@ public class Item : SavableEntity
     public class ItemSaveData
     {
         public string resourceName;
-        public float[] pos; // float[] jest �atwiejszy dla JsonUtility ni� Vector3
+        public float[] pos; // float[] is easier for JsonUtility than Vector3
         public float[] targetPos;
         public bool moving;
         public float speed;
     }
 
-    // DODAJ S�OWO override
     public override string GetSerializedData()
     {
         ItemSaveData data = new ItemSaveData();
@@ -124,21 +253,18 @@ public class Item : SavableEntity
         data.pos = new float[] { transform.position.x, transform.position.y, transform.position.z };
         data.targetPos = new float[] { targetWorldPosition.x, targetWorldPosition.y, targetWorldPosition.z };
         data.moving = isBeingMoved;
-        data.speed = currentMoveSpeed; // upewnij si�, �e masz tak� zmienn�
+        data.speed = currentMoveSpeed;
 
         return JsonUtility.ToJson(data);
     }
 
-    // T� metod� wywo�amy w SaveManagerze podczas wczytywania
     public override void LoadComponentData(string json)
     {
         if (string.IsNullOrEmpty(json)) return;
         ItemSaveData data = JsonUtility.FromJson<ItemSaveData>(json);
 
-        // Przywracamy fizyczn� pozycj�
         transform.position = new Vector3(data.pos[0], data.pos[1], data.pos[2]);
 
-        // Przywracamy cel ruchu
         if (data.moving)
         {
             Vector3 target = new Vector3(data.targetPos[0], data.targetPos[1], data.targetPos[2]);

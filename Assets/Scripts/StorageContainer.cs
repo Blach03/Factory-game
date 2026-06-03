@@ -9,8 +9,6 @@ public class StorageContainer : GridObject
     public float checkInterval = 0.5f;
     private float checkTimer;
 
-    private static LayerMask itemLayerMask;
-
     [Header("Limit i Stan")]
     public int itemLimit = 100;
     private ResourceData trackedResource = null;
@@ -25,11 +23,6 @@ public class StorageContainer : GridObject
         objectType = GridObjectType.Building;
         isBlockingPlacement = true;
         size = new Vector2Int(1, 1);
-
-        if (itemLayerMask == 0)
-        {
-            itemLayerMask = LayerMask.GetMask("Item");
-        }
     }
 
     void Start()
@@ -52,28 +45,10 @@ public class StorageContainer : GridObject
         List<Item> foundItems = new List<Item>();
         if (GridManager.Instance == null) return foundItems;
 
-        float tileSize = GridManager.Instance.tileSize;
-        Vector2 scanSize = new Vector2(tileSize, tileSize);
-        Vector2Int tileGridPos = occupiedPosition;
-
-        Vector3 tileWorldPos = GridManager.Instance.GridToWorld(tileGridPos) +
-                               new Vector3(tileSize / 2f, tileSize / 2f, 0f);
-
-        Collider2D[] foundColliders = Physics2D.OverlapBoxAll(
-            tileWorldPos,
-            scanSize * 0.9f,
-            0f,
-            itemLayerMask
-        );
-
-        foreach (Collider2D col in foundColliders)
+        Item item = GridManager.Instance.GetItemAtGridSpot(occupiedPosition);
+        if (item != null && !item.isBeingMoved)
         {
-            Item item = col.GetComponent<Item>();
-
-            if (item != null && !item.isBeingMoved)
-            {
-                foundItems.Add(item);
-            }
+            foundItems.Add(item);
         }
 
         return foundItems;
@@ -151,12 +126,18 @@ public class StorageContainer : GridObject
     {
         StorageContainerComponentData data = new StorageContainerComponentData
         {
+            hasItemLimit = true,
             itemLimit = this.itemLimit,
             trackedResourceName = this.trackedResource != null ? this.trackedResource.resourceName : null
         };
 
         // U�ywamy wbudowanej metody Unity
         return JsonUtility.ToJson(data);
+    }
+
+    public override string GetSerializedData()
+    {
+        return SaveComponentData();
     }
 
     public override void LoadComponentData(string json)
@@ -166,7 +147,12 @@ public class StorageContainer : GridObject
         try
         {
             StorageContainerComponentData data = JsonUtility.FromJson<StorageContainerComponentData>(json);
-            this.itemLimit = data.itemLimit;
+
+            // Backward compatibility: starsze save'y mogły nie mieć pola itemLimit.
+            if (data != null && data.hasItemLimit)
+            {
+                this.itemLimit = Mathf.Max(0, data.itemLimit);
+            }
 
             if (!string.IsNullOrEmpty(data.trackedResourceName))
             {

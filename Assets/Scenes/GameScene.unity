@@ -19874,7 +19874,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startingInventory:
   - resource: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
-    amount: 100
+    amount: 150
   - resource: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
     amount: 100
   - resource: {fileID: 11400000, guid: f9beaccf35641ea40babb506377a9f83, type: 2}

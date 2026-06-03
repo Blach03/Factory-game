@@ -17,13 +17,13 @@ public class OverheadConveyor : GridObject
     private bool isStartSegment = false;
     private bool isEndSegment = false;
 
+    public bool IsStartSegment => isStartSegment;
+
     public Item itemOnOverheadLayer = null;
     public Item itemToPickup = null;
 
     private const int ITEM_LAYER_ID = 8;
     private const int OVERHEAD_LAYER_ID = 11;
-
-    private static LayerMask lowerLayerMask;
 
     protected override void Awake()
     {
@@ -32,10 +32,6 @@ public class OverheadConveyor : GridObject
         isBlockingPlacement = false;
         size = new Vector2Int(1, 1);
 
-        if (lowerLayerMask == 0)
-        {
-            lowerLayerMask = 1 << ITEM_LAYER_ID;
-        }
     }
 
     void Start()
@@ -66,41 +62,6 @@ public class OverheadConveyor : GridObject
     public void OnNeighborChange()
     {
         CheckChainState();
-    }
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        Item item = other.GetComponent<Item>();
-        if (item == null) return;
-
-        if (item.IsOnOverheadLayer())
-        {
-            if (itemOnOverheadLayer != null && itemOnOverheadLayer != item)
-            {
-                return;
-            }
-
-            itemOnOverheadLayer = item;
-        }
-        else
-        {
-            itemToPickup = item;
-        }
-    }
-
-    void OnTriggerExit2D(Collider2D other)
-    {
-        Item item = other.GetComponent<Item>();
-        if (item == null) return;
-
-        if (itemOnOverheadLayer == item)
-        {
-            itemOnOverheadLayer = null;
-        }
-        if (itemToPickup == item)
-        {
-            itemToPickup = null;
-        }
     }
 
     public void RotateBelt(ConveyorBelt.Direction newDirection)
@@ -195,9 +156,17 @@ public class OverheadConveyor : GridObject
 
     private void ForceCheckForMovement()
     {
-        if (isStartSegment && itemToPickup == null)
+        Vector2Int currentPos = GetGridPosition();
+
+        itemOnOverheadLayer = GridManager.Instance != null
+            ? GridManager.Instance.GetOverheadItemAtGridSpot(currentPos)
+            : null;
+
+        if (isStartSegment)
         {
-            itemToPickup = FindItemOnLayer(GetGridPosition(), ITEM_LAYER_ID);
+            itemToPickup = GridManager.Instance != null
+                ? GridManager.Instance.GetItemAtGridSpot(currentPos)
+                : null;
         }
 
         if (itemOnOverheadLayer != null && !itemOnOverheadLayer.isBeingMoved)
@@ -215,29 +184,6 @@ public class OverheadConveyor : GridObject
         }
     }
 
-    private Item FindItemOnLayer(Vector2Int gridPos, int layerId)
-    {
-        float overlapRadius = 0.1f;
-        Vector3 worldPos = GridManager.Instance.GridToWorld(gridPos);
-        LayerMask targetMask = 1 << layerId;
-
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(worldPos, overlapRadius, targetMask);
-
-        foreach (Collider2D col in colliders)
-        {
-            Item item = col.GetComponent<Item>();
-            if (item != null)
-            {
-                if ((layerId == OVERHEAD_LAYER_ID && item.gameObject.layer == OVERHEAD_LAYER_ID) ||
-                    (layerId == ITEM_LAYER_ID && item.gameObject.layer == ITEM_LAYER_ID))
-                {
-                    return item;
-                }
-            }
-        }
-        return null;
-    }
-
     private bool CanPickupFromLowerLayer()
     {
         return true;
@@ -250,7 +196,9 @@ public class OverheadConveyor : GridObject
 
         OverheadConveyor nextConveyor = GetNeighborOverheadConveyor(nextGridPosition);
 
-        if (nextConveyor != null && nextConveyor.itemOnOverheadLayer != null)
+        if (nextConveyor != null && GridManager.Instance != null &&
+            (GridManager.Instance.IsOverheadGridSpotOccupied(nextGridPosition) ||
+             GridManager.Instance.IsOverheadGridSpotReserved(nextGridPosition)))
         {
             return;
         }
@@ -292,7 +240,9 @@ public class OverheadConveyor : GridObject
             return;
         }
 
-        if (nextConveyor.itemOnOverheadLayer != null)
+        if (GridManager.Instance != null &&
+            (GridManager.Instance.IsOverheadGridSpotOccupied(nextGridPosition) ||
+             GridManager.Instance.IsOverheadGridSpotReserved(nextGridPosition)))
         {
             return;
         }
@@ -317,20 +267,10 @@ public class OverheadConveyor : GridObject
 
     private bool IsLowerLayerBlocked(Vector3 worldPosition)
     {
-        float overlapRadius = 0.1f;
-        LayerMask targetMask = 1 << ITEM_LAYER_ID;
+        if (GridManager.Instance == null) return false;
 
-        Collider2D[] colliders = Physics2D.OverlapCircleAll(worldPosition, overlapRadius, targetMask);
-
-        foreach (Collider2D col in colliders)
-        {
-            Item item = col.GetComponent<Item>();
-            if (item != null && !item.isBeingMoved && item.gameObject.layer == ITEM_LAYER_ID)
-            {
-                return true;
-            }
-        }
-        return false;
+        Vector2Int gridPos = GridManager.Instance.WorldToGrid(worldPosition);
+        return GridManager.Instance.IsGridSpotReserved(gridPos) || GridManager.Instance.IsGridSpotOccupied(gridPos);
     }
 
     [System.Serializable]
@@ -354,10 +294,10 @@ public class OverheadConveyor : GridObject
         if (string.IsNullOrEmpty(json)) return;
         BuildingSaveData data = JsonUtility.FromJson<BuildingSaveData>(json);
 
-        // Przywracamy Enum z inta i odœwie¿amy wizualia strza³ki
+        // Przywracamy Enum z inta i odï¿½wieï¿½amy wizualia strzaï¿½ki
         this.travelDirection = (ConveyorBelt.Direction)data.outputDirectionInt;
 
-        // Wywo³ujemy Twoj¹ istniej¹c¹ metodê wizualizacji
+        // Wywoï¿½ujemy Twojï¿½ istniejï¿½cï¿½ metodï¿½ wizualizacji
         RotateBelt(this.travelDirection);
     }
 }
