@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class CameraController : MonoBehaviour
 {
@@ -31,8 +32,16 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
-        HandleMovement();
-        HandleZoom();
+        if (!IsCameraMovementBlocked())
+        {
+            HandleMovement();
+        }
+
+        if (!IsCameraZoomBlocked())
+        {
+            HandleZoom();
+        }
+
         CheckForNewChunks();
 
         if (Input.GetKeyDown(KeyCode.H))
@@ -115,5 +124,27 @@ public class CameraController : MonoBehaviour
             float newSize = cam.orthographicSize - scrollInput * zoomSpeed;
             cam.orthographicSize = Mathf.Clamp(newSize, minZoom, maxZoom);
         }
+    }
+
+    private static bool IsCameraMovementBlocked()
+    {
+        // Pause menu sets Time.timeScale to 0 and should freeze camera control.
+        return Time.timeScale == 0f;
+    }
+
+    private static bool IsCameraZoomBlocked()
+    {
+        // Ignore mouse wheel zoom while interacting with UI (e.g. save list scroll view).
+        return Time.timeScale == 0f || IsPointerOverUi();
+    }
+
+    private static bool IsPointerOverUi()
+    {
+        if (EventSystem.current == null)
+        {
+            return false;
+        }
+
+        return EventSystem.current.IsPointerOverGameObject();
     }
 }

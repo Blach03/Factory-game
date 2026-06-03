@@ -54,6 +54,49 @@ public class PauseMenuUI : MonoBehaviour
                 PrepareOverwrite(save.Name);
             });
         }
+
+        RebuildSaveListLayout();
+    }
+
+    private void RebuildSaveListLayout()
+    {
+        if (saveListContainer == null)
+        {
+            return;
+        }
+
+        RectTransform contentRect = saveListContainer as RectTransform ?? saveListContainer.GetComponent<RectTransform>();
+        if (contentRect == null)
+        {
+            return;
+        }
+
+        VerticalLayoutGroup layoutGroup = contentRect.GetComponent<VerticalLayoutGroup>();
+        if (layoutGroup != null)
+        {
+            layoutGroup.childControlHeight = true;
+            layoutGroup.childForceExpandHeight = false;
+        }
+
+        ContentSizeFitter fitter = contentRect.GetComponent<ContentSizeFitter>();
+        if (fitter == null)
+        {
+            fitter = contentRect.gameObject.AddComponent<ContentSizeFitter>();
+        }
+
+        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+
+        ScrollRect scrollRect = contentRect.GetComponentInParent<ScrollRect>(true);
+        if (scrollRect != null)
+        {
+            scrollRect.content = contentRect;
+            scrollRect.StopMovement();
+            scrollRect.verticalNormalizedPosition = 1f;
+        }
     }
 
     private void PrepareOverwrite(string fileName)
