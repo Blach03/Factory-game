@@ -194,7 +194,8 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding, IMachineWorkS
             return;
         }
 
-        launchSfxSource.PlayOneShot(launchSfx, launchSfxVolume);
+        float machineVolume = AudioManager.Instance != null ? AudioManager.Instance.MachineCategoryVolume : 1f;
+        launchSfxSource.PlayOneShot(launchSfx, launchSfxVolume * machineVolume);
     }
 
     // --- RESZTA LOGIKI (BEZ ZMIAN) ---

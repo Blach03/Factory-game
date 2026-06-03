@@ -65,7 +65,7 @@ public class MachineAudioController : MonoBehaviour
             source.clip = machineLoopClip;
         }
 
-        source.volume = baseVolume;
+        source.volume = baseVolume * globalVolumeMultiplier;
         source.pitch = basePitch;
 
         UpdateDistanceForZoom();

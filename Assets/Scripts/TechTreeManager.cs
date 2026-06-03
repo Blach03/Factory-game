@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public class TechTreeManager : MonoBehaviour
 {
     public static TechTreeManager Instance;
+    private static HashSet<string> cachedResearchedIds = new HashSet<string>();
+    private static bool hasCachedResearchState;
+
     private static TextAsset cachedJsonFile;
     private static GameObject cachedTechNodePrefab;
     private static GameObject cachedLinePrefab;
@@ -26,6 +29,7 @@ public class TechTreeManager : MonoBehaviour
     void Awake()
     {
         CacheRuntimeConfig();
+        ApplyCachedResearchStateIfAvailable();
 
         if (Instance == null)
         {
@@ -41,6 +45,7 @@ public class TechTreeManager : MonoBehaviour
     private void OnEnable()
     {
         CacheRuntimeConfig();
+        ApplyCachedResearchStateIfAvailable();
 
         if (Instance == null)
         {
@@ -187,6 +192,8 @@ public class TechTreeManager : MonoBehaviour
             researchedIds = new HashSet<string>(pendingLoadIds);
             pendingLoadIds = null;
         }
+
+        CacheResearchState();
 
         RefreshAllNodes();
 
@@ -526,6 +533,7 @@ public class TechTreeManager : MonoBehaviour
         if (!researchedIds.Contains(node.id))
         {
             researchedIds.Add(node.id);
+            CacheResearchState();
             RefreshAllNodes(); // Od�wie�a kolory w drzewku
         }
 
@@ -642,7 +650,35 @@ public class TechTreeManager : MonoBehaviour
 
     public List<string> GetResearchedIds()
     {
+        CacheResearchState();
         return researchedIds.ToList();
+    }
+
+    public static List<string> GetResearchedIdsSnapshot()
+    {
+        if (Instance != null)
+        {
+            return Instance.GetResearchedIds();
+        }
+
+        return hasCachedResearchState
+            ? cachedResearchedIds.ToList()
+            : new List<string>();
+    }
+
+    public static void RestoreResearchedIdsSnapshot(List<string> loadedIds)
+    {
+        HashSet<string> normalized = loadedIds != null
+            ? new HashSet<string>(loadedIds.Where(id => !string.IsNullOrWhiteSpace(id)))
+            : new HashSet<string>();
+
+        cachedResearchedIds = normalized;
+        hasCachedResearchState = true;
+
+        if (Instance != null)
+        {
+            Instance.ApplyLoadedResearchSet(normalized);
+        }
     }
 
     // Ta metoda przyjmuje list� z wczytanego pliku i aktualizuje stan drzewka
@@ -650,17 +686,19 @@ public class TechTreeManager : MonoBehaviour
 
     public void LoadFromSave(List<string> loadedIds)
     {
-        if (loadedIds != null && loadedIds.Count > 0)
+        if (loadedIds == null)
         {
-            researchedIds = new HashSet<string>(loadedIds);
+            loadedIds = new List<string>();
+        }
 
-            if (spawnedNodes != null && spawnedNodes.Count > 0)
+        if (loadedIds.Count > 0)
+        {
+            HashSet<string> normalized = new HashSet<string>(loadedIds.Where(id => !string.IsNullOrWhiteSpace(id)));
+            ApplyLoadedResearchSet(normalized);
+
+            if (spawnedNodes == null || spawnedNodes.Count == 0)
             {
-                RefreshAllNodes();
-            }
-            else
-            {
-                pendingLoadIds = loadedIds;
+                pendingLoadIds = normalized.ToList();
             }
 
             // DODAJ TO TUTAJ:
@@ -673,8 +711,49 @@ public class TechTreeManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("<color=cyan>[TechTreeManager]</color> Otrzymana lista technologii jest pusta lub null!");
+            researchedIds.Clear();
+            pendingLoadIds = null;
+            CacheResearchState();
+
+            if (spawnedNodes != null && spawnedNodes.Count > 0)
+            {
+                RefreshAllNodes();
+            }
+
+            UnlockManager unlocker = Object.FindAnyObjectByType<UnlockManager>();
+            if (unlocker != null)
+            {
+                unlocker.RefreshUnlocks();
+            }
         }
+    }
+
+    private void ApplyLoadedResearchSet(HashSet<string> loadedSet)
+    {
+        researchedIds = loadedSet ?? new HashSet<string>();
+        pendingLoadIds = null;
+        CacheResearchState();
+
+        if (spawnedNodes != null && spawnedNodes.Count > 0)
+        {
+            RefreshAllNodes();
+        }
+    }
+
+    private void ApplyCachedResearchStateIfAvailable()
+    {
+        if (!hasCachedResearchState)
+        {
+            return;
+        }
+
+        researchedIds = new HashSet<string>(cachedResearchedIds);
+    }
+
+    private void CacheResearchState()
+    {
+        cachedResearchedIds = new HashSet<string>(researchedIds);
+        hasCachedResearchState = true;
     }
 
     public float GetConveyorSpeedMultiplier()

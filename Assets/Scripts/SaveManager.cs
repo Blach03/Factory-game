@@ -8,6 +8,16 @@ using UnityEngine.UI;
 
 public class SaveManager : MonoBehaviour
 {
+    [System.Serializable]
+    private class LegacyTechSaveProbe
+    {
+        public List<string> researchedTechnologyIds;
+        public List<string> researchedIds;
+        public List<string> researchedTechIds;
+        public List<string> unlockedTechnologyIds;
+        public List<string> unlockedTechIds;
+    }
+
     public static SaveManager Instance { get; private set; }
 
     public event System.Action<bool, string> GameLoadCompleted;
@@ -133,6 +143,7 @@ public class SaveManager : MonoBehaviour
         if (isNewGame)
         {
             totalPlayTimeSeconds = 0f;
+            HandCraftingManager.RestoreQueueSnapshot(null);
             SetLoadingProgress(0.6f, "Generating world...");
 
             // --- TUTAJ ZMIANA: Szukamy nowego WorldGeneratora zamiast ResourceGenerator ---
@@ -315,10 +326,8 @@ public class SaveManager : MonoBehaviour
             saveData.inventoryData = PlayerInventory.Instance.GetSaveData();
         }
 
-        if (TechTreeManager.Instance != null)
-        {
-            saveData.researchedTechnologyIds = TechTreeManager.Instance.GetResearchedIds();
-        }
+        saveData.researchedTechnologyIds = GetResearchedTechnologyIdsForSave();
+        saveData.handCraftingQueueData = HandCraftingManager.GetQueueSnapshotForSave();
 
         // 2. Encje (Budynki, Przedmioty, Z�o�a)
         SavableEntity[] entities = Object.FindObjectsByType<SavableEntity>(FindObjectsSortMode.None);
@@ -361,6 +370,14 @@ public class SaveManager : MonoBehaviour
 
         string json = File.ReadAllText(fullPath);
         GameSaveData data = JsonUtility.FromJson<GameSaveData>(json);
+        if (data == null)
+        {
+            Debug.LogError("Nie udało się zdeserializować pliku zapisu.");
+            return false;
+        }
+
+        List<string> researchedIdsToLoad = ResolveResearchedTechnologyIds(data, json);
+        TechTreeManager.RestoreResearchedIdsSnapshot(researchedIdsToLoad);
 
         WorldGenerator worldGen = Object.FindFirstObjectByType<WorldGenerator>();
         if (worldGen != null)
@@ -377,18 +394,20 @@ public class SaveManager : MonoBehaviour
             PlayerInventory.Instance.LoadFromSave(data.inventoryData);
         }
 
+        HandCraftingManager.RestoreQueueSnapshot(data.handCraftingQueueData);
+
         // Szukamy WSZYSTKICH manager�w na scenie, nawet tych nieaktywnych (true)
         TechTreeManager tree = Object.FindObjectsByType<TechTreeManager>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault();
 
         if (tree != null)
         {
-            Debug.Log($"<color=green>[SaveManager]</color> Znaleziono drzewko! Przekazuj� {data.researchedTechnologyIds.Count} ID.");
-            tree.LoadFromSave(data.researchedTechnologyIds);
+            Debug.Log($"<color=green>[SaveManager]</color> Znaleziono drzewko! Przekazuj� {researchedIdsToLoad.Count} ID.");
+            tree.LoadFromSave(researchedIdsToLoad);
         }
         else
         {
-            // Je�li to wyskoczy, to znaczy, �e w hierarchii sceny GameScene w og�le nie ma skryptu TechTreeManager
-            Debug.LogError("<color=red>[SaveManager] KRYTYCZNY B��D:</color> Skrypt TechTreeManager nie zosta� znaleziony nigdzie na scenie!");
+            // Drzewko może być nieaktywne podczas ładowania; stan i tak trafi do cache statycznego.
+            Debug.LogWarning("<color=yellow>[SaveManager]</color> TechTreeManager nie został znaleziony podczas load. Stan research zapisano do cache i zostanie zastosowany po inicjalizacji managera.");
         }
 
         // 2. Wyczy�� scen�
@@ -488,5 +507,54 @@ public class SaveManager : MonoBehaviour
         int minutes = (totalSeconds % 3600) / 60;
         int secs = totalSeconds % 60;
         return $"{hours:00}:{minutes:00}:{secs:00}";
+    }
+
+    private List<string> GetResearchedTechnologyIdsForSave()
+    {
+        TechTreeManager tree = TechTreeManager.Instance;
+        if (tree == null)
+        {
+            tree = Object.FindObjectsByType<TechTreeManager>(FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault();
+        }
+
+        if (tree != null)
+        {
+            return tree.GetResearchedIds();
+        }
+
+        return TechTreeManager.GetResearchedIdsSnapshot();
+    }
+
+    private List<string> ResolveResearchedTechnologyIds(GameSaveData data, string rawJson)
+    {
+        if (data != null && data.researchedTechnologyIds != null && data.researchedTechnologyIds.Count > 0)
+        {
+            return data.researchedTechnologyIds.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+        }
+
+        LegacyTechSaveProbe legacy = JsonUtility.FromJson<LegacyTechSaveProbe>(rawJson);
+        if (legacy == null)
+        {
+            return new List<string>();
+        }
+
+        List<string>[] candidates =
+        {
+            legacy.researchedTechnologyIds,
+            legacy.researchedIds,
+            legacy.researchedTechIds,
+            legacy.unlockedTechnologyIds,
+            legacy.unlockedTechIds
+        };
+
+        foreach (List<string> candidate in candidates)
+        {
+            if (candidate != null && candidate.Count > 0)
+            {
+                return candidate.Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList();
+            }
+        }
+
+        return new List<string>();
     }
 }

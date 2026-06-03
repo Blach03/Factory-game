@@ -238,5 +238,5 @@ MonoBehaviour:
   basePitch: 1
   playOnlyWhenWorking: 1
   baseMinDistance: 2
-  baseMaxDistance: 100
+  baseMaxDistance: 30
   maxZoomRangeMultiplier: 3

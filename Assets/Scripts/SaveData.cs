@@ -7,10 +7,27 @@ public class GameSaveData
 
     public List<EntityData> entityDatas = new List<EntityData>();
     public List<string> researchedTechnologyIds = new List<string>();
+    public HandCraftingQueueSaveData handCraftingQueueData = new HandCraftingQueueSaveData();
     public float seedX;
     public float seedY;
     public float totalPlayTimeSeconds;
     public List<ChunkSaveData> generatedResourceChunks = new List<ChunkSaveData>();
+}
+
+[System.Serializable]
+public class HandCraftingQueueSaveData
+{
+    public List<HandCraftingQueueEntrySaveData> entries = new List<HandCraftingQueueEntrySaveData>();
+    public float currentRecipeRemainingTimeSeconds;
+}
+
+[System.Serializable]
+public class HandCraftingQueueEntrySaveData
+{
+    public string recipeType;
+    public string recipeName;
+    public string recipeAssetName;
+    public string outputResourceName;
 }
 
 [System.Serializable]

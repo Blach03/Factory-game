@@ -322,11 +322,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MachineAudioController
   machineLoopClip: {fileID: 8300000, guid: 5b8f6955105b9b541a344a2e69ea1df9, type: 3}
-  baseVolume: 0.7
+  baseVolume: 0.4
   basePitch: 1
   playOnlyWhenWorking: 1
   baseMinDistance: 2
-  baseMaxDistance: 100
+  baseMaxDistance: 35
   maxZoomRangeMultiplier: 3
 --- !u!1 &7802312057195589007
 GameObject:

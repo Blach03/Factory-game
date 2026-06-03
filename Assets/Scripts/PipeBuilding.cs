@@ -4,6 +4,14 @@ using System.Linq;
 
 public class PipeBuilding : GridObject
 {
+    [System.Serializable]
+    private class PipeSaveData
+    {
+        public int saveVersion = 1;
+        public float networkStoredFluid;
+        public string networkFluidTypeName;
+    }
+
     [Header("Wizualizacja - Sprite'y")]
     [SerializeField] public SpriteRenderer spriteRenderer;
     [SerializeField] public Sprite spriteStraight; // rura prosta (1-3)
@@ -13,6 +21,10 @@ public class PipeBuilding : GridObject
     [SerializeField] public Sprite spriteEnd;      // zakończenie (opcjonalne)
 
     public PipeNetwork CurrentNetwork;
+
+    private bool hasPendingNetworkState;
+    private float pendingStoredFluid;
+    private string pendingFluidTypeName;
 
     protected override void Awake()
     {
@@ -24,6 +36,8 @@ public class PipeBuilding : GridObject
 
     void Update()
     {
+        TryApplyPendingNetworkState();
+
         // Tylko jedna rura z danej sieci musi wywoływać TickProduction
         // Sprawdzamy, czy jesteśmy "pierwszą" rurą w zbiorze HashSet
         if (CurrentNetwork != null && CurrentNetwork.Pipes.First() == this)
@@ -36,6 +50,7 @@ public class PipeBuilding : GridObject
     {
         UpdatePipeVisuals();
         RefreshNetwork();
+        TryApplyPendingNetworkState();
         
         // Powiadom sąsiadów, żeby też się zaktualizowali graficznie
         NotifyNeighborsToUpdateVisuals();
@@ -216,5 +231,87 @@ public class PipeBuilding : GridObject
         {
             PipeNetworkUI.Instance.OpenWindow(CurrentNetwork);
         }
+    }
+
+    public override string GetSerializedData()
+    {
+        PipeSaveData data = new PipeSaveData();
+
+        if (CurrentNetwork != null)
+        {
+            data.networkStoredFluid = Mathf.Max(0f, CurrentNetwork.storedFluid);
+            data.networkFluidTypeName = CurrentNetwork.FluidType != null
+                ? CurrentNetwork.FluidType.resourceName
+                : string.Empty;
+        }
+
+        return JsonUtility.ToJson(data);
+    }
+
+    public override void LoadComponentData(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return;
+        }
+
+        PipeSaveData data = JsonUtility.FromJson<PipeSaveData>(json);
+        if (data == null)
+        {
+            return;
+        }
+
+        // Backward compatibility: stare save'y nie miały danych sieci rur.
+        bool hasMeaningfulState = data.networkStoredFluid > 0.001f || !string.IsNullOrWhiteSpace(data.networkFluidTypeName);
+        if (!hasMeaningfulState)
+        {
+            return;
+        }
+
+        pendingStoredFluid = Mathf.Max(0f, data.networkStoredFluid);
+        pendingFluidTypeName = data.networkFluidTypeName;
+        hasPendingNetworkState = true;
+    }
+
+    private void TryApplyPendingNetworkState()
+    {
+        if (!hasPendingNetworkState || CurrentNetwork == null)
+        {
+            return;
+        }
+
+        CurrentNetwork.storedFluid = Mathf.Max(CurrentNetwork.storedFluid, pendingStoredFluid);
+
+        if (CurrentNetwork.FluidType == null && !string.IsNullOrWhiteSpace(pendingFluidTypeName))
+        {
+            CurrentNetwork.FluidType = ResolveFluidByName(pendingFluidTypeName);
+        }
+
+        hasPendingNetworkState = false;
+    }
+
+    private ResourceData ResolveFluidByName(string fluidName)
+    {
+        ResourceData[] allResources = Resources.LoadAll<ResourceData>("Items");
+        if (allResources == null || allResources.Length == 0)
+        {
+            return null;
+        }
+
+        foreach (ResourceData resource in allResources)
+        {
+            if (resource == null)
+            {
+                continue;
+            }
+
+            if (string.Equals(resource.resourceName, fluidName, System.StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(resource.name, fluidName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return resource;
+            }
+        }
+
+        return null;
     }
 }
