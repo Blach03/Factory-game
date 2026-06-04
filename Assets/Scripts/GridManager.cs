@@ -16,6 +16,28 @@ public class GridManager : MonoBehaviour
     private Dictionary<Vector2Int, Item> occupiedGridSpots = new Dictionary<Vector2Int, Item>();
     private Dictionary<Vector2Int, Item> occupiedOverheadGridSpots = new Dictionary<Vector2Int, Item>();
     private Dictionary<Vector2Int, List<GridObject>> allPlacedObjects = new Dictionary<Vector2Int, List<GridObject>>();
+
+    private bool CleanupDeadReferences(Vector2Int gridPosition, List<GridObject> placedObjects)
+    {
+        if (placedObjects == null) return false;
+
+        bool removedAny = false;
+        for (int i = placedObjects.Count - 1; i >= 0; i--)
+        {
+            if (placedObjects[i] == null)
+            {
+                placedObjects.RemoveAt(i);
+                removedAny = true;
+            }
+        }
+
+        if (placedObjects.Count == 0)
+        {
+            allPlacedObjects.Remove(gridPosition);
+        }
+
+        return removedAny;
+    }
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -191,6 +213,13 @@ public class GridManager : MonoBehaviour
     {
         if (allPlacedObjects.TryGetValue(gridPosition, out List<GridObject> placedObjects))
         {
+            CleanupDeadReferences(gridPosition, placedObjects);
+
+            if (placedObjects.Count == 0)
+            {
+                return new List<GridObject>();
+            }
+
             return placedObjects;
         }
         return new List<GridObject>();
@@ -199,14 +228,20 @@ public class GridManager : MonoBehaviour
     {
         if (allPlacedObjects.TryGetValue(gridPosition, out List<GridObject> placedObjects))
         {
-            GridObject lowerLayerObject = placedObjects.FirstOrDefault(obj => obj.objectType != GridObjectType.OverheadConveyor);
+            CleanupDeadReferences(gridPosition, placedObjects);
+            if (placedObjects.Count == 0)
+            {
+                return null;
+            }
+
+            GridObject lowerLayerObject = placedObjects.FirstOrDefault(obj => obj != null && obj.objectType != GridObjectType.OverheadConveyor);
 
             if (lowerLayerObject != null)
             {
                 return lowerLayerObject;
             }
 
-            return placedObjects.FirstOrDefault();
+            return placedObjects.FirstOrDefault(obj => obj != null);
         }
         return null;
     }
@@ -315,6 +350,13 @@ public class GridManager : MonoBehaviour
     {
         if (allPlacedObjects.TryGetValue(gridPosition, out List<GridObject> placedObjects))
         {
+            CleanupDeadReferences(gridPosition, placedObjects);
+
+            if (placedObjects.Count == 0)
+            {
+                return new List<GridObject>();
+            }
+
             return placedObjects;
         }
         return new List<GridObject>();

@@ -150,9 +150,19 @@ public class OverheadConveyor : GridObject
 
     }
 
-    void Update()
+    void OnEnable()
     {
-        checkTimer -= Time.deltaTime;
+        TransportTickManager.RegisterOverheadConveyor(this);
+    }
+
+    void OnDisable()
+    {
+        TransportTickManager.UnregisterOverheadConveyor(this);
+    }
+
+    public void TickTransport(float deltaTime)
+    {
+        checkTimer -= deltaTime;
         if (checkTimer <= 0f)
         {
             ForceCheckForMovement();

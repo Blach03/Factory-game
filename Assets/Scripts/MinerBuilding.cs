@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 
 public class MinerBuilding : GridObject
 {
@@ -96,19 +95,29 @@ public class MinerBuilding : GridObject
         if (GridManager.Instance == null) return;
 
         List<GridObject> objectsOnTile = GridManager.Instance.GetGridObjects(GetGridPosition());
-
-        if (objectsOnTile != null)
+        if (objectsOnTile == null)
         {
-            ResourceDeposit deposit = objectsOnTile
-                .Select(o => o.GetComponent<ResourceDeposit>())
-                .FirstOrDefault(d => d != null);
+            depositToMine = null;
+            return;
+        }
 
-            depositToMine = deposit;
+        depositToMine = null;
+        for (int i = 0; i < objectsOnTile.Count; i++)
+        {
+            GridObject obj = objectsOnTile[i];
+            if (obj == null) continue;
 
-            if (depositToMine != null)
+            ResourceDeposit deposit = obj as ResourceDeposit;
+            if (deposit != null)
             {
-                Debug.Log($"MinerBuilding na pozycji {GetGridPosition()} znalaz� z�o�e: {depositToMine.resourceData.resourceName}");
+                depositToMine = deposit;
+                break;
             }
+        }
+
+        if (depositToMine != null)
+        {
+            Debug.Log($"MinerBuilding na pozycji {GetGridPosition()} znalaz� z�o�e: {depositToMine.resourceData.resourceName}");
         }
     }
 
@@ -270,7 +279,18 @@ public class MinerBuilding : GridObject
             var objects = GridManager.Instance.GetGridObjects(nPos);
             if (objects == null) continue;
 
-            MinerExtender extender = objects.OfType<MinerExtender>().FirstOrDefault();
+            MinerExtender extender = null;
+            for (int i = 0; i < objects.Count; i++)
+            {
+                GridObject obj = objects[i];
+                if (obj == null) continue;
+
+                extender = obj as MinerExtender;
+                if (extender != null)
+                {
+                    break;
+                }
+            }
 
             // Sprawdzamy: czy to extender, czy celuje w currentPoint i czy jest na tym samym z�o�u
             if (extender != null && extender.GetTargetGridPosition() == currentPoint)
@@ -291,17 +311,34 @@ public class MinerBuilding : GridObject
 
     private bool IsSameDepositType(Vector2Int pos)
     {
-        // Pobieramy z�o�e pod minerem
-        var myDeposit = GridManager.Instance.GetGridObjects(GetGridPosition())
-                        .OfType<ResourceDeposit>().FirstOrDefault();
-
-        // Pobieramy z�o�e pod sprawdzanym polem
-        var targetDeposit = GridManager.Instance.GetGridObjects(pos)
-                            .OfType<ResourceDeposit>().FirstOrDefault();
+        ResourceDeposit myDeposit = GetFirstDepositAt(GetGridPosition());
+        ResourceDeposit targetDeposit = GetFirstDepositAt(pos);
 
         if (myDeposit == null || targetDeposit == null) return false;
 
         // Por�wnujemy nazwy surowc�w (np. "Coal" == "Coal")
         return myDeposit.resourceData.resourceName == targetDeposit.resourceData.resourceName;
+    }
+
+    private ResourceDeposit GetFirstDepositAt(Vector2Int gridPos)
+    {
+        if (GridManager.Instance == null) return null;
+
+        List<GridObject> objects = GridManager.Instance.GetGridObjects(gridPos);
+        if (objects == null) return null;
+
+        for (int i = 0; i < objects.Count; i++)
+        {
+            GridObject obj = objects[i];
+            if (obj == null) continue;
+
+            ResourceDeposit deposit = obj as ResourceDeposit;
+            if (deposit != null)
+            {
+                return deposit;
+            }
+        }
+
+        return null;
     }
 }

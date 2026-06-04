@@ -23,6 +23,7 @@ public class ConveyorBelt : GridObject
     private const int OVERHEAD_LAYER_ID = 11;
 
     private bool isHoldingItem = false;
+    private bool isRegisteredForTick = false;
     private Item heldItem = null;
     private int overheadDelayFrames = 0;
     private const int MAX_OVERHEAD_DELAY_FRAMES = 20;
@@ -30,11 +31,22 @@ public class ConveyorBelt : GridObject
     public float checkInterval = 0.05f;
 
 
-    void Update()
+    void OnEnable()
+    {
+        UpdateTickRegistration();
+    }
+
+    void OnDisable()
+    {
+        TransportTickManager.UnregisterConveyor(this);
+        isRegisteredForTick = false;
+    }
+
+    public void TickTransport(float deltaTime)
     {
         if (isHoldingItem)
         {
-            checkTimer -= Time.deltaTime;
+            checkTimer -= deltaTime;
             if (checkTimer <= 0f)
             {
                 ForceCheckForMovement();
@@ -76,8 +88,29 @@ public class ConveyorBelt : GridObject
     {
         heldItem = item;
         isHoldingItem = true;
+        UpdateTickRegistration();
         checkTimer = 0f; // trigger an immediate check
         ForceCheckForMovement();
+    }
+
+    private void UpdateTickRegistration()
+    {
+        if (isHoldingItem)
+        {
+            if (!isRegisteredForTick)
+            {
+                TransportTickManager.RegisterConveyor(this);
+                isRegisteredForTick = true;
+            }
+        }
+        else
+        {
+            if (isRegisteredForTick)
+            {
+                TransportTickManager.UnregisterConveyor(this);
+                isRegisteredForTick = false;
+            }
+        }
     }
 
     public void RotateBelt(Direction newDirection)
@@ -184,6 +217,7 @@ public class ConveyorBelt : GridObject
             isHoldingItem = false;
             heldItem = null;
             overheadDelayFrames = 0;
+            UpdateTickRegistration();
             return;
         }
 
@@ -227,6 +261,7 @@ public class ConveyorBelt : GridObject
         TutorialItemTracker.OnItemMovedByConveyor();
         isHoldingItem = false;
         heldItem = null;
+        UpdateTickRegistration();
     }
 
     private bool IsOutputBlocked(Vector3 outputWorldPosition)

@@ -15,11 +15,15 @@ public abstract class GridObject : SavableEntity
     {
         base.Awake(); // To wywo�a Awake z SavableEntity
 
-        // Grid objects are controlled by grid logic, not by 2D physics simulation.
+        // Keep colliders queryable for OnMouseDown while avoiding dynamic physics work.
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
-            rb.simulated = false;
+            rb.bodyType = RigidbodyType2D.Static;
+            rb.gravityScale = 0f;
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+            rb.simulated = true;
         }
     }
 

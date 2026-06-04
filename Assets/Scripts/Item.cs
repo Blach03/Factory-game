@@ -76,6 +76,19 @@ public class Item : SavableEntity
         }
     }
 
+    void OnEnable()
+    {
+        if (isBeingMoved)
+        {
+            TransportTickManager.RegisterMovingItem(this);
+        }
+    }
+
+    void OnDisable()
+    {
+        TransportTickManager.UnregisterMovingItem(this);
+    }
+
     public void Initialize(ResourceData data)
     {
         itemData = data;
@@ -189,6 +202,7 @@ public class Item : SavableEntity
         }
 
         isBeingMoved = true;
+        TransportTickManager.RegisterMovingItem(this);
     }
 
     public void SetMoveSpeed(float speed)
@@ -196,14 +210,14 @@ public class Item : SavableEntity
         currentMoveSpeed = speed;
     }
 
-    void Update()
+    public void TickTransport(float deltaTime)
     {
         if (!isBeingMoved) return;
 
         transform.position = Vector3.MoveTowards(
             transform.position,
             targetWorldPosition,
-            currentMoveSpeed * Time.deltaTime
+            currentMoveSpeed * deltaTime
         );
 
         if (Vector3.Distance(transform.position, targetWorldPosition) < 0.001f)
@@ -240,6 +254,8 @@ public class Item : SavableEntity
 
     void OnDestroy()
     {
+        TransportTickManager.UnregisterMovingItem(this);
+
         if (GridManager.Instance != null)
         {
             ClearCurrentGridOccupation();
