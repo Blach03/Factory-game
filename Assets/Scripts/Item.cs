@@ -22,6 +22,7 @@ public class Item : SavableEntity
     private Vector3 targetWorldPosition;
     private float currentMoveSpeed;
     private Vector2Int currentReservedGridPos = Vector2Int.zero;
+    private bool dropToConveyorOnArrival = false;
 
     protected override void Awake()
     {
@@ -131,6 +132,22 @@ public class Item : SavableEntity
         return isOnOverheadLayer;
     }
 
+    public void DropToConveyorAfterCurrentMove()
+    {
+        dropToConveyorOnArrival = true;
+    }
+
+    private void ApplyConveyorLayerAfterArrival()
+    {
+        dropToConveyorOnArrival = false;
+        isOnOverheadLayer = false;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sortingOrder = CONVEYOR_SORTING_ORDER;
+        }
+        gameObject.layer = CONVEYOR_LAYER_ID;
+    }
+
     private ConveyorBelt GetConveyorAtGridPosition(Vector2Int gridPos)
     {
         if (GridManager.Instance == null) return null;
@@ -227,6 +244,11 @@ public class Item : SavableEntity
             // Mark as stationary before notifying conveyor logic.
             isBeingMoved = false;
             Vector2Int arrivedGridPos = currentReservedGridPos;
+
+            if (dropToConveyorOnArrival)
+            {
+                ApplyConveyorLayerAfterArrival();
+            }
 
             if (GridManager.Instance != null)
             {

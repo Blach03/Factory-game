@@ -29,6 +29,7 @@ public class SaveManager : MonoBehaviour
     [SerializeField] private GameObject loadingScreenRoot;
     [SerializeField] private Slider loadingProgressBar;
     [SerializeField] private TextMeshProUGUI loadingStatusText;
+    [SerializeField] private int loadingScreenSortingOrder = 32767;
 
     [Header("Auto Save")]
     [SerializeField] private bool autoSaveEnabled = true;
@@ -72,7 +73,19 @@ public class SaveManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            // �cie�ka do AppData
+
+            // Ensure the loading screen survives scene transitions.
+            // Without this, the panel lives in the main-menu scene and is
+            // destroyed the moment GameScene loads, making every
+            // ShowLoadingScreen() call after that point a no-op.
+            if (loadingScreenRoot != null)
+            {
+                loadingScreenRoot.transform.SetParent(null);
+                DontDestroyOnLoad(loadingScreenRoot);
+                loadingScreenRoot.SetActive(false);
+            }
+
+            // Sciezka do AppData
             baseSaveFolder = Application.persistentDataPath;
 
             if (!Directory.Exists(baseSaveFolder))
@@ -101,6 +114,8 @@ public class SaveManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        EnsureLoadingScreenOnTop();
+
         if (scene.name == "GameScene")
         {
             // 1. Podpinanie przycisku zapisu
@@ -182,7 +197,59 @@ public class SaveManager : MonoBehaviour
                 failReason = "There was a problem while loading the save file.";
             }
 
-            SetLoadingProgress(0.85f, "Finalizing load...");
+            // Wait several frames so every spawned object's Awake()/Start() has finished.
+            // This ensures buildings register on the grid and items set up their sprites
+            // before we try to refresh chunks or declare the load complete.
+            SetLoadingProgress(0.70f, "Initializing buildings...");
+            yield return null;
+
+            // Re-trigger chunk refresh now that Awake() calls are done.
+            SetLoadingProgress(0.75f, "Refreshing world...");
+            CameraController camForRefresh = Object.FindFirstObjectByType<CameraController>();
+            if (camForRefresh != null)
+            {
+                camForRefresh.ForceRefreshChunks();
+            }
+
+            // ---------------------------------------------------------------
+            // RESPONSIVENESS GATE
+            // While Unity is processing the Start() methods of hundreds of
+            // newly-spawned objects (miners, belts, items, etc.) each engine
+            // frame takes far longer than normal — often 100-500 ms. Simply
+            // counting frames does not help because those 300 frames still fly
+            // by in a few wall-clock seconds while the game stays unresponsive.
+            //
+            // Instead we measure Time.unscaledDeltaTime every frame.  Once we
+            // see STREAK_NEEDED consecutive frames each shorter than
+            // FAST_FRAME_THRESHOLD we know the heavy init work is finished and
+            // the camera / gameplay is actually interactive again.
+            // ---------------------------------------------------------------
+            SetLoadingProgress(0.80f, "Final sync...");
+            {
+                const float FAST_FRAME_THRESHOLD = 0.08f; // 80 ms -> ~12.5 fps
+                const int   STREAK_NEEDED        = 5;     // short readiness streak
+                const float MAX_WAIT_SECONDS     = 1.5f;  // keep this step brief
+
+                float deadline   = Time.unscaledTime + MAX_WAIT_SECONDS;
+                int   fastStreak = 0;
+
+                while (fastStreak < STREAK_NEEDED && Time.unscaledTime < deadline)
+                {
+                    if (Time.unscaledDeltaTime <= FAST_FRAME_THRESHOLD)
+                        fastStreak++;
+                    else
+                        fastStreak = 0;
+
+                    // Animate the progress bar so the player can see the
+                    // screen is alive during the wait.
+                    float pct = Mathf.Clamp01((float)fastStreak / STREAK_NEEDED);
+                    SetLoadingProgress(0.80f + pct * 0.13f, "Final sync...");
+
+                    yield return null;
+                }
+            }
+
+            SetLoadingProgress(0.93f, "Finalizing load...");
         }
 
         yield return null; // Jeszcze jedna klatka, by UnlockManager zd��y� si� zainicjalizowa�
@@ -209,8 +276,8 @@ public class SaveManager : MonoBehaviour
 
         GameLoadCompleted?.Invoke(loadSucceeded, failReason);
 
-        // Krótkie opóźnienie, aby gracz zdążył zobaczyć 100%.
-        yield return null;
+        // Give the player a moment to see 100% and let the final render flush.
+            yield return new WaitForSecondsRealtime(0.5f);
 
         isLoadInProgress = false;
         ShowLoadingScreen(false);
@@ -493,7 +560,38 @@ public class SaveManager : MonoBehaviour
     {
         if (loadingScreenRoot != null)
         {
+            EnsureLoadingScreenOnTop();
             loadingScreenRoot.SetActive(visible);
+
+            // Keep it as the last sibling so it stays above other UI on the same canvas.
+            if (visible)
+            {
+                loadingScreenRoot.transform.SetAsLastSibling();
+            }
+        }
+    }
+
+    private void EnsureLoadingScreenOnTop()
+    {
+        if (loadingScreenRoot == null)
+        {
+            return;
+        }
+
+        Canvas canvas = loadingScreenRoot.GetComponent<Canvas>();
+        if (canvas == null)
+        {
+            canvas = loadingScreenRoot.AddComponent<Canvas>();
+        }
+
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = loadingScreenSortingOrder;
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+        GraphicRaycaster raycaster = loadingScreenRoot.GetComponent<GraphicRaycaster>();
+        if (raycaster == null)
+        {
+            loadingScreenRoot.AddComponent<GraphicRaycaster>();
         }
     }
 

@@ -275,7 +275,7 @@ public class OverheadConveyor : GridObject
             return false;
         }
 
-        item.SetLayerAndSortingOrderForConveyor();
+        item.DropToConveyorAfterCurrentMove();
         item.SetTargetPosition(dropWorldPosition, CurrentBeltSpeed);
 
         return true;
