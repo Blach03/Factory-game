@@ -1,6 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
 
 public class OverheadConveyor : GridObject
 {
@@ -122,8 +121,16 @@ public class OverheadConveyor : GridObject
 
         if (objects == null) return null;
 
-        return objects.OfType<OverheadConveyor>()
-                      .FirstOrDefault(oc => oc != this);
+        for (int i = 0; i < objects.Count; i++)
+        {
+            OverheadConveyor conveyor = objects[i] as OverheadConveyor;
+            if (conveyor != null && conveyor != this)
+            {
+                return conveyor;
+            }
+        }
+
+        return null;
     }
 
     private void CheckChainState()
@@ -141,7 +148,6 @@ public class OverheadConveyor : GridObject
 
         isEndSegment = !(nextConveyor != null && nextConveyor.travelDirection == travelDirection);
 
-        Debug.Log($"[OH-STATE] {currentPos} (Dir: {travelDirection}) -> isStart: {isStartSegment}, isEnd: {isEndSegment}. NextObj: {(nextConveyor != null ? "OverheadConveyor" : "NONE")}");
     }
 
     void Update()

@@ -15,7 +15,7 @@ MonoBehaviour:
   _recipeName: Basic Research Pack Recipe
   _techRequirementId: 
   _primaryInput: {fileID: 11400000, guid: f9beaccf35641ea40babb506377a9f83, type: 2}
-  _primaryInputAmount: 3
+  _primaryInputAmount: 2
   _secondaryInput: {fileID: 11400000, guid: f35b3d74579041c499b78822419d6abe, type: 2}
   _secondaryInputAmount: 3
   tertiaryInput: {fileID: 0}

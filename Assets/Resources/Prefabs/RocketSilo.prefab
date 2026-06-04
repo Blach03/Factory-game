@@ -212,22 +212,22 @@ MonoBehaviour:
   - resource: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
     amount: 200
   - resource: {fileID: 11400000, guid: 31bc856968d48dc44ab611c2c126d7e1, type: 2}
-    amount: 100
+    amount: 50
   - resource: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
     amount: 200
   - resource: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
-    amount: 100
+    amount: 50
   inputA:
     resource: {fileID: 11400000, guid: 3aa122ddda6a6134095b040e1c356217, type: 2}
-    requiredAmount: 500
+    requiredAmount: 100
     currentAmount: 0
   inputB:
     resource: {fileID: 11400000, guid: 822fa23858ccfd74cb6cfde1a23f204d, type: 2}
-    requiredAmount: 500
+    requiredAmount: 300
     currentAmount: 0
   inputC:
     resource: {fileID: 11400000, guid: f39b9b86639cb4f488711fd844e657bf, type: 2}
-    requiredAmount: 500
+    requiredAmount: 300
     currentAmount: 0
   buildTime: 60
   powerConsumption: 100

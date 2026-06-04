@@ -1,7 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
-using System;
 
 public class ConveyorBelt : GridObject
 {
@@ -22,7 +20,6 @@ public class ConveyorBelt : GridObject
     public Direction travelDirection = Direction.Right;
     public enum Direction { Right, Down, Left, Up }
 
-    private static LayerMask itemLayerMask;
     private const int OVERHEAD_LAYER_ID = 11;
 
     private bool isHoldingItem = false;
@@ -54,13 +51,6 @@ public class ConveyorBelt : GridObject
         isBlockingPlacement = true;
         size = new Vector2Int(1, 1);
 
-        if (itemLayerMask == 0)
-        {
-            itemLayerMask = LayerMask.GetMask("Item");
-        }
-
-        QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = 60;
     }
 
     void Start()
@@ -104,7 +94,16 @@ public class ConveyorBelt : GridObject
 
         if (objects == null) return null;
 
-        return objects.OfType<OverheadConveyor>().FirstOrDefault();
+        for (int i = 0; i < objects.Count; i++)
+        {
+            OverheadConveyor conveyor = objects[i] as OverheadConveyor;
+            if (conveyor != null)
+            {
+                return conveyor;
+            }
+        }
+
+        return null;
     }
 
     private bool CanOverheadAcceptItem(OverheadConveyor overhead)
@@ -137,7 +136,16 @@ public class ConveyorBelt : GridObject
 
         if (objects == null) return null;
 
-        return objects.OfType<OverheadConveyor>().FirstOrDefault();
+        for (int i = 0; i < objects.Count; i++)
+        {
+            OverheadConveyor conveyor = objects[i] as OverheadConveyor;
+            if (conveyor != null)
+            {
+                return conveyor;
+            }
+        }
+
+        return null;
     }
 
     private Vector2Int GetPositionInDirection(Vector2Int currentGridPos, ConveyorBelt.Direction direction)
@@ -155,6 +163,11 @@ public class ConveyorBelt : GridObject
 
     private void ForceCheckForMovement()
     {
+        if (GridManager.Instance == null)
+        {
+            return;
+        }
+
         // Use the stored reference; fall back to grid lookup if needed.
         Item itemToMove = heldItem;
         if (itemToMove == null || itemToMove.isBeingMoved || itemToMove.gameObject.layer != 8)
@@ -181,11 +194,8 @@ public class ConveyorBelt : GridObject
 
             if (overheadDelayFrames > 0)
             {
-                Debug.Log($"[CB-DELAYED] Op�nienie: pozosta�o {overheadDelayFrames} klatek. Zatrzymuj�.");
                 return;
             }
-
-            Debug.Log($"[CB-DELAYED] Licznik op�nienia si� wyczerpa�. Wymuszam ruch.");
         }
         else
         {
@@ -195,12 +205,10 @@ public class ConveyorBelt : GridObject
             {
                 if (overhead.itemOnOverheadLayer != null)
                 {
-                    Debug.Log($"[CB-OH-BLOCKED] Overhead jest ZAJ�TY. Pcham dalej.");
                 }
                 else if (overhead.IsStartSegment && CanOverheadAcceptItem(overhead))
                 {
                     overheadDelayFrames = MAX_OVERHEAD_DELAY_FRAMES;
-                    Debug.Log($"[CB-OH-ACCEPT] Overhead jest WOLNY. Rozpoczynam op�nienie ({MAX_OVERHEAD_DELAY_FRAMES} klatek).");
                     return;
                 }
             }

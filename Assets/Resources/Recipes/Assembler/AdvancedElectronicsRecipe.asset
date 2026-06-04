@@ -17,7 +17,7 @@ MonoBehaviour:
   _primaryInput: {fileID: 11400000, guid: 2635e50e999728d4c999d71b70240c06, type: 2}
   _primaryInputAmount: 1
   _secondaryInput: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
-  _secondaryInputAmount: 5
+  _secondaryInputAmount: 2
   tertiaryInput: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
   tertiaryInputAmount: 3
   _outputItem: {fileID: 11400000, guid: 0495c53f59dd08b44bac3b1d8e010bb4, type: 2}

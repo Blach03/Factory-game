@@ -15,11 +15,11 @@ MonoBehaviour:
   _recipeName: Electric Motor Recipe
   _techRequirementId: t15
   _primaryInput: {fileID: 11400000, guid: 7ade40e580971b84884e858cfe79dd37, type: 2}
-  _primaryInputAmount: 2
+  _primaryInputAmount: 1
   _secondaryInput: {fileID: 11400000, guid: b3a130aac82b17c47b6ee06528891326, type: 2}
-  _secondaryInputAmount: 2
+  _secondaryInputAmount: 1
   tertiaryInput: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
-  tertiaryInputAmount: 5
+  tertiaryInputAmount: 3
   _outputItem: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
   _outputAmount: 1
   assemblyTime: 30

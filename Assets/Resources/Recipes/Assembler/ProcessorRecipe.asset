@@ -15,7 +15,7 @@ MonoBehaviour:
   _recipeName: Processor Recipe
   _techRequirementId: t17
   _primaryInput: {fileID: 11400000, guid: 0495c53f59dd08b44bac3b1d8e010bb4, type: 2}
-  _primaryInputAmount: 3
+  _primaryInputAmount: 2
   _secondaryInput: {fileID: 11400000, guid: 736dac994f4bf624fb6926c1ad73fbd2, type: 2}
   _secondaryInputAmount: 3
   tertiaryInput: {fileID: 0}

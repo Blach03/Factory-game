@@ -15,9 +15,9 @@ MonoBehaviour:
   _recipeName: Stator Recipe
   _techRequirementId: t15
   _primaryInput: {fileID: 11400000, guid: f35b3d74579041c499b78822419d6abe, type: 2}
-  _primaryInputAmount: 10
+  _primaryInputAmount: 9
   _secondaryInput: {fileID: 11400000, guid: 019195acccaa6974eb3f142c6c4d3162, type: 2}
-  _secondaryInputAmount: 5
+  _secondaryInputAmount: 3
   tertiaryInput: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
   tertiaryInputAmount: 3
   _outputItem: {fileID: 11400000, guid: 7ade40e580971b84884e858cfe79dd37, type: 2}

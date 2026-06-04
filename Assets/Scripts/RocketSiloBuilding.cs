@@ -38,7 +38,6 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding, IMachineWorkS
     private bool isBuilding = false;
     private float timer;
     private int rocketCount = 0;
-    private static LayerMask itemLayerMask;
     private AssemblyRecipeData runtimeRecipe;
 
     [Header("Ustawienia Startu Wyk�adniczego")]
@@ -71,7 +70,6 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding, IMachineWorkS
     {
         base.Awake();
         size = new Vector2Int(5, 5);
-        if (itemLayerMask == 0) itemLayerMask = LayerMask.GetMask("Item");
 
         Transform launchAudioTransform = transform.Find("LaunchSfxSource");
         if (launchAudioTransform == null)
@@ -216,23 +214,20 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding, IMachineWorkS
 
     private void TryConsumeFromWorld()
     {
+        if (GridManager.Instance == null) return;
+
         for (int x = 0; x < size.x; x++)
         {
             for (int y = 0; y < size.y; y++)
             {
                 Vector2Int tilePos = occupiedPosition + new Vector2Int(x, y);
-                Vector3 worldPos = GridManager.Instance.GridToWorld(tilePos) + new Vector3(0.5f, 0.5f, 0f);
-                Collider2D col = Physics2D.OverlapBox(worldPos, Vector2.one * 0.8f, 0f, itemLayerMask);
+                Item item = GridManager.Instance.GetItemAtGridSpot(tilePos);
 
-                if (col != null)
+                if (item != null && !item.isBeingMoved)
                 {
-                    Item item = col.GetComponent<Item>();
-                    if (item != null && !item.isBeingMoved)
-                    {
-                        if (CheckAndPickup(item, inputA)) continue;
-                        if (CheckAndPickup(item, inputB)) continue;
-                        if (CheckAndPickup(item, inputC)) continue;
-                    }
+                    if (CheckAndPickup(item, inputA)) continue;
+                    if (CheckAndPickup(item, inputB)) continue;
+                    if (CheckAndPickup(item, inputC)) continue;
                 }
             }
         }

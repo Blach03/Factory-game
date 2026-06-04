@@ -1,6 +1,5 @@
-using TMPro;
 using UnityEngine;
-using System.Linq;
+using System.Collections.Generic;
 
 public class Item : SavableEntity
 {
@@ -24,6 +23,26 @@ public class Item : SavableEntity
     private float currentMoveSpeed;
     private Vector2Int currentReservedGridPos = Vector2Int.zero;
 
+    protected override void Awake()
+    {
+        base.Awake();
+
+        // Disable 2D physics before the first simulation step.
+        rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.simulated = false;
+        }
+
+        // Physics callbacks are not used for item transport.
+        itemCollider = GetComponent<Collider2D>();
+        if (itemCollider != null)
+        {
+            itemCollider.enabled = false;
+        }
+    }
+
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -37,21 +56,6 @@ public class Item : SavableEntity
         else
         {
             SetLayerAndSortingOrderForConveyor();
-        }
-
-        // Make items kinematic so Unity doesn't run physics island simulation on them.
-        rb = GetComponent<Rigidbody2D>();
-        if (rb != null)
-        {
-            rb.isKinematic = true;
-            rb.simulated = false;
-        }
-
-        // Physics-based detection is no longer used; disable collider to remove contact cost.
-        itemCollider = GetComponent<Collider2D>();
-        if (itemCollider != null)
-        {
-            itemCollider.enabled = false;
         }
 
         // Register occupation for items that start stationary (e.g. loaded from a save).
@@ -118,9 +122,19 @@ public class Item : SavableEntity
     {
         if (GridManager.Instance == null) return null;
 
-        return GridManager.Instance.GetAllGridObjects(gridPos)
-            .OfType<ConveyorBelt>()
-            .FirstOrDefault();
+        List<GridObject> objects = GridManager.Instance.GetAllGridObjects(gridPos);
+        if (objects == null) return null;
+
+        for (int i = 0; i < objects.Count; i++)
+        {
+            ConveyorBelt belt = objects[i] as ConveyorBelt;
+            if (belt != null)
+            {
+                return belt;
+            }
+        }
+
+        return null;
     }
 
     private void RegisterCurrentGridOccupation()

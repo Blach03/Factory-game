@@ -9,6 +9,7 @@ public class ConveyorBeltAnimation : MonoBehaviour
     private ConveyorBelt standardBelt;
     private OverheadConveyor overheadBelt;
     private bool isVisible = true;
+    private bool isRegisteredInManager = false;
     private static readonly int MainTexST = Shader.PropertyToID("_MainTex_ST");
     private float cachedSpeed;
 
@@ -30,17 +31,28 @@ public class ConveyorBeltAnimation : MonoBehaviour
         }
 
         cachedSpeed = GetCurrentSpeed();
-        ConveyorBeltAnimationManager.Register(this);
+
+        if (spriteRenderer != null)
+        {
+            SetVisibility(spriteRenderer.isVisible);
+        }
     }
 
     void OnEnable()
     {
-        ConveyorBeltAnimationManager.Register(this);
+        if (spriteRenderer != null)
+        {
+            SetVisibility(spriteRenderer.isVisible);
+        }
+        else
+        {
+            SetVisibility(false);
+        }
     }
 
     void OnDisable()
     {
-        ConveyorBeltAnimationManager.Unregister(this);
+        SetVisibility(false);
     }
 
     public void ApplyScrollOffset()
@@ -77,11 +89,33 @@ public class ConveyorBeltAnimation : MonoBehaviour
 
     void OnBecameVisible()
     {
-        isVisible = true;
+        SetVisibility(true);
     }
 
     void OnBecameInvisible()
     {
-        isVisible = false;
+        SetVisibility(false);
+    }
+
+    private void SetVisibility(bool visible)
+    {
+        isVisible = visible;
+
+        if (visible)
+        {
+            if (!isRegisteredInManager)
+            {
+                ConveyorBeltAnimationManager.Register(this);
+                isRegisteredInManager = true;
+            }
+        }
+        else
+        {
+            if (isRegisteredInManager)
+            {
+                ConveyorBeltAnimationManager.Unregister(this);
+                isRegisteredInManager = false;
+            }
+        }
     }
 }

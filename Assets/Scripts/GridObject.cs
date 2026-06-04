@@ -10,10 +10,17 @@ public abstract class GridObject : SavableEntity
     public Vector2Int size = new Vector2Int(1, 1);
     public List<ResourceCost> constructionCost;
 
-    // Musimy nadpisaæ Awake, aby wywo³aæ generowanie ID z klasy bazowej
+    // Musimy nadpisaï¿½ Awake, aby wywoï¿½aï¿½ generowanie ID z klasy bazowej
     protected override void Awake()
     {
-        base.Awake(); // To wywo³a Awake z SavableEntity
+        base.Awake(); // To wywoï¿½a Awake z SavableEntity
+
+        // Grid objects are controlled by grid logic, not by 2D physics simulation.
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.simulated = false;
+        }
     }
 
 
@@ -21,7 +28,7 @@ public abstract class GridObject : SavableEntity
     {
         if (GridManager.Instance == null)
         {
-            Debug.LogError("GridManager nie jest dostêpny podczas inicjalizacji GridObject.");
+            Debug.LogError("GridManager nie jest dostï¿½pny podczas inicjalizacji GridObject.");
             return;
         }
 

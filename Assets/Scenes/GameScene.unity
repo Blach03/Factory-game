@@ -19874,15 +19874,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startingInventory:
   - resource: {fileID: 11400000, guid: d8b7fabf6ca67064494cff85ea46082a, type: 2}
-    amount: 150
+    amount: 100
   - resource: {fileID: 11400000, guid: 361f2a7f4b8a1a44a919ccfd3ecadd07, type: 2}
     amount: 100
   - resource: {fileID: 11400000, guid: f9beaccf35641ea40babb506377a9f83, type: 2}
     amount: 750
   - resource: {fileID: 11400000, guid: 019195acccaa6974eb3f142c6c4d3162, type: 2}
-    amount: 750
+    amount: 500
   - resource: {fileID: 11400000, guid: 5ac7141967b8a5644bb7eb58b7c53d44, type: 2}
-    amount: 400
+    amount: 300
   - resource: {fileID: 11400000, guid: 81c5b52fe3c16cc4f866616ea2988063, type: 2}
     amount: 150
   - resource: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}

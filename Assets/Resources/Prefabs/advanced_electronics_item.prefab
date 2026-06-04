@@ -64,7 +64,9 @@ PrefabInstance:
       propertyPath: m_Name
       value: advanced_electronics_item
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 1310372971062347870, guid: fca3e6e07d3941f4aa628f703d4c3222, type: 3}
+    - {fileID: 8829833630637501943, guid: fca3e6e07d3941f4aa628f703d4c3222, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
