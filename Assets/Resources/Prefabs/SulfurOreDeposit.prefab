@@ -105,7 +105,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   uniqueID: 
-  prefabNameForSave: 
+  prefabNameForSave: SulfurOreDeposit
   objectType: 1
   isBlockingPlacement: 0
   occupiedPosition: {x: 0, y: 0}

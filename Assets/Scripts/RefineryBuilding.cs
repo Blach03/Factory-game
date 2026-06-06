@@ -11,6 +11,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
     public int GetInputCount(int slotIndex) {
         if (slotIndex == 0) return currentItemInput;
         if (slotIndex == 1) return Mathf.FloorToInt(currentFluidAmount); 
+        if (slotIndex == 2) return currentTertiaryItemInput;
         return 0;
     }
     public float GetProgressTimer() => timer;
@@ -35,6 +36,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
     [Header("Ekwipunek")]
     public float currentFluidAmount = 0f;
     public int currentItemInput = 0;
+    public int currentTertiaryItemInput = 0;
     public int currentOutputAmount = 0;
     
     public int inputCapacity = 30;
@@ -284,8 +286,11 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
 
     private bool CanStartProduction()
     {
+         bool hasTertiary = currentRecipe.tertiaryInput != null;
+
         return currentFluidAmount >= currentRecipe.fluidAmount &&
                currentItemInput >= currentRecipe.inputItemAmount &&
+             (!hasTertiary || currentTertiaryItemInput >= currentRecipe.tertiaryInputAmount) &&
                currentOutputAmount + currentRecipe.outputResultAmount <= outputCapacity;
     }
 
@@ -293,6 +298,10 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
     {
         currentFluidAmount -= currentRecipe.fluidAmount;
         currentItemInput -= currentRecipe.inputItemAmount;
+        if (currentRecipe.tertiaryInput != null)
+        {
+            currentTertiaryItemInput -= currentRecipe.tertiaryInputAmount;
+        }
         timer = currentRecipe.processTime;
         isProcessing = true;
     }
@@ -305,7 +314,9 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
 
     private void TryConsumeItemsFromWorld()
     {
-        if (currentItemInput >= inputCapacity) return;
+        bool needsPrimary = currentItemInput < inputCapacity;
+        bool needsTertiary = currentRecipe != null && currentRecipe.tertiaryInput != null && currentTertiaryItemInput < inputCapacity;
+        if (!needsPrimary && !needsTertiary) return;
         if (GridManager.Instance == null || currentRecipe == null) return;
 
         // Skanujemy obszar 3x3 budynku
@@ -316,11 +327,29 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
                 Vector2Int tilePos = occupiedPosition + new Vector2Int(x, y);
 
                 Item item = GridManager.Instance.GetItemAtGridSpot(tilePos);
-                if (item != null && !item.isBeingMoved && item.itemData == currentRecipe.inputItem)
+                if (item == null || item.isBeingMoved)
+                {
+                    continue;
+                }
+
+                ResourceData itemData = item.itemData;
+                if (itemData == currentRecipe.inputItem && currentItemInput < inputCapacity)
                 {
                     currentItemInput++;
                     Destroy(item.gameObject);
-                    if (currentItemInput >= inputCapacity) return;
+                    needsPrimary = currentItemInput < inputCapacity;
+                    needsTertiary = currentRecipe.tertiaryInput != null && currentTertiaryItemInput < inputCapacity;
+                    if (!needsPrimary && !needsTertiary) return;
+                    continue;
+                }
+
+                if (currentRecipe.tertiaryInput != null && itemData == currentRecipe.tertiaryInput && currentTertiaryItemInput < inputCapacity)
+                {
+                    currentTertiaryItemInput++;
+                    Destroy(item.gameObject);
+                    needsPrimary = currentItemInput < inputCapacity;
+                    needsTertiary = currentTertiaryItemInput < inputCapacity;
+                    if (!needsPrimary && !needsTertiary) return;
                 }
             }
         }
@@ -363,6 +392,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
     {
         currentRecipe = recipe;
         currentItemInput = 0;
+        currentTertiaryItemInput = 0;
         currentOutputAmount = 0;
         currentFluidAmount = 0;
         isProcessing = false;
@@ -472,6 +502,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
         public string activeRecipeName;
         public float fluidAmount;
         public int itemInput;
+        public int tertiaryInput;
         public int outputAmount;
         public float currentTimer;
         public bool processing;
@@ -484,6 +515,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
         data.activeRecipeName = currentRecipe != null ? currentRecipe.name : string.Empty;
         data.fluidAmount = currentFluidAmount;
         data.itemInput = currentItemInput;
+        data.tertiaryInput = currentTertiaryItemInput;
         data.outputAmount = currentOutputAmount;
         data.currentTimer = timer;
         data.processing = isProcessing;
@@ -509,6 +541,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
 
                 currentFluidAmount = data.fluidAmount;
                 currentItemInput = data.itemInput;
+                currentTertiaryItemInput = data.tertiaryInput;
                 currentOutputAmount = data.outputAmount;
                 timer = data.currentTimer;
                 isProcessing = data.processing;

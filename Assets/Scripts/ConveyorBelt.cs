@@ -4,7 +4,8 @@ using System.Collections.Generic;
 public class ConveyorBelt : GridObject
 {
     [Header("Settings")]
-    public float baseBeltSpeed = 2f; // Pr�dko�� bazowa
+    public float baseBeltSpeed = 2f;
+    [SerializeField] private int blockedRetryDelayFrames = 2;
 
     public float CurrentBeltSpeed
     {
@@ -14,46 +15,31 @@ public class ConveyorBelt : GridObject
             {
                 return baseBeltSpeed * TechTreeManager.Instance.GetConveyorSpeedMultiplier();
             }
+
             return baseBeltSpeed;
         }
     }
+
     public Direction travelDirection = Direction.Right;
     public enum Direction { Right, Down, Left, Up }
 
-    private const int OVERHEAD_LAYER_ID = 11;
-
     private bool isHoldingItem = false;
-    private bool isRegisteredForTick = false;
     private Item heldItem = null;
     private int overheadDelayFrames = 0;
     private const int MAX_OVERHEAD_DELAY_FRAMES = 20;
-    private float checkTimer = 0f;
-    public float checkInterval = 0.05f;
-
 
     void OnEnable()
     {
-        UpdateTickRegistration();
+        TransportTickManager.RegisterConveyor(this);
     }
 
     void OnDisable()
     {
         TransportTickManager.UnregisterConveyor(this);
-        isRegisteredForTick = false;
     }
 
-    public void TickTransport(float deltaTime)
-    {
-        if (isHoldingItem)
-        {
-            checkTimer -= deltaTime;
-            if (checkTimer <= 0f)
-            {
-                ForceCheckForMovement();
-                checkTimer = checkInterval;
-            }
-        }
-    }
+    // Conveyor logic is now queued by TransportTickManager.
+    public void TickTransport(float deltaTime) { }
 
     protected override void Awake()
     {
@@ -62,55 +48,52 @@ public class ConveyorBelt : GridObject
         objectType = GridObjectType.ConveyorBelt;
         isBlockingPlacement = true;
         size = new Vector2Int(1, 1);
-
     }
 
     void Start()
     {
         UpdateVisualRotation();
-        // Check for a stationary item already on this belt (e.g. after loading a save).
         StartCoroutine(CheckForExistingItemDelayed());
     }
 
     private System.Collections.IEnumerator CheckForExistingItemDelayed()
     {
-        yield return null; // wait one frame so all Items have registered their occupation in Start
+        yield return null;
+
         if (GridManager.Instance != null)
         {
             Item existing = GridManager.Instance.GetItemAtGridSpot(GetGridPosition());
             if (existing != null && !existing.isBeingMoved)
+            {
                 NotifyItemArrived(existing);
+            }
         }
     }
 
-    /// <summary>Called by Item when it finishes moving onto this belt's grid cell.</summary>
     public void NotifyItemArrived(Item item)
     {
         heldItem = item;
         isHoldingItem = true;
-        UpdateTickRegistration();
-        checkTimer = 0f; // trigger an immediate check
-        ForceCheckForMovement();
+        TransportTickManager.RequestConveyorTick(this, 0);
+
+        OverheadConveyor overhead = GetOverheadConveyorOnThisSpot();
+        if (overhead != null && overhead.IsStartSegment)
+        {
+            overhead.NotifyLowerLayerItemAvailable();
+        }
     }
 
-    private void UpdateTickRegistration()
+    public bool ProcessTransportStep(out int retryDelayFrames)
     {
-        if (isHoldingItem)
+        retryDelayFrames = Mathf.Max(1, blockedRetryDelayFrames);
+
+        if (!isHoldingItem)
         {
-            if (!isRegisteredForTick)
-            {
-                TransportTickManager.RegisterConveyor(this);
-                isRegisteredForTick = true;
-            }
+            return false;
         }
-        else
-        {
-            if (isRegisteredForTick)
-            {
-                TransportTickManager.UnregisterConveyor(this);
-                isRegisteredForTick = false;
-            }
-        }
+
+        ConveyorStepResult result = ForceCheckForMovement();
+        return result == ConveyorStepResult.Waiting;
     }
 
     public void RotateBelt(Direction newDirection)
@@ -121,19 +104,9 @@ public class ConveyorBelt : GridObject
 
     private OverheadConveyor GetOverheadConveyorOnThisSpot()
     {
-        if (GridManager.Instance == null) return null;
-
-        List<GridObject> objects = GridManager.Instance.GetAllGridObjects(GetGridPosition());
-
-        if (objects == null) return null;
-
-        for (int i = 0; i < objects.Count; i++)
+        if (GridManager.Instance != null && GridManager.Instance.TryGetOverheadConveyorAt(GetGridPosition(), out OverheadConveyor conveyor))
         {
-            OverheadConveyor conveyor = objects[i] as OverheadConveyor;
-            if (conveyor != null)
-            {
-                return conveyor;
-            }
+            return conveyor;
         }
 
         return null;
@@ -141,16 +114,19 @@ public class ConveyorBelt : GridObject
 
     private bool CanOverheadAcceptItem(OverheadConveyor overhead)
     {
-        if (overhead == null || GridManager.Instance == null) return false;
-
-        if (GridManager.Instance.IsOverheadGridSpotOccupied(overhead.GetGridPosition()) ||
-            GridManager.Instance.IsOverheadGridSpotReserved(overhead.GetGridPosition()))
+        if (overhead == null || GridManager.Instance == null)
         {
             return false;
         }
 
-        Vector2Int nextGridPosition = GetPositionInDirection(overhead.GetGridPosition(), overhead.travelDirection);
+        Vector2Int overheadPos = overhead.GetGridPosition();
+        if (GridManager.Instance.IsOverheadGridSpotOccupied(overheadPos) ||
+            GridManager.Instance.IsOverheadGridSpotReserved(overheadPos))
+        {
+            return false;
+        }
 
+        Vector2Int nextGridPosition = GetPositionInDirection(overheadPos, overhead.travelDirection);
         OverheadConveyor nextConveyor = GetNeighborOverheadConveyor(nextGridPosition);
 
         if (nextConveyor != null && nextConveyor.travelDirection == overhead.travelDirection)
@@ -158,58 +134,54 @@ public class ConveyorBelt : GridObject
             return !GridManager.Instance.IsOverheadGridSpotOccupied(nextGridPosition) &&
                    !GridManager.Instance.IsOverheadGridSpotReserved(nextGridPosition);
         }
+
         return true;
     }
 
     private OverheadConveyor GetNeighborOverheadConveyor(Vector2Int gridPos)
     {
-        if (GridManager.Instance == null) return null;
-
-        List<GridObject> objects = GridManager.Instance.GetAllGridObjects(gridPos);
-
-        if (objects == null) return null;
-
-        for (int i = 0; i < objects.Count; i++)
+        if (GridManager.Instance != null && GridManager.Instance.TryGetOverheadConveyorAt(gridPos, out OverheadConveyor conveyor))
         {
-            OverheadConveyor conveyor = objects[i] as OverheadConveyor;
-            if (conveyor != null)
-            {
-                return conveyor;
-            }
+            return conveyor;
         }
 
         return null;
     }
 
-    private Vector2Int GetPositionInDirection(Vector2Int currentGridPos, ConveyorBelt.Direction direction)
+    private Vector2Int GetPositionInDirection(Vector2Int currentGridPos, Direction direction)
     {
         switch (direction)
         {
-            case ConveyorBelt.Direction.Up: return new Vector2Int(currentGridPos.x, currentGridPos.y + 1);
-            case ConveyorBelt.Direction.Down: return new Vector2Int(currentGridPos.x, currentGridPos.y - 1);
-            case ConveyorBelt.Direction.Left: return new Vector2Int(currentGridPos.x - 1, currentGridPos.y);
-            case ConveyorBelt.Direction.Right: return new Vector2Int(currentGridPos.x + 1, currentGridPos.y);
+            case Direction.Up: return new Vector2Int(currentGridPos.x, currentGridPos.y + 1);
+            case Direction.Down: return new Vector2Int(currentGridPos.x, currentGridPos.y - 1);
+            case Direction.Left: return new Vector2Int(currentGridPos.x - 1, currentGridPos.y);
+            case Direction.Right: return new Vector2Int(currentGridPos.x + 1, currentGridPos.y);
             default: return currentGridPos;
         }
     }
 
+    private enum ConveyorStepResult
+    {
+        Idle,
+        Waiting,
+        Moved
+    }
 
-    private void ForceCheckForMovement()
+    private ConveyorStepResult ForceCheckForMovement()
     {
         if (GridManager.Instance == null)
         {
-            return;
+            return ConveyorStepResult.Waiting;
         }
 
-        // Use the stored reference; fall back to grid lookup if needed.
         Item itemToMove = heldItem;
         if (itemToMove == null || itemToMove.isBeingMoved || itemToMove.gameObject.layer != 8)
         {
-            itemToMove = GridManager.Instance != null
-                ? GridManager.Instance.GetItemAtGridSpot(GetGridPosition())
-                : null;
+            itemToMove = GridManager.Instance.GetItemAtGridSpot(GetGridPosition());
             if (itemToMove != null && (itemToMove.isBeingMoved || itemToMove.gameObject.layer != 8))
+            {
                 itemToMove = null;
+            }
         }
 
         if (itemToMove == null)
@@ -217,34 +189,24 @@ public class ConveyorBelt : GridObject
             isHoldingItem = false;
             heldItem = null;
             overheadDelayFrames = 0;
-            UpdateTickRegistration();
-            return;
+            return ConveyorStepResult.Idle;
         }
-
 
         if (overheadDelayFrames > 0)
         {
             overheadDelayFrames--;
-
             if (overheadDelayFrames > 0)
             {
-                return;
+                return ConveyorStepResult.Waiting;
             }
         }
         else
         {
             OverheadConveyor overhead = GetOverheadConveyorOnThisSpot();
-
-            if (overhead != null)
+            if (overhead != null && overhead.itemOnOverheadLayer == null && overhead.IsStartSegment && CanOverheadAcceptItem(overhead))
             {
-                if (overhead.itemOnOverheadLayer != null)
-                {
-                }
-                else if (overhead.IsStartSegment && CanOverheadAcceptItem(overhead))
-                {
-                    overheadDelayFrames = MAX_OVERHEAD_DELAY_FRAMES;
-                    return;
-                }
+                overheadDelayFrames = MAX_OVERHEAD_DELAY_FRAMES;
+                return ConveyorStepResult.Waiting;
             }
         }
 
@@ -253,15 +215,14 @@ public class ConveyorBelt : GridObject
 
         if (IsOutputBlocked(nextWorldPosition))
         {
-            isHoldingItem = true;
-            return;
+            return ConveyorStepResult.Waiting;
         }
 
         itemToMove.SetTargetPosition(nextWorldPosition, CurrentBeltSpeed);
         TutorialItemTracker.OnItemMovedByConveyor();
         isHoldingItem = false;
         heldItem = null;
-        UpdateTickRegistration();
+        return ConveyorStepResult.Moved;
     }
 
     private bool IsOutputBlocked(Vector3 outputWorldPosition)
@@ -273,15 +234,16 @@ public class ConveyorBelt : GridObject
 
     private void UpdateVisualRotation()
     {
-        float angle = 0;
+        float angle = 0f;
         switch (travelDirection)
         {
-            case Direction.Up: angle = 0; break;
-            case Direction.Down: angle = 180; break;
-            case Direction.Left: angle = 90; break;
-            case Direction.Right: angle = -90; break;
+            case Direction.Up: angle = 0f; break;
+            case Direction.Down: angle = 180f; break;
+            case Direction.Left: angle = 90f; break;
+            case Direction.Right: angle = -90f; break;
         }
-        transform.rotation = Quaternion.Euler(0, 0, angle);
+
+        transform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 
     private Vector2Int GetNextGridPosition()
@@ -305,24 +267,23 @@ public class ConveyorBelt : GridObject
 
     public override string GetSerializedData()
     {
-        BuildingSaveData data = new BuildingSaveData();
-
-        // Rzutujemy Enum na int (Right=0, Down=1, itp.)
-        data.outputDirectionInt = (int)this.travelDirection;
+        BuildingSaveData data = new BuildingSaveData
+        {
+            outputDirectionInt = (int)travelDirection
+        };
 
         return JsonUtility.ToJson(data);
     }
 
     public override void LoadComponentData(string json)
     {
-        if (string.IsNullOrEmpty(json)) return;
+        if (string.IsNullOrEmpty(json))
+        {
+            return;
+        }
+
         BuildingSaveData data = JsonUtility.FromJson<BuildingSaveData>(json);
-
-        // Przywracamy Enum z inta i od�wie�amy wizualia strza�ki
-        this.travelDirection = (Direction)data.outputDirectionInt;
-
-        // Wywo�ujemy Twoj� istniej�c� metod� wizualizacji
-        RotateBelt(this.travelDirection);
-
+        travelDirection = (Direction)data.outputDirectionInt;
+        RotateBelt(travelDirection);
     }
 }

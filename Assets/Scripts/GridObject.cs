@@ -15,14 +15,12 @@ public abstract class GridObject : SavableEntity
     {
         base.Awake(); // To wywo�a Awake z SavableEntity
 
-        // Keep colliders queryable for OnMouseDown while avoiding dynamic physics work.
+        // Keep objects clickable via OnMouseDown while remaining cheap for physics.
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
             rb.bodyType = RigidbodyType2D.Static;
             rb.gravityScale = 0f;
-            rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0f;
             rb.simulated = true;
         }
     }

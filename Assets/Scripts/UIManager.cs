@@ -16,6 +16,7 @@ public class UIManager : MonoBehaviour
     [Header("Global Font Override")]
     [SerializeField] private TMP_FontAsset globalFontOverride;
     [SerializeField] private bool includeInactiveTextInFontOverride = true;
+    [SerializeField] private bool enablePeriodicFontOverrideRefresh = false;
     [SerializeField] private float fontOverrideRefreshInterval = 0.5f;
 
     private const int CompactCostTypesThreshold = 5;
@@ -156,13 +157,16 @@ public class UIManager : MonoBehaviour
             ToggleTechnologyTree();
         }
 
-        // Aktualizuj crafting w tle, nawet jeśli HandCraftingManager jest wyłączony
-        HandCraftingManager.UpdateCraftingBackground(Time.deltaTime);
+        // Update background crafting only when manager loop is unavailable.
+        if (HandCraftingManager.Instance == null || !HandCraftingManager.Instance.isActiveAndEnabled)
+        {
+            HandCraftingManager.UpdateCraftingBackground(Time.deltaTime);
+        }
     }
 
     private void RefreshGlobalFontOverrideIfNeeded()
     {
-        if (globalFontOverride == null || fontOverrideRefreshInterval <= 0f)
+        if (!enablePeriodicFontOverrideRefresh || globalFontOverride == null || fontOverrideRefreshInterval <= 0f)
         {
             return;
         }

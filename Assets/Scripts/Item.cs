@@ -227,19 +227,30 @@ public class Item : SavableEntity
         currentMoveSpeed = speed;
     }
 
-    public void TickTransport(float deltaTime)
+    public bool TickTransport(float deltaTime)
     {
-        if (!isBeingMoved) return;
+        if (!isBeingMoved) return false;
 
-        transform.position = Vector3.MoveTowards(
-            transform.position,
+        Vector3 currentPosition = transform.position;
+        Vector3 nextPosition = Vector3.MoveTowards(
+            currentPosition,
             targetWorldPosition,
             currentMoveSpeed * deltaTime
         );
 
-        if (Vector3.Distance(transform.position, targetWorldPosition) < 0.001f)
+        bool movedThisTick = (nextPosition - currentPosition).sqrMagnitude > 0.00000001f;
+        if (movedThisTick)
         {
-            transform.position = targetWorldPosition;
+            transform.position = nextPosition;
+        }
+
+        if ((transform.position - targetWorldPosition).sqrMagnitude < 0.000001f)
+        {
+            if ((transform.position - targetWorldPosition).sqrMagnitude > 0f)
+            {
+                transform.position = targetWorldPosition;
+                movedThisTick = true;
+            }
 
             // Mark as stationary before notifying conveyor logic.
             isBeingMoved = false;
@@ -272,6 +283,8 @@ public class Item : SavableEntity
                 currentReservedGridPos = Vector2Int.zero;
             }
         }
+
+        return movedThisTick;
     }
 
     void OnDestroy()

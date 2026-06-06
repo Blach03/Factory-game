@@ -15,6 +15,10 @@ public class RefineryRecipeData : ScriptableObject, IBuildingRecipe
     public ResourceData tetriaryinputItem;
     public int tetriaryinputItemAmount;
 
+    // Canonical aliases used by runtime/UI code. Keep serialized typo fields for backward compatibility.
+    public ResourceData tertiaryInput => tetriaryinputItem;
+    public int tertiaryInputAmount => tetriaryinputItemAmount;
+
     [Header("Składnik Płynny (Secondary)")]
     public ResourceData fluidResource; // Twoja ropa (ResourceData)
     public int fluidAmount; // Ilość płynu (jako float dla logiki rafinerii)

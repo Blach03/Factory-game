@@ -15,7 +15,7 @@ MonoBehaviour:
   _recipeName: Iron Rod Recipe
   _techRequirementId: 
   _primaryInput: {fileID: 11400000, guid: fa95236d2b3365649a3c0e5705a9e625, type: 2}
-  _primaryInputAmount: 2
+  _primaryInputAmount: 1
   _secondaryInput: {fileID: 0}
   _secondaryInputAmount: 0
   tertiaryInput: {fileID: 0}
