@@ -51,6 +51,8 @@ public class GridManager : MonoBehaviour
 
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
+        Time.fixedDeltaTime = 1f / 30f;
+        Time.maximumDeltaTime = 1f / 10f;
 
         if (itemsContainer == null)
         {
@@ -360,6 +362,82 @@ public class GridManager : MonoBehaviour
             return placedObjects;
         }
         return new List<GridObject>();
+    }
+
+    public bool TryGetConveyorAt(Vector2Int gridPosition, out ConveyorBelt conveyor)
+    {
+        conveyor = null;
+
+        if (!allPlacedObjects.TryGetValue(gridPosition, out List<GridObject> placedObjects))
+        {
+            return false;
+        }
+
+        CleanupDeadReferences(gridPosition, placedObjects);
+
+        for (int i = 0; i < placedObjects.Count; i++)
+        {
+            ConveyorBelt current = placedObjects[i] as ConveyorBelt;
+            if (current != null)
+            {
+                conveyor = current;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool TryGetOverheadConveyorAt(Vector2Int gridPosition, out OverheadConveyor conveyor, OverheadConveyor exclude = null)
+    {
+        conveyor = null;
+
+        if (!allPlacedObjects.TryGetValue(gridPosition, out List<GridObject> placedObjects))
+        {
+            return false;
+        }
+
+        CleanupDeadReferences(gridPosition, placedObjects);
+
+        for (int i = 0; i < placedObjects.Count; i++)
+        {
+            OverheadConveyor current = placedObjects[i] as OverheadConveyor;
+            if (current == null || current == exclude)
+            {
+                continue;
+            }
+
+            conveyor = current;
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool TryGetLowerLayerObjectAt(Vector2Int gridPosition, out GridObject lowerLayerObject)
+    {
+        lowerLayerObject = null;
+
+        if (!allPlacedObjects.TryGetValue(gridPosition, out List<GridObject> placedObjects))
+        {
+            return false;
+        }
+
+        CleanupDeadReferences(gridPosition, placedObjects);
+
+        for (int i = 0; i < placedObjects.Count; i++)
+        {
+            GridObject current = placedObjects[i];
+            if (current == null || current.objectType == GridObjectType.OverheadConveyor)
+            {
+                continue;
+            }
+
+            lowerLayerObject = current;
+            return true;
+        }
+
+        return false;
     }
 
 }

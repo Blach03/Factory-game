@@ -70,16 +70,28 @@ public class ProductionStatusUI : MonoBehaviour
         secondaryInputCountText.gameObject.SetActive(hasSecondary);
         if(hasSecondary) SetupInputIcon(secondaryInputIcon, recipe.secondaryInput);
 
-        // Tertiary (Dostępne tylko jeśli to recepta assemblera)
+        // Tertiary
         bool hasTertiary = false;
+        int tertiaryRequiredAmount = 0;
         if (recipe is AssemblyRecipeData assemblyRecipe && assemblyRecipe.tertiaryInput != null)
         {
             SetupInputIcon(tertiaryInputIcon, assemblyRecipe.tertiaryInput);
             hasTertiary = true;
+            tertiaryRequiredAmount = assemblyRecipe.tertiaryInputAmount;
+        }
+        else if (recipe is RefineryRecipeData refineryRecipe && refineryRecipe.tertiaryInput != null)
+        {
+            SetupInputIcon(tertiaryInputIcon, refineryRecipe.tertiaryInput);
+            hasTertiary = true;
+            tertiaryRequiredAmount = refineryRecipe.tertiaryInputAmount;
         }
         
         tertiaryInputIcon.gameObject.SetActive(hasTertiary);
         tertiaryInputCountText.gameObject.SetActive(hasTertiary);
+        if (hasTertiary)
+        {
+            tertiaryInputCountText.text = $"0 / {tertiaryRequiredAmount}";
+        }
 
         // Output
         if (recipe.outputItem != null)
@@ -114,6 +126,8 @@ public class ProductionStatusUI : MonoBehaviour
 
         if (recipe is AssemblyRecipeData ard && ard.tertiaryInput != null)
             UpdateInputSlot(curC, ard.tertiaryInputAmount, currentBuilding.inputCapacity, tertiaryInputCountText);
+        else if (recipe is RefineryRecipeData rrd && rrd.tertiaryInput != null)
+            UpdateInputSlot(curC, rrd.tertiaryInputAmount, currentBuilding.inputCapacity, tertiaryInputCountText);
 
         outputItemCountText.text = $"{curOut} / {currentBuilding.outputCapacity}";
         outputItemCountText.color = curOut >= currentBuilding.outputCapacity ? NotEnoughColor : RequiredColor;

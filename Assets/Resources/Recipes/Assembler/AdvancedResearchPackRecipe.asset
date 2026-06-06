@@ -15,7 +15,7 @@ MonoBehaviour:
   _recipeName: Advanced Research Pack Recipe
   _techRequirementId: t18
   _primaryInput: {fileID: 11400000, guid: 31bc856968d48dc44ab611c2c126d7e1, type: 2}
-  _primaryInputAmount: 2
+  _primaryInputAmount: 1
   _secondaryInput: {fileID: 11400000, guid: fdecbfc80266b814cb65e68815ba644e, type: 2}
   _secondaryInputAmount: 2
   tertiaryInput: {fileID: 11400000, guid: 93a6e34a2774aad40a48a5f61a437476, type: 2}

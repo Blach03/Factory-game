@@ -37,12 +37,16 @@ public class OverheadConveyor : GridObject
     {
         UpdateVisualRotation();
         CheckChainState();
+        checkTimer = 0f;
+        ForceCheckForMovement();
     }
 
     public override void Initialize(Vector2Int gridPosition)
     {
         base.Initialize(gridPosition);
         CheckChainState();
+        checkTimer = 0f;
+        ForceCheckForMovement();
         if (GridManager.Instance != null)
         {
             GridManager.Instance.NotifyNeighborsOfChange(GetGridPosition());
@@ -61,6 +65,8 @@ public class OverheadConveyor : GridObject
     public void OnNeighborChange()
     {
         CheckChainState();
+        checkTimer = 0f;
+        ForceCheckForMovement();
     }
 
     public void RotateBelt(ConveyorBelt.Direction newDirection)
@@ -69,6 +75,8 @@ public class OverheadConveyor : GridObject
 
         UpdateVisualRotation();
         CheckChainState();
+        checkTimer = 0f;
+        ForceCheckForMovement();
 
         if (GridManager.Instance != null)
         {
@@ -115,19 +123,9 @@ public class OverheadConveyor : GridObject
 
     private OverheadConveyor GetNeighborOverheadConveyor(Vector2Int gridPos)
     {
-        if (GridManager.Instance == null) return null;
-
-        List<GridObject> objects = GridManager.Instance.GetAllGridObjects(gridPos);
-
-        if (objects == null) return null;
-
-        for (int i = 0; i < objects.Count; i++)
+        if (GridManager.Instance != null && GridManager.Instance.TryGetOverheadConveyorAt(gridPos, out OverheadConveyor conveyor, this))
         {
-            OverheadConveyor conveyor = objects[i] as OverheadConveyor;
-            if (conveyor != null && conveyor != this)
-            {
-                return conveyor;
-            }
+            return conveyor;
         }
 
         return null;
@@ -168,6 +166,12 @@ public class OverheadConveyor : GridObject
             ForceCheckForMovement();
             checkTimer = checkInterval;
         }
+    }
+
+    public void NotifyLowerLayerItemAvailable()
+    {
+        checkTimer = 0f;
+        ForceCheckForMovement();
     }
 
     private void ForceCheckForMovement()
@@ -236,7 +240,11 @@ public class OverheadConveyor : GridObject
         if (isEndSegment)
         {
 
-            GridObject nextGridObj = GridManager.Instance.GetGridObject(nextGridPosition);
+            GridObject nextGridObj = null;
+            if (GridManager.Instance != null)
+            {
+                GridManager.Instance.TryGetLowerLayerObjectAt(nextGridPosition, out nextGridObj);
+            }
 
             bool canDropOnNextTile = nextGridObj == null || nextGridObj.objectType == GridObjectType.ConveyorBelt;
 

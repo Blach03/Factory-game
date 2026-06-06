@@ -31,12 +31,15 @@ public class AudioManager : MonoBehaviour
 
     [Header("Auto Hook")]
     [Tooltip("How often to scan scene for newly spawned UI Buttons.")]
-    [SerializeField] private float uiScanInterval = 0.75f;
+    [SerializeField] private bool enablePeriodicUiButtonScan = false;
+    [SerializeField] private float uiScanInterval = 5f;
+    [SerializeField] private float musicPlaybackPollInterval = 0.25f;
 
     private AudioSource uiSource;
     private AudioSource musicSource;
     private readonly HashSet<int> hookedButtonIds = new HashSet<int>();
     private float uiScanTimer;
+    private float musicPollTimer;
     private int currentTrackIndex = -1;
 
     private float masterVolume = 1f;
@@ -85,14 +88,24 @@ public class AudioManager : MonoBehaviour
 
     private void Update()
     {
-        uiScanTimer += Time.unscaledDeltaTime;
-        if (uiScanTimer >= uiScanInterval)
+        float unscaledDelta = Time.unscaledDeltaTime;
+
+        if (enablePeriodicUiButtonScan && uiScanInterval > 0f)
         {
-            uiScanTimer = 0f;
-            HookAllButtonsInScene();
+            uiScanTimer += unscaledDelta;
+            if (uiScanTimer >= uiScanInterval)
+            {
+                uiScanTimer = 0f;
+                HookAllButtonsInScene();
+            }
         }
 
-        UpdateMusicPlayback();
+        musicPollTimer += unscaledDelta;
+        if (musicPollTimer >= musicPlaybackPollInterval)
+        {
+            musicPollTimer = 0f;
+            UpdateMusicPlayback();
+        }
     }
 
     public void PlayUIClick()
@@ -282,8 +295,6 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        musicSource.volume = backgroundMusicVolume * musicCategoryVolume;
-
         if (backgroundMusicPlaylist == null || backgroundMusicPlaylist.Count == 0)
         {
             return;
@@ -349,7 +360,7 @@ public class AudioManager : MonoBehaviour
 
     private void HookAllButtonsInScene()
     {
-        Button[] buttons = FindObjectsOfType<Button>(true);
+        Button[] buttons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         for (int i = 0; i < buttons.Length; i++)
         {
             Button btn = buttons[i];
