@@ -212,6 +212,8 @@ public class FurnaceBuilding : GridObject, IMachineWorkStateProvider
 
     public void SetRecipe(SmeltingRecipeData newRecipe)
     {
+        TryTransferStoredItemsToPlayerInventory();
+
         currentRecipe = newRecipe;
         timer = GetModifiedSmeltingTime();
         UpdateRecipeIcon();
@@ -222,6 +224,33 @@ public class FurnaceBuilding : GridObject, IMachineWorkStateProvider
 
         isSmelting = false;
         timer = GetModifiedSmeltingTime();
+    }
+
+    public void TryTransferStoredItemsToPlayerInventory()
+    {
+        if (PlayerInventory.Instance == null || currentRecipe == null)
+        {
+            return;
+        }
+
+        TransferToPlayerInventory(currentRecipe.primaryInput, currentPrimaryInput);
+        TransferToPlayerInventory(currentRecipe.secondaryInput, currentSecondaryInput);
+        TransferToPlayerInventory(currentRecipe.outputItem, currentOutputAmount);
+
+        currentPrimaryInput = 0;
+        currentSecondaryInput = 0;
+        currentOutputAmount = 0;
+        isSmelting = false;
+    }
+
+    private static void TransferToPlayerInventory(ResourceData resource, int amount)
+    {
+        if (resource == null || amount <= 0 || PlayerInventory.Instance == null)
+        {
+            return;
+        }
+
+        PlayerInventory.Instance.AddItem(resource, amount);
     }
 
     public List<SmeltingRecipeData> GetAllAvailableRecipes()

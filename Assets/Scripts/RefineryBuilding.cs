@@ -390,6 +390,8 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
 
     public void SetRecipe(RefineryRecipeData recipe)
     {
+        TryTransferStoredItemsToPlayerInventory();
+
         currentRecipe = recipe;
         currentItemInput = 0;
         currentTertiaryItemInput = 0;
@@ -397,6 +399,39 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
         currentFluidAmount = 0;
         isProcessing = false;
         UpdateRecipeIcon();
+    }
+
+    public void TryTransferStoredItemsToPlayerInventory()
+    {
+        if (PlayerInventory.Instance == null || currentRecipe == null)
+        {
+            return;
+        }
+
+        TransferToPlayerInventory(currentRecipe.inputItem, currentItemInput);
+        TransferToPlayerInventory(currentRecipe.tertiaryInput, currentTertiaryItemInput);
+
+        if (currentRecipe.outputResource != null && !currentRecipe.outputResource.isFluid)
+        {
+            TransferToPlayerInventory(currentRecipe.outputResource, currentOutputAmount);
+        }
+
+        currentItemInput = 0;
+        currentTertiaryItemInput = 0;
+        currentOutputAmount = 0;
+        currentFluidAmount = 0f;
+        isProcessing = false;
+        timer = 0f;
+    }
+
+    private static void TransferToPlayerInventory(ResourceData resource, int amount)
+    {
+        if (resource == null || amount <= 0 || PlayerInventory.Instance == null)
+        {
+            return;
+        }
+
+        PlayerInventory.Instance.AddItem(resource, amount);
     }
 
     private void UpdateRecipeIcon()

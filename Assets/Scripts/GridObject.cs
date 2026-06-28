@@ -9,19 +9,18 @@ public abstract class GridObject : SavableEntity
     public Vector2Int occupiedPosition;
     public Vector2Int size = new Vector2Int(1, 1);
     public List<ResourceCost> constructionCost;
+    private bool hasInitializedGridPlacement = false;
 
     // Musimy nadpisa� Awake, aby wywo�a� generowanie ID z klasy bazowej
     protected override void Awake()
     {
         base.Awake(); // To wywo�a Awake z SavableEntity
 
-        // Keep objects clickable via OnMouseDown while remaining cheap for physics.
+        // Grid clicks are handled centrally; static rigidbody simulation is unnecessary.
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         if (rb != null)
         {
-            rb.bodyType = RigidbodyType2D.Static;
-            rb.gravityScale = 0f;
-            rb.simulated = true;
+            rb.simulated = false;
         }
     }
 
@@ -35,6 +34,7 @@ public abstract class GridObject : SavableEntity
         }
 
         occupiedPosition = gridPosition;
+        hasInitializedGridPlacement = true;
 
         for (int x = 0; x < size.x; x++)
         {
@@ -59,7 +59,7 @@ public abstract class GridObject : SavableEntity
 
     protected virtual void OnDestroy()
     {
-        if (GridManager.Instance != null && occupiedPosition != Vector2Int.zero)
+        if (GridManager.Instance != null && hasInitializedGridPlacement)
         {
             for (int x = 0; x < size.x; x++)
             {

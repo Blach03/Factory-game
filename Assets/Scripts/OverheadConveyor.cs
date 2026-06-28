@@ -3,6 +3,14 @@ using System.Collections.Generic;
 
 public class OverheadConveyor : GridObject
 {
+    public enum SegmentRole
+    {
+        Single,
+        Start,
+        Middle,
+        End
+    }
+
     public float baseBeltSpeed = 4f;
 
     public float CurrentBeltSpeed => TechTreeManager.Instance != null
@@ -15,8 +23,14 @@ public class OverheadConveyor : GridObject
 
     private bool isStartSegment = false;
     private bool isEndSegment = false;
+    private SegmentRole segmentRole = SegmentRole.Single;
+
+    [SerializeField] private float staleStateSweepInterval = 2f;
+    private float staleStateSweepTimer = 0f;
 
     public bool IsStartSegment => isStartSegment;
+    public bool IsEndSegment => isEndSegment;
+    public SegmentRole CurrentSegmentRole => segmentRole;
 
     public Item itemOnOverheadLayer = null;
     public Item itemToPickup = null;
@@ -36,16 +50,18 @@ public class OverheadConveyor : GridObject
     void Start()
     {
         UpdateVisualRotation();
-        CheckChainState();
+        RefreshSegmentState();
         checkTimer = 0f;
+        staleStateSweepTimer = Random.Range(0f, Mathf.Max(0.1f, staleStateSweepInterval));
         ForceCheckForMovement();
     }
 
     public override void Initialize(Vector2Int gridPosition)
     {
         base.Initialize(gridPosition);
-        CheckChainState();
+        RefreshSegmentState();
         checkTimer = 0f;
+        staleStateSweepTimer = Random.Range(0f, Mathf.Max(0.1f, staleStateSweepInterval));
         ForceCheckForMovement();
         if (GridManager.Instance != null)
         {
@@ -64,7 +80,16 @@ public class OverheadConveyor : GridObject
 
     public void OnNeighborChange()
     {
-        CheckChainState();
+        OnNeighborChange(new Vector2Int(int.MinValue, int.MinValue));
+    }
+
+    public void OnNeighborChange(Vector2Int changedGridPos)
+    {
+        if (IsSegmentUpdateRelevant(changedGridPos))
+        {
+            RefreshSegmentState();
+        }
+
         checkTimer = 0f;
         ForceCheckForMovement();
     }
@@ -74,7 +99,7 @@ public class OverheadConveyor : GridObject
         travelDirection = newDirection;
 
         UpdateVisualRotation();
-        CheckChainState();
+        RefreshSegmentState();
         checkTimer = 0f;
         ForceCheckForMovement();
 
@@ -131,7 +156,21 @@ public class OverheadConveyor : GridObject
         return null;
     }
 
-    private void CheckChainState()
+    private bool IsSegmentUpdateRelevant(Vector2Int changedGridPos)
+    {
+        if (changedGridPos.x == int.MinValue)
+        {
+            return true;
+        }
+
+        Vector2Int currentPos = GetGridPosition();
+        Vector2Int prevPos = GetPositionInDirection(currentPos, GetOppositeDirection(travelDirection));
+        Vector2Int nextPos = GetPositionInDirection(currentPos, travelDirection);
+
+        return changedGridPos == prevPos || changedGridPos == nextPos;
+    }
+
+    private void RefreshSegmentState()
     {
         Vector2Int currentPos = GetGridPosition();
 
@@ -143,9 +182,24 @@ public class OverheadConveyor : GridObject
         Vector2Int nextPos = GetPositionInDirection(currentPos, travelDirection);
         OverheadConveyor nextConveyor = GetNeighborOverheadConveyor(nextPos);
 
-
         isEndSegment = !(nextConveyor != null && nextConveyor.travelDirection == travelDirection);
 
+        if (isStartSegment && isEndSegment)
+        {
+            segmentRole = SegmentRole.Single;
+        }
+        else if (isStartSegment)
+        {
+            segmentRole = SegmentRole.Start;
+        }
+        else if (isEndSegment)
+        {
+            segmentRole = SegmentRole.End;
+        }
+        else
+        {
+            segmentRole = SegmentRole.Middle;
+        }
     }
 
     void OnEnable()
@@ -166,6 +220,13 @@ public class OverheadConveyor : GridObject
             ForceCheckForMovement();
             checkTimer = checkInterval;
         }
+
+        staleStateSweepTimer -= deltaTime;
+        if (staleStateSweepTimer <= 0f)
+        {
+            staleStateSweepTimer = Mathf.Max(0.1f, staleStateSweepInterval);
+            RunStaleStateSweep();
+        }
     }
 
     public void NotifyLowerLayerItemAvailable()
@@ -174,19 +235,30 @@ public class OverheadConveyor : GridObject
         ForceCheckForMovement();
     }
 
+    public void NotifyOverheadLayerItemAvailable()
+    {
+        checkTimer = 0f;
+        ForceCheckForMovement();
+    }
+
     private void ForceCheckForMovement()
     {
+        if (GridManager.Instance == null)
+        {
+            return;
+        }
+
         Vector2Int currentPos = GetGridPosition();
 
-        itemOnOverheadLayer = GridManager.Instance != null
-            ? GridManager.Instance.GetOverheadItemAtGridSpot(currentPos)
-            : null;
+        itemOnOverheadLayer = GridManager.Instance.GetOverheadItemAtGridSpot(currentPos);
 
         if (isStartSegment)
         {
-            itemToPickup = GridManager.Instance != null
-                ? GridManager.Instance.GetItemAtGridSpot(currentPos)
-                : null;
+            itemToPickup = GridManager.Instance.GetItemAtGridSpot(currentPos);
+        }
+        else
+        {
+            itemToPickup = null;
         }
 
         if (itemOnOverheadLayer != null && !itemOnOverheadLayer.isBeingMoved)
@@ -202,6 +274,36 @@ public class OverheadConveyor : GridObject
                 TryPickupItem(itemToPickup);
             }
         }
+    }
+
+    private void RunStaleStateSweep()
+    {
+        if (GridManager.Instance == null)
+        {
+            return;
+        }
+
+        Vector2Int currentPos = GetGridPosition();
+        Vector2Int prevPos = GetPositionInDirection(currentPos, GetOppositeDirection(travelDirection));
+        Vector2Int nextPos = GetPositionInDirection(currentPos, travelDirection);
+
+        RepairGridSpot(currentPos, true);
+        RepairGridSpot(currentPos, false);
+        RepairGridSpot(prevPos, false);
+        RepairGridSpot(nextPos, false);
+        RepairGridSpot(nextPos, true);
+
+        ForceCheckForMovement();
+    }
+
+    private void RepairGridSpot(Vector2Int gridPos, bool overheadLayer)
+    {
+        if (GridManager.Instance == null)
+        {
+            return;
+        }
+
+        GridManager.Instance.CleanupInvalidItemReferenceAt(gridPos, overheadLayer);
     }
 
     private bool CanPickupFromLowerLayer()

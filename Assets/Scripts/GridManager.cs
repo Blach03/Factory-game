@@ -201,6 +201,76 @@ public class GridManager : MonoBehaviour
         return item;
     }
 
+    private bool IsItemReferenceConsistent(Vector2Int gridPosition, Item item, bool overheadLayer)
+    {
+        if (item == null)
+        {
+            return false;
+        }
+
+        if (!item.gameObject.activeInHierarchy || item.isBeingMoved)
+        {
+            return false;
+        }
+
+        int expectedLayer = overheadLayer ? 11 : 8;
+        if (item.gameObject.layer != expectedLayer)
+        {
+            return false;
+        }
+
+        return WorldToGrid(item.transform.position) == gridPosition;
+    }
+
+    public bool CleanupInvalidItemReferenceAt(Vector2Int gridPosition, bool overheadLayer)
+    {
+        Dictionary<Vector2Int, Item> map = overheadLayer ? occupiedOverheadGridSpots : occupiedGridSpots;
+        if (!map.TryGetValue(gridPosition, out Item item))
+        {
+            return false;
+        }
+
+        if (IsItemReferenceConsistent(gridPosition, item, overheadLayer))
+        {
+            return false;
+        }
+
+        map.Remove(gridPosition);
+        return true;
+    }
+
+    public Item FindStationaryItemAtGridSpot(Vector2Int gridPosition, bool overheadLayer)
+    {
+        if (itemsContainer == null)
+        {
+            return null;
+        }
+
+        int expectedLayer = overheadLayer ? 11 : 8;
+        int childCount = itemsContainer.childCount;
+        for (int i = 0; i < childCount; i++)
+        {
+            Transform child = itemsContainer.GetChild(i);
+            if (child == null)
+            {
+                continue;
+            }
+
+            Item item = child.GetComponent<Item>();
+            if (item == null || item.isBeingMoved || item.gameObject.layer != expectedLayer)
+            {
+                continue;
+            }
+
+            if (WorldToGrid(item.transform.position) == gridPosition)
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
 
     public ResourceDeposit GetResourceDeposit(Vector2Int gridPosition)
     {
@@ -334,7 +404,7 @@ public class GridManager : MonoBehaviour
                         OverheadConveyor conveyor = obj.GetComponent<OverheadConveyor>();
                         if (conveyor != null)
                         {
-                            conveyor.OnNeighborChange();
+                            conveyor.OnNeighborChange(centerPosition);
                         }
                     }
 

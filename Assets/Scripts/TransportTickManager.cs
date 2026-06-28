@@ -44,8 +44,13 @@ public class TransportTickManager : MonoBehaviour
     [Header("Physics Sync")]
     [SerializeField] private bool disableAutoPhysicsSync2D = true;
 
+    [Header("Stationary Item Recovery")]
+    [SerializeField] private bool enableStationaryItemRecovery = true;
+    [SerializeField] private float stationaryItemRecoveryInterval = 2f;
+
     private int frameCounter;
     private bool pendingPhysicsSync;
+    private float stationaryItemRecoveryTimer;
     private float frameTimeEmaMs;
     private float timeAboveDegradeThreshold;
     private float timeBelowRecoverThreshold;
@@ -69,6 +74,7 @@ public class TransportTickManager : MonoBehaviour
     {
         currentTier = startTier;
         frameTimeEmaMs = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime * 1000f : 16.67f;
+        stationaryItemRecoveryTimer = Mathf.Max(0.1f, stationaryItemRecoveryInterval);
 
         if (disableAutoPhysicsSync2D)
         {
@@ -253,6 +259,114 @@ public class TransportTickManager : MonoBehaviour
         {
             Physics2D.SyncTransforms();
             pendingPhysicsSync = false;
+        }
+
+        if (enableStationaryItemRecovery)
+        {
+            stationaryItemRecoveryTimer -= deltaTime;
+            if (stationaryItemRecoveryTimer <= 0f)
+            {
+                stationaryItemRecoveryTimer = Mathf.Max(0.1f, stationaryItemRecoveryInterval);
+                RunStationaryItemRecoveryPass();
+            }
+        }
+    }
+
+    private void RunStationaryItemRecoveryPass()
+    {
+        if (GridManager.Instance == null || GridManager.Instance.itemsContainer == null)
+        {
+            return;
+        }
+
+        Transform itemsRoot = GridManager.Instance.itemsContainer;
+        int itemCount = itemsRoot.childCount;
+        for (int i = 0; i < itemCount; i++)
+        {
+            Transform child = itemsRoot.GetChild(i);
+            if (child == null)
+            {
+                continue;
+            }
+
+            Item item = child.GetComponent<Item>();
+            if (item == null || item.isBeingMoved || !item.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            item.ReconcileGridOccupationFromWorldPosition();
+
+            Vector2Int gridPos = GridManager.Instance.WorldToGrid(item.transform.position);
+            if (item.gameObject.layer == 11)
+            {
+                if (GridManager.Instance.TryGetOverheadConveyorAt(gridPos, out OverheadConveyor overhead))
+                {
+                    overhead.NotifyOverheadLayerItemAvailable();
+                }
+
+                continue;
+            }
+
+            if (GridManager.Instance.TryGetOverheadConveyorAt(gridPos, out OverheadConveyor startOverhead) && startOverhead.IsStartSegment)
+            {
+                startOverhead.NotifyLowerLayerItemAvailable();
+                continue;
+            }
+
+            if (TryGetOverheadEndingIntoTile(gridPos, out OverheadConveyor endingOverhead) && endingOverhead.IsEndSegment)
+            {
+                if (GridManager.Instance.TryGetConveyorAt(gridPos, out ConveyorBelt belt))
+                {
+                    belt.NotifyItemArrived(item);
+                }
+            }
+        }
+    }
+
+    private bool TryGetOverheadEndingIntoTile(Vector2Int targetTile, out OverheadConveyor overhead)
+    {
+        overhead = null;
+        if (GridManager.Instance == null)
+        {
+            return false;
+        }
+
+        Vector2Int[] neighbors = new Vector2Int[]
+        {
+            new Vector2Int(targetTile.x + 1, targetTile.y),
+            new Vector2Int(targetTile.x - 1, targetTile.y),
+            new Vector2Int(targetTile.x, targetTile.y + 1),
+            new Vector2Int(targetTile.x, targetTile.y - 1)
+        };
+
+        for (int i = 0; i < neighbors.Length; i++)
+        {
+            if (!GridManager.Instance.TryGetOverheadConveyorAt(neighbors[i], out OverheadConveyor candidate))
+            {
+                continue;
+            }
+
+            Vector2Int nextPos = GetPositionInDirection(candidate.GetGridPosition(), candidate.travelDirection);
+            if (nextPos == targetTile)
+            {
+                overhead = candidate;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Vector2Int GetPositionInDirection(Vector2Int currentGridPos, ConveyorBelt.Direction direction)
+    {
+        switch (direction)
+        {
+            case ConveyorBelt.Direction.Up: return new Vector2Int(currentGridPos.x, currentGridPos.y + 1);
+            case ConveyorBelt.Direction.Down: return new Vector2Int(currentGridPos.x, currentGridPos.y - 1);
+            case ConveyorBelt.Direction.Left: return new Vector2Int(currentGridPos.x - 1, currentGridPos.y);
+            case ConveyorBelt.Direction.Right: return new Vector2Int(currentGridPos.x + 1, currentGridPos.y);
+            default: return currentGridPos;
         }
     }
 

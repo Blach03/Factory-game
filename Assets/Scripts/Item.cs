@@ -184,6 +184,19 @@ public class Item : SavableEntity
         }
     }
 
+    public void ReconcileGridOccupationFromWorldPosition()
+    {
+        if (isBeingMoved || GridManager.Instance == null)
+        {
+            return;
+        }
+
+        Vector2Int gridPos = GridManager.Instance.WorldToGrid(transform.position);
+        GridManager.Instance.ClearOccupiedGridSpot(gridPos, this);
+        GridManager.Instance.ClearOccupiedOverheadGridSpot(gridPos, this);
+        RegisterCurrentGridOccupation();
+    }
+
     private void ClearCurrentGridOccupation()
     {
         if (GridManager.Instance == null) return;
@@ -273,6 +286,13 @@ public class Item : SavableEntity
                     if (belt != null)
                     {
                         belt.NotifyItemArrived(this);
+                    }
+                }
+                else if (gameObject.layer == OVERHEAD_LAYER_ID)
+                {
+                    if (GridManager.Instance.TryGetOverheadConveyorAt(arrivedGridPos, out OverheadConveyor overhead))
+                    {
+                        overhead.NotifyOverheadLayerItemAvailable();
                     }
                 }
             }

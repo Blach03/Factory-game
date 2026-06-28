@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 public class CameraController : MonoBehaviour
 {
@@ -41,6 +42,8 @@ public class CameraController : MonoBehaviour
         {
             HandleZoom();
         }
+
+        HandleGridClickInteraction();
 
         CheckForNewChunks();
 
@@ -146,5 +149,82 @@ public class CameraController : MonoBehaviour
         }
 
         return EventSystem.current.IsPointerOverGameObject();
+    }
+
+    private void HandleGridClickInteraction()
+    {
+        if (!Input.GetMouseButtonDown(0) || Time.timeScale == 0f)
+        {
+            return;
+        }
+
+        if (IsPointerOverUi() || GridManager.Instance == null || cam == null)
+        {
+            return;
+        }
+
+        if (PlacementManager.Instance != null && PlacementManager.Instance.IsPlacementOrAreaToolActive())
+        {
+            return;
+        }
+
+        Vector3 mouseWorld = cam.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorld.z = 0f;
+        Vector2Int gridPos = GridManager.Instance.WorldToGrid(mouseWorld);
+
+        List<GridObject> objects = GridManager.Instance.GetGridObjects(gridPos);
+        if (objects == null || objects.Count == 0)
+        {
+            return;
+        }
+
+        GridObject clickedObject = SelectTopInteractiveObject(objects);
+        if (clickedObject == null)
+        {
+            return;
+        }
+
+        clickedObject.gameObject.SendMessage("OnMouseDown", SendMessageOptions.DontRequireReceiver);
+    }
+
+    private static GridObject SelectTopInteractiveObject(List<GridObject> objects)
+    {
+        GridObject best = null;
+        int bestScore = int.MinValue;
+
+        for (int i = 0; i < objects.Count; i++)
+        {
+            GridObject current = objects[i];
+            if (current == null || current.objectType == GridObjectType.ResourceDeposit)
+            {
+                continue;
+            }
+
+            int score = 0;
+            if (current is PipeBuilding)
+            {
+                score = 100;
+            }
+            else if (current.objectType == GridObjectType.Building)
+            {
+                score = 90;
+            }
+            else if (current.isBlockingPlacement)
+            {
+                score = 50;
+            }
+            else if (current.objectType == GridObjectType.OverheadConveyor || current.objectType == GridObjectType.ConveyorBelt)
+            {
+                score = 20;
+            }
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = current;
+            }
+        }
+
+        return best;
     }
 }

@@ -203,7 +203,7 @@ public class ConveyorBelt : GridObject
         else
         {
             OverheadConveyor overhead = GetOverheadConveyorOnThisSpot();
-            if (overhead != null && overhead.itemOnOverheadLayer == null && overhead.IsStartSegment && CanOverheadAcceptItem(overhead))
+            if (overhead != null && overhead.IsStartSegment && CanOverheadAcceptItem(overhead))
             {
                 overheadDelayFrames = MAX_OVERHEAD_DELAY_FRAMES;
                 return ConveyorStepResult.Waiting;

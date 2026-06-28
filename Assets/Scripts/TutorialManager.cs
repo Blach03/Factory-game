@@ -51,7 +51,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 1: Mine Coal",
-            description = "Welcome to your factory! You can move the camera with WASD or the arrow keys, and zoom in or out with the mouse wheel. Your first task is to set up a coal mine. Click on the Miner button in the buildings menu, then place it on a Coal deposit. Look for the dark coal deposits on the map.",
+            description = "Welcome to your factory! Your goal is to build an efficient production network, automate increasingly complex manufacturing processes, and ultimately launch a rocket. You can move the camera with WASD or the arrow keys, and zoom in or out with the mouse wheel. Your first task is to set up a coal mine. Click on the Miner button in the buildings hotbar, then place it on a Coal deposit (black tiles on the map)",
             onStepStart = () => 
             {
                 Debug.Log("[Tutorial] Step 1 started - Highlight Miner in UI");
@@ -64,7 +64,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 2: Build a Conveyor Belt",
-            description = "Now connect your miner to a storage area using a Conveyor Belt. Select the Conveyor Belt and drag from the miner to create a line. Tip: press R to rotate selected buildable objects before placing. The build cost of the currently selected object is shown at the top of the screen.",
+            description = "Now place Conveyor Belts to move items that are being produced by your miner. Select the Conveyor Belt and drag from the miner to create a line. Tip: press R to rotate selected buildable objects before placing. The build cost of the currently selected object is shown at the top of the screen.",
             onStepStart = () => 
             {
                 Debug.Log("[Tutorial] Step 2 started - Highlight Conveyor Belt");
@@ -84,7 +84,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 3: Build a Storage Container",
-            description = "Place a Storage Container at the end of your conveyor belt to collect coal. Tip: when you click Storage, you can set an item limit. Storage will stop collecting that item if your inventory is already at or above the limit. You can also pick up non-moving items from the map by pressing Z on them.",
+            description = "Place a Storage Container at the end of your conveyor belt to collect coal. The Storage will allow you to transport items from the map to your inventory. Tip: when you click Storage, you can set an item limit. Storage will stop collecting that item if your inventory is already at or above the limit. You can also pick up non-moving items from the map by pressing Z on them.",
             onStepStart = () => 
             {
                 Debug.Log("[Tutorial] Step 3 started");
@@ -178,7 +178,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 8: Craft Science Packs in Inventory",
-            description = "Open inventory again with E. First craft Copper Wires, then craft 5 Basic Science Packs.",
+            description = "Open inventory again with E. First craft Copper Wires, then craft 5 Basic Research Packs.",
             onStepStart = () =>
             {
                 Debug.Log("[Tutorial] Step 8 started - Craft science packs in inventory");
@@ -296,7 +296,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 15: Copy Blueprint and Use Pipette",
-            description = "Press Ctrl+C to enter area copy mode, then drag the mouse to select an area. You will get a blueprint of the whole selected area that you can rotate and place in one action. Also use pipette with Q: hover a machine and press Q to copy that machine with its configured recipe. Tip: if you make a mistake, you can always press Ctrl+Z to undo previous actions.",
+            description = "Press Ctrl+C to enter area copy mode, then drag the mouse to select an area. You will get a blueprint of the whole selected area that you can rotate and place in one action. Copy and Paste at least 2 buildings at the same time. Also use pipette with Q: hover a machine and press Q to copy that machine with its configured recipe. Tip: if you make a mistake, you can always press Ctrl+Z to undo previous actions.",
             onStepStart = () =>
             {
                 Debug.Log("[Tutorial] Step 15 started - Ctrl+C area copy and Q pipette");
@@ -326,7 +326,7 @@ public class TutorialManager : MonoBehaviour
             {
                 Debug.Log("[Tutorial] Step 17 started - Final summary");
                 finalSummaryTimerElapsed = false;
-                StartCoroutine(CompleteFinalSummaryAfterDelay(10f));
+                StartCoroutine(CompleteFinalSummaryAfterDelay(15f));
             },
             onCheckComplete = () => finalSummaryTimerElapsed
         });
@@ -378,32 +378,9 @@ public class TutorialManager : MonoBehaviour
     {
         if (!isTutorialActive || currentStepIndex >= tutorialSteps.Count) return;
 
-        // Dla kroków inventory ukrywamy overlay tutoriala, gdy inventory jest otwarte,
-        // żeby nie zasłaniać listy itemów i przycisków craftingu.
-        bool isInventoryStep = currentStepIndex == 3 || currentStepIndex == 7;
-        bool inventoryOpen = UIManager.Instance != null &&
-                             UIManager.Instance.inventoryPanel != null &&
-                             UIManager.Instance.inventoryPanel.activeSelf;
-
-        // Dla kroków wyboru receptury ukrywamy overlay, gdy jest otwarte okno Choose Recipe.
-        bool isFurnaceRecipeStep = currentStepIndex == 4;
-        bool isAssemblerRecipeStep = currentStepIndex == 9;
-        bool isRefineryRecipeStep = currentStepIndex == 12;
-        bool chooseRecipeOpen = UIManager.Instance != null &&
-                                UIManager.Instance.recipeSelectionPanel != null &&
-                                UIManager.Instance.recipeSelectionPanel.gameObject.activeSelf;
-
-        // Dla kroku technologii ukrywamy overlay, gdy drzewko jest otwarte.
-        bool isTechTreeStep = currentStepIndex == 8;
-        bool techTreeOpen = UIManager.Instance != null &&
-                            UIManager.Instance.technologyPanel != null &&
-                            UIManager.Instance.technologyPanel.activeSelf;
-
         if (tutorialPanel != null)
         {
-            bool hideOverlay = (isInventoryStep && inventoryOpen) ||
-                               ((isFurnaceRecipeStep || isAssemblerRecipeStep || isRefineryRecipeStep) && chooseRecipeOpen) ||
-                               (isTechTreeStep && techTreeOpen);
+            bool hideOverlay = IsBlockingGameplayUIOpen();
             tutorialPanel.SetOverlayVisible(!hideOverlay);
         }
 
@@ -675,6 +652,27 @@ public class TutorialManager : MonoBehaviour
         if (PlacementManager.Instance == null) return false;
 
         return PlacementManager.Instance.HasTutorialAreaDeleteBeenUsed();
+    }
+
+    private bool IsBlockingGameplayUIOpen()
+    {
+        UIManager ui = UIManager.Instance;
+        if (ui == null) return false;
+
+        if (ui.IsAnyPanelOpen())
+            return true;
+
+        if (ui.pauseMenuPanel != null && ui.pauseMenuPanel.activeSelf)
+            return true;
+
+        if (TechDetailsUI.Instance != null &&
+            TechDetailsUI.Instance.panel != null &&
+            TechDetailsUI.Instance.panel.activeSelf)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void CompleteTutorial()

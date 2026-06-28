@@ -183,6 +183,11 @@ public class PlacementManager : MonoBehaviour
             return;
         }
 
+        if (TryHandleHotbarShortcut())
+        {
+            return;
+        }
+
         if (Input.GetMouseButtonDown(1))
         {
             CancelPlacement();
@@ -193,8 +198,13 @@ public class PlacementManager : MonoBehaviour
             TryDestroyItem();
         }
 
-        if (Input.GetKeyDown(KeyCode.X) && selectedPrefab == null)
+        if (Input.GetKeyDown(KeyCode.X))
         {
+            if (selectedPrefab != null)
+            {
+                CancelPlacement();
+            }
+
             TryRemoveBuilding();
         }
 
@@ -342,6 +352,86 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
+    private bool TryHandleHotbarShortcut()
+    {
+        int slot = -1;
+
+        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1)) slot = 1;
+        else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2)) slot = 2;
+        else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3)) slot = 3;
+        else if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4)) slot = 4;
+        else if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5)) slot = 5;
+        else if (Input.GetKeyDown(KeyCode.Alpha6) || Input.GetKeyDown(KeyCode.Keypad6)) slot = 6;
+        else if (Input.GetKeyDown(KeyCode.Alpha7) || Input.GetKeyDown(KeyCode.Keypad7)) slot = 7;
+        else if (Input.GetKeyDown(KeyCode.Alpha8) || Input.GetKeyDown(KeyCode.Keypad8)) slot = 8;
+        else if (Input.GetKeyDown(KeyCode.Alpha9) || Input.GetKeyDown(KeyCode.Keypad9)) slot = 9;
+        else if (Input.GetKeyDown(KeyCode.Alpha0) || Input.GetKeyDown(KeyCode.Keypad0)) slot = 10;
+
+        if (slot < 1 || machinePrefabs == null)
+        {
+            return false;
+        }
+
+        List<GameObject> availablePrefabs = GetAvailableHotbarPrefabs();
+        int index = slot - 1;
+
+        if (index < 0 || index >= availablePrefabs.Count)
+        {
+            return true;
+        }
+
+        GameObject prefab = availablePrefabs[index];
+        if (prefab == null)
+        {
+            return true;
+        }
+
+        SelectBuildingInternal(prefab, false);
+        return true;
+    }
+
+    private List<GameObject> GetAvailableHotbarPrefabs()
+    {
+        List<GameObject> result = new List<GameObject>();
+        if (machinePrefabs == null || machinePrefabs.Count == 0)
+        {
+            return result;
+        }
+
+        var frames = UIManager.Instance != null ? UIManager.Instance.machineButtonFrames : null;
+        if (frames == null || frames.Count == 0)
+        {
+            result.AddRange(machinePrefabs.Where(p => p != null));
+            return result;
+        }
+
+        for (int i = 0; i < machinePrefabs.Count; i++)
+        {
+            GameObject prefab = machinePrefabs[i];
+            if (prefab == null)
+            {
+                continue;
+            }
+
+            bool slotAvailable = true;
+            if (i < frames.Count && frames[i] != null)
+            {
+                Transform visibilityRootTransform = frames[i].transform.parent != null
+                    ? frames[i].transform.parent
+                    : frames[i].transform;
+
+                slotAvailable = visibilityRootTransform.gameObject.activeInHierarchy;
+            }
+
+            if (slotAvailable)
+            {
+                result.Add(prefab);
+            }
+        }
+
+        return result;
+    }
+
     private void EnterCopySelectionMode()
     {
         CancelPlacement();
@@ -388,6 +478,8 @@ public class PlacementManager : MonoBehaviour
 
             RemovedObjectSnapshot snap = CreateRemovedSnapshot(obj);
             if (snap != null) areaDeleteUndo.removed.Add(snap);
+
+            TransferStoredMachineItemsToPlayer(obj);
 
             if (obj.constructionCost != null)
             {
@@ -1516,6 +1608,8 @@ public class PlacementManager : MonoBehaviour
             {
                 RemovedObjectSnapshot snap = CreateRemovedSnapshot(objectToRemove);
 
+                TransferStoredMachineItemsToPlayer(objectToRemove);
+
                 foreach (var cost in objectToRemove.constructionCost)
                 {
                     PlayerInventory.Instance.AddItem(cost.resource, cost.amount);
@@ -1536,6 +1630,31 @@ public class PlacementManager : MonoBehaviour
             {
                 return;
             }
+        }
+    }
+
+    private void TransferStoredMachineItemsToPlayer(GridObject obj)
+    {
+        if (obj == null) return;
+
+        FurnaceBuilding furnace = obj as FurnaceBuilding;
+        if (furnace != null)
+        {
+            furnace.TryTransferStoredItemsToPlayerInventory();
+            return;
+        }
+
+        AssemblerBuilding assembler = obj as AssemblerBuilding;
+        if (assembler != null)
+        {
+            assembler.TryTransferStoredItemsToPlayerInventory();
+            return;
+        }
+
+        RefineryBuilding refinery = obj as RefineryBuilding;
+        if (refinery != null)
+        {
+            refinery.TryTransferStoredItemsToPlayerInventory();
         }
     }
 
@@ -1670,6 +1789,11 @@ public class PlacementManager : MonoBehaviour
         lastPlacedGridPos = new Vector2Int(int.MaxValue, int.MaxValue);
         ResetPipettePlacementState();
         ClearAreaToolState();
+    }
+
+    public bool IsPlacementOrAreaToolActive()
+    {
+        return selectedPrefab != null || areaToolMode != AreaToolMode.None || isAreaDragActive;
     }
 
     private void ClearAreaToolState()

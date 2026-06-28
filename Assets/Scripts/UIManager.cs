@@ -575,15 +575,20 @@ public class UIManager : MonoBehaviour
 
         for (int i = 0; i < machineButtonFrames.Count; i++)
         {
+            Image frame = machineButtonFrames[i];
+            if (frame == null)
+            {
+                continue;
+            }
+
             if (i == selectedIndex)
             {
-                machineButtonFrames[i].color = activeFrameColor;
-                // Opcjonalnie: machineButtonFrames[i].gameObject.SetActive(true);
+                frame.gameObject.SetActive(true);
+                frame.color = activeFrameColor;
             }
             else
             {
-                machineButtonFrames[i].color = inactiveFrameColor;
-                // Opcjonalnie: machineButtonFrames[i].gameObject.SetActive(false);
+                frame.color = inactiveFrameColor;
             }
         }
     }

@@ -241,6 +241,8 @@ public class AssemblerBuilding : GridObject, IProductionBuilding, IMachineWorkSt
 
     public void SetRecipe(AssemblyRecipeData newRecipe)
     {
+        TryTransferStoredItemsToPlayerInventory();
+
         currentRecipe = newRecipe;
         timer = GetModifiedAssemblyTime();
         UpdateRecipeIcon();
@@ -252,6 +254,35 @@ public class AssemblerBuilding : GridObject, IProductionBuilding, IMachineWorkSt
 
         isAssembling = false;
         timer = GetModifiedAssemblyTime();
+    }
+
+    public void TryTransferStoredItemsToPlayerInventory()
+    {
+        if (PlayerInventory.Instance == null || currentRecipe == null)
+        {
+            return;
+        }
+
+        TransferToPlayerInventory(currentRecipe.primaryInput, currentPrimaryInput);
+        TransferToPlayerInventory(currentRecipe.secondaryInput, currentSecondaryInput);
+        TransferToPlayerInventory(currentRecipe.tertiaryInput, currentTertiaryInput);
+        TransferToPlayerInventory(currentRecipe.outputItem, currentOutputAmount);
+
+        currentPrimaryInput = 0;
+        currentSecondaryInput = 0;
+        currentTertiaryInput = 0;
+        currentOutputAmount = 0;
+        isAssembling = false;
+    }
+
+    private static void TransferToPlayerInventory(ResourceData resource, int amount)
+    {
+        if (resource == null || amount <= 0 || PlayerInventory.Instance == null)
+        {
+            return;
+        }
+
+        PlayerInventory.Instance.AddItem(resource, amount);
     }
 
     public List<AssemblyRecipeData> GetAllAvailableRecipes()
