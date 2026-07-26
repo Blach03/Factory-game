@@ -53,7 +53,7 @@ public class RefineryBuilding : GridObject, IProductionBuilding, IMachineWorkSta
 
     public bool IsMachineWorking => isProcessing;
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
         size = new Vector2Int(3, 3);

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using UnityEngine.EventSystems;
 
 public class PlacementManager : MonoBehaviour
 {
@@ -31,6 +32,7 @@ public class PlacementManager : MonoBehaviour
     private LayerMask itemLayerMask;
     private bool isPlacingConveyor = false;
     private Vector2Int lastPlacedGridPos = new Vector2Int(int.MaxValue, int.MaxValue);
+    private bool blockPlacementUntilMouseRelease = false;
 
     private bool hasPipettePlacementState = false;
     private int pipetteRotationIndex = 1;
@@ -130,7 +132,7 @@ public class PlacementManager : MonoBehaviour
         public int amount;
     }
 
-    void Awake()
+    public void Awake()
     {
         if (Instance == null)
         {
@@ -142,7 +144,7 @@ public class PlacementManager : MonoBehaviour
         }
     }
 
-    void Start()
+    public void Start()
     {
         GameObject containerGO = GameObject.Find(BuildingsContainerName);
         if (containerGO == null)
@@ -158,6 +160,11 @@ public class PlacementManager : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetMouseButtonDown(0) && IsPointerOverUi())
+        {
+            blockPlacementUntilMouseRelease = true;
+        }
+
         bool ctrlHeld = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
 
         if (ctrlHeld && Input.GetKeyDown(KeyCode.Z))
@@ -213,23 +220,24 @@ public class PlacementManager : MonoBehaviour
             TryPipetteUnderCursor();
         }
 
-        if (Input.GetMouseButtonDown(0) && selectedPrefab != null && !isPlacingConveyor)
+        if (Input.GetMouseButtonDown(0) && selectedPrefab != null && !isPlacingConveyor && !ShouldBlockWorldPlacementInput())
         {
             TryPlaceBuilding();
         }
 
-        if (Input.GetMouseButtonDown(0) && selectedPrefab != null && isPlacingConveyor)
+        if (Input.GetMouseButtonDown(0) && selectedPrefab != null && isPlacingConveyor && !ShouldBlockWorldPlacementInput())
         {
             currentDragBatchAction = new UndoAction();
         }
 
-        if (Input.GetMouseButton(0) && selectedPrefab != null && isPlacingConveyor)
+        if (Input.GetMouseButton(0) && selectedPrefab != null && isPlacingConveyor && !ShouldBlockWorldPlacementInput())
         {
             TryPlaceBuildingContinuously();
         }
 
         if (Input.GetMouseButtonUp(0))
         {
+            blockPlacementUntilMouseRelease = false;
             lastPlacedGridPos = new Vector2Int(int.MaxValue, int.MaxValue);
             if (currentDragBatchAction != null && currentDragBatchAction.placed.Count > 0)
                 PushUndoAction(currentDragBatchAction);
@@ -271,6 +279,11 @@ public class PlacementManager : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
             {
+                if (ShouldBlockWorldPlacementInput())
+                {
+                    return true;
+                }
+
                 isAreaDragActive = true;
                 areaDragStartGrid = mouseGrid;
                 areaDragCurrentGrid = mouseGrid;
@@ -309,6 +322,11 @@ public class PlacementManager : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
             {
+                if (ShouldBlockWorldPlacementInput())
+                {
+                    return true;
+                }
+
                 TryPlaceAreaClipboard();
             }
 
@@ -316,6 +334,16 @@ public class PlacementManager : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool ShouldBlockWorldPlacementInput()
+    {
+        return blockPlacementUntilMouseRelease || IsPointerOverUi();
+    }
+
+    private bool IsPointerOverUi()
+    {
+        return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
     }
 
 

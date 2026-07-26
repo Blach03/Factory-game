@@ -4,30 +4,30 @@ public class ResourceDeposit : GridObject
 {
     public ResourceData resourceData;
 
-    protected override void Awake()
+    public override void Awake()
     {
-        // Wywo³ujemy base.Awake(), aby zainicjowaæ podstawowe parametry GridObject
+        // Wywoï¿½ujemy base.Awake(), aby zainicjowaï¿½ podstawowe parametry GridObject
         base.Awake();
 
         objectType = GridObjectType.ResourceDeposit;
-        // Z³o¿a nie blokuj¹ budowania (mo¿na na nich stawiaæ górniki/pasy)
+        // Zï¿½oï¿½a nie blokujï¿½ budowania (moï¿½na na nich stawiaï¿½ gï¿½rniki/pasy)
         isBlockingPlacement = false;
     }
 
     /// <summary>
-    /// Kluczowa metoda wywo³ywana przez WorldGenerator
+    /// Kluczowa metoda wywoï¿½ywana przez WorldGenerator
     /// </summary>
     public override void Initialize(Vector2Int gridPos)
     {
-        // Wywo³ujemy logikê bazow¹ (jeœli GridObject coœ tam ustawia, np. occupiedPosition)
+        // Wywoï¿½ujemy logikï¿½ bazowï¿½ (jeï¿½li GridObject coï¿½ tam ustawia, np. occupiedPosition)
         base.Initialize(gridPos);
 
-        // Nasza specyficzna logika dla z³o¿a
+        // Nasza specyficzna logika dla zï¿½oï¿½a
         if (GridManager.Instance != null)
         {
             transform.position = GridManager.Instance.GridToWorld(gridPos);
 
-            // Rejestracja w s³owniku zasobów
+            // Rejestracja w sï¿½owniku zasobï¿½w
             GridManager.Instance.AddGridObject(this, gridPos);
         }
     }
@@ -49,6 +49,6 @@ public class ResourceDeposit : GridObject
         return resourceData.itemPrefab;
     }
 
-    // Opcjonalnie: Zwraca nazwê surowca dla UI
+    // Opcjonalnie: Zwraca nazwï¿½ surowca dla UI
     public string GetResourceName() => resourceData != null ? resourceData.resourceName : "Unknown";
 }

@@ -70,7 +70,7 @@ public class TransportTickManager : MonoBehaviour
         movingItemSet.Clear();
     }
 
-    private void Awake()
+    public void Awake()
     {
         currentTier = startTier;
         frameTimeEmaMs = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime * 1000f : 16.67f;

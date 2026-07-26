@@ -13,7 +13,7 @@ public class StorageContainer : GridObject
     public int itemLimit = 100;
     private ResourceData trackedResource = null;
 
-    protected override void Awake()
+    public override void Awake()
     {
         // 1. Wywo�aj Awake z GridObject (kt�ry wywo�a Awake z SavableEntity)
         // Jest to niezb�dne, aby wygenerowa� uniqueID dla zapisu!

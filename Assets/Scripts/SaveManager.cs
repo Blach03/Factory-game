@@ -67,7 +67,7 @@ public class SaveManager : MonoBehaviour
         return go.AddComponent<SaveManager>();
     }
 
-    private void Awake()
+    public void Awake()
     {
         if (Instance == null)
         {

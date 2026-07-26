@@ -12,7 +12,7 @@ public abstract class GridObject : SavableEntity
     private bool hasInitializedGridPlacement = false;
 
     // Musimy nadpisa� Awake, aby wywo�a� generowanie ID z klasy bazowej
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake(); // To wywo�a Awake z SavableEntity
 

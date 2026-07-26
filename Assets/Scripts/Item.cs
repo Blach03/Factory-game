@@ -24,7 +24,7 @@ public class Item : SavableEntity
     private Vector2Int currentReservedGridPos = Vector2Int.zero;
     private bool dropToConveyorOnArrival = false;
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
 

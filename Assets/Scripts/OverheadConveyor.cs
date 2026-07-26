@@ -38,7 +38,7 @@ public class OverheadConveyor : GridObject
     private const int ITEM_LAYER_ID = 8;
     private const int OVERHEAD_LAYER_ID = 11;
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
         objectType = GridObjectType.OverheadConveyor;
@@ -47,7 +47,7 @@ public class OverheadConveyor : GridObject
 
     }
 
-    void Start()
+    public void Start()
     {
         UpdateVisualRotation();
         RefreshSegmentState();

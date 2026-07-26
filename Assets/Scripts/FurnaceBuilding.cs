@@ -55,7 +55,7 @@ public class FurnaceBuilding : GridObject, IMachineWorkStateProvider
 
     public SmeltingRecipeData GetCurrentRecipe() { return currentRecipe; }
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
 

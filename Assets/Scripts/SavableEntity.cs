@@ -7,7 +7,7 @@ public class SavableEntity : MonoBehaviour
     [HideInInspector] public string uniqueID;
     public string prefabNameForSave;
 
-    protected virtual void Awake()
+    public virtual void Awake()
     {
         if (string.IsNullOrEmpty(uniqueID))
         {
@@ -23,7 +23,7 @@ public class SavableEntity : MonoBehaviour
         data.worldPosition = new float[] { transform.position.x, transform.position.y, transform.position.z };
         data.worldRotation = new float[] { transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z };
         data.uniqueID = uniqueID;
-        // Trim() usuwa ewentualne zbêdne spacje na koñcach
+        // Trim() usuwa ewentualne zbï¿½dne spacje na koï¿½cach
 
         // Zapis pozycji
         data.worldPosition[0] = transform.position.x;
@@ -33,12 +33,12 @@ public class SavableEntity : MonoBehaviour
         data.layer = gameObject.layer;
 
         // --- DODATEK: Zapis rotacji (opcjonalne, ale zalecane) ---
-        // Musisz dodaæ pole 'public float[] rotation = new float[3];' do klasy EntityData
+        // Musisz dodaï¿½ pole 'public float[] rotation = new float[3];' do klasy EntityData
         // data.rotation[0] = transform.eulerAngles.x;
         // data.rotation[1] = transform.eulerAngles.y;
         // data.rotation[2] = transform.eulerAngles.z;
 
-        // Zapis pozycji w siatce (tylko dla budynków)
+        // Zapis pozycji w siatce (tylko dla budynkï¿½w)
         GridObject gridObj = GetComponent<GridObject>();
         if (gridObj != null)
         {

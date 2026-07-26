@@ -65,7 +65,7 @@ public class AssemblerBuilding : GridObject, IProductionBuilding, IMachineWorkSt
     public int GetCurrentOutputAmount() { return currentOutputAmount; }
     public float GetAssemblyTimer() { return timer; }
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
 

@@ -66,7 +66,7 @@ public class RocketSiloBuilding : GridObject, IProductionBuilding, IMachineWorkS
     int IProductionBuilding.inputCapacity => storageCapacity;
     int IProductionBuilding.outputCapacity => 1;
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
         size = new Vector2Int(5, 5);

@@ -26,7 +26,7 @@ public class PipeBuilding : GridObject
     private float pendingStoredFluid;
     private string pendingFluidTypeName;
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
         objectType = GridObjectType.Pipe;

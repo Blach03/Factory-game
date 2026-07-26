@@ -180,6 +180,11 @@ public class UIManager : MonoBehaviour
         ApplyGlobalFontOverride();
     }
 
+    private void CancelPlacementForUiOpen()
+    {
+        PlacementManager.Instance?.CancelPlacement();
+    }
+
     /// <summary>
     /// Logika obs�ugi klawisza ESC: najpierw zamyka aktywne okna, 
     /// a je�li nic nie jest otwarte - otwiera/zamyka Menu Pauzy.
@@ -189,6 +194,8 @@ public class UIManager : MonoBehaviour
     {
         if (!isTechTreeOpen)
         {
+            CancelPlacementForUiOpen();
+
             // Je�li otwieramy drzewko, zamknijmy inne panele (np. piec, assembler)
             CloseAllUI();
 
@@ -216,7 +223,6 @@ public class UIManager : MonoBehaviour
         // Opcjonalnie: Zablokuj ruch kamery lub budowanie, gdy drzewko jest otwarte
         if (isTechTreeOpen)
         {
-            PlacementManager.Instance?.CancelPlacement();
             Time.timeScale = 0f; // Pauza gry
         }
         else
@@ -325,6 +331,7 @@ public class UIManager : MonoBehaviour
     {
         if (pauseMenuPanel != null)
         {
+            CancelPlacementForUiOpen();
             pauseMenuPanel.SetActive(true);
             Time.timeScale = 0f; // Zatrzymuje czas w grze
         }
@@ -343,6 +350,7 @@ public class UIManager : MonoBehaviour
 
     public void OpenInventory()
     {
+        CancelPlacementForUiOpen();
         CloseAllUI();
         inventoryPanel.SetActive(true);
         isInventoryOpen = true;
@@ -401,6 +409,7 @@ public class UIManager : MonoBehaviour
 
     public void OpenRecipeSelection(GridObject building, List<IBuildingRecipe> availableRecipes)
     {
+        CancelPlacementForUiOpen();
         CloseAllUI();
         if (recipeSelectionPanel != null)
         {
@@ -410,6 +419,7 @@ public class UIManager : MonoBehaviour
 
     public void OpenFurnaceStatus(FurnaceBuilding furnace)
     {
+        CancelPlacementForUiOpen();
         CloseAllUI();
         if (furnaceStatusPanel != null)
         {
@@ -419,12 +429,14 @@ public class UIManager : MonoBehaviour
 
     public void OpenStatusWindow(IProductionBuilding building)
     {
+        CancelPlacementForUiOpen();
         CloseAllUI();
         productionStatusPanel.ShowStatus(building); // productionStatusPanel to Twój stary assemblerStatusPanel
     }
 
     public void OpenStorageLimitUI(StorageContainer storage)
     {
+        CancelPlacementForUiOpen();
         CloseAllUI();
         currentStorage = storage;
         if (storageLimitPanel != null)

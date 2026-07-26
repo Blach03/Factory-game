@@ -27,7 +27,7 @@ public class MinerBuilding : GridObject
     private int activeExtendersCount = 0;
 
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
 

@@ -41,7 +41,7 @@ public class ConveyorBelt : GridObject
     // Conveyor logic is now queued by TransportTickManager.
     public void TickTransport(float deltaTime) { }
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
 
@@ -50,7 +50,7 @@ public class ConveyorBelt : GridObject
         size = new Vector2Int(1, 1);
     }
 
-    void Start()
+    public void Start()
     {
         UpdateVisualRotation();
         StartCoroutine(CheckForExistingItemDelayed());

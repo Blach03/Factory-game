@@ -64,7 +64,7 @@ public class TutorialManager : MonoBehaviour
         tutorialSteps.Add(new TutorialStep
         {
             title = "Step 2: Build a Conveyor Belt",
-            description = "Now place Conveyor Belts to move items that are being produced by your miner. Select the Conveyor Belt and drag from the miner to create a line. Tip: press R to rotate selected buildable objects before placing. The build cost of the currently selected object is shown at the top of the screen.",
+            description = "Now place Conveyor Belts to move items that are being produced by your miner. Select the Conveyor Belt and drag from the miner to create a line. Tip: press R to rotate selected buildable objects before placing. The build cost of the currently selected object is shown at the top of the screen. You can always deselect currently selected building by pressing right mouse button.",
             onStepStart = () => 
             {
                 Debug.Log("[Tutorial] Step 2 started - Highlight Conveyor Belt");

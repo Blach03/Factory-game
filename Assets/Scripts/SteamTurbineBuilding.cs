@@ -21,7 +21,7 @@ public class SteamTurbineBuilding : GridObject, IMachineWorkStateProvider
     public PipeNetwork AttachedNetwork;
     public bool IsMachineWorking => isRunning;
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
         size = new Vector2Int(2, 2);

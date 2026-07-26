@@ -6,7 +6,7 @@ public class MinerExtender : GridObject
 {
     public MinerBuilding.Direction outputDirection = MinerBuilding.Direction.Right;
 
-    protected override void Awake()
+    public override void Awake()
     {
         base.Awake();
         objectType = GridObjectType.Building;

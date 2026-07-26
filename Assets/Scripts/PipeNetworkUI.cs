@@ -46,6 +46,7 @@ public class PipeNetworkUI : MonoBehaviour
 
     public void OpenWindow(PipeNetwork network)
     {
+        PlacementManager.Instance?.CancelPlacement();
         currentNetwork = network;
         windowPanel.SetActive(true);
         UpdateDisplay();
