@@ -146,12 +146,36 @@ public class PlacementManager : MonoBehaviour
 
     public void Start()
     {
-        GameObject containerGO = GameObject.Find(BuildingsContainerName);
+        GameObject containerGO = null;
+
+        // Prefer root objects in the currently active scene to avoid matching objects
+        // that may exist in other scenes or as assets in the project.
+        var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        if (scene.IsValid())
+        {
+            var roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                if (roots[i] != null && roots[i].name == BuildingsContainerName)
+                {
+                    containerGO = roots[i];
+                    break;
+                }
+            }
+        }
+
+        if (containerGO == null)
+        {
+            // Fallback to GameObject.Find for compatibility, then create if missing.
+            containerGO = GameObject.Find(BuildingsContainerName);
+        }
+
         if (containerGO == null)
         {
             containerGO = new GameObject(BuildingsContainerName);
             containerGO.transform.position = Vector3.zero;
         }
+
         buildingsContainer = containerGO.transform;
 
         itemLayerMask = LayerMask.GetMask("Item");

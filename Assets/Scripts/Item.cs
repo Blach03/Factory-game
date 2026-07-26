@@ -44,7 +44,7 @@ public class Item : SavableEntity
         }
     }
 
-    void Start()
+    public void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
 
@@ -191,9 +191,9 @@ public class Item : SavableEntity
             return;
         }
 
-        Vector2Int gridPos = GridManager.Instance.WorldToGrid(transform.position);
-        GridManager.Instance.ClearOccupiedGridSpot(gridPos, this);
-        GridManager.Instance.ClearOccupiedOverheadGridSpot(gridPos, this);
+        // Clear any previous occupation entries for this item, then register the current
+        // grid occupation based on the current world position.
+        GridManager.Instance.ClearItemOccupations(this);
         RegisterCurrentGridOccupation();
     }
 

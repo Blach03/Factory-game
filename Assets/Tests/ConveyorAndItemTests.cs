@@ -151,8 +151,11 @@ public class ConveyorAndItemTests : FactoryGameTestBase
         Item item = CreateTestObject<Item>();
         item.gameObject.layer = 8;
         item.transform.position = gridManager.GridToWorld(new Vector2Int(0, 0));
+        // Ensure item lifecycle/registration runs so initial occupation is recorded.
+        item.Awake();
         item.SetLayerAndSortingOrderForConveyor();
 
+        // Move and reconcile; Reconcile should clear any previous occupation entries and register the new one.
         item.transform.position = gridManager.GridToWorld(new Vector2Int(1, 0));
         item.ReconcileGridOccupationFromWorldPosition();
 
@@ -187,6 +190,10 @@ public class ConveyorAndItemTests : FactoryGameTestBase
         string json = "{\"resourceName\":\"LoadResource\",\"pos\":[0,0,0],\"targetPos\":[1,0,0],\"moving\":true,\"speed\":5.0}";
 
         item.LoadComponentData(json);
+
+        // Simulate Unity lifecycle to ensure layer/sorting and registration occur.
+        item.Awake();
+        item.Start();
 
         Assert.IsTrue(item.isBeingMoved);
         Assert.AreEqual(8, item.gameObject.layer);

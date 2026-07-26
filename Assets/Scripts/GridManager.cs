@@ -190,6 +190,26 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    // Clears any occupancy entries for the given item across both ground and overhead maps.
+    public void ClearItemOccupations(Item item)
+    {
+        if (item == null) return;
+
+        var keysToRemove = new System.Collections.Generic.List<Vector2Int>();
+        foreach (var kv in occupiedGridSpots)
+        {
+            if (kv.Value == item) keysToRemove.Add(kv.Key);
+        }
+        foreach (var k in keysToRemove) occupiedGridSpots.Remove(k);
+
+        keysToRemove.Clear();
+        foreach (var kv in occupiedOverheadGridSpots)
+        {
+            if (kv.Value == item) keysToRemove.Add(kv.Key);
+        }
+        foreach (var k in keysToRemove) occupiedOverheadGridSpots.Remove(k);
+    }
+
     public bool IsOverheadGridSpotOccupied(Vector2Int gridPosition)
     {
         return occupiedOverheadGridSpots.ContainsKey(gridPosition);

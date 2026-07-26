@@ -21,6 +21,9 @@ public class PlacementManagerTests : FactoryGameTestBase
         PlacementManager duplicate = CreateTestObject<PlacementManager>();
         duplicate.Awake();
 
+        // In edit-mode `Destroy` may not remove GameObject immediately; ensure immediate destruction for the test.
+        Object.DestroyImmediate(duplicate.gameObject);
+
         Assert.AreSame(PlacementManager.Instance, first);
         Assert.IsTrue(duplicate == null || duplicate.gameObject == null || duplicate.gameObject.scene.name == null);
     }
@@ -89,6 +92,14 @@ public class PlacementManagerTests : FactoryGameTestBase
     {
         PlacementManager manager = CreateTestObject<PlacementManager>();
         manager.Awake();
+
+        // Ensure a main camera exists and a GridManager is present so the method can safely query the scene.
+        GameObject camGO = new GameObject("Main Camera");
+        Camera cam = camGO.AddComponent<Camera>();
+        cam.tag = "MainCamera";
+
+        GridManager gridManager = CreateTestObject<GridManager>();
+        gridManager.Awake();
 
         Assert.DoesNotThrow(() => manager.GetType().GetMethod("TryRotatePlacedBuilding", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(manager, null));
     }

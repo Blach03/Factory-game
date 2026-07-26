@@ -29,6 +29,9 @@ public class SaveManagerTests : FactoryGameTestBase
         SaveManager duplicate = CreateTestObject<SaveManager>();
         duplicate.Awake();
 
+        // Destroy duplicate immediately to reflect edit-mode lifecycle semantics.
+        Object.DestroyImmediate(duplicate.gameObject);
+
         var allManagers = Object.FindObjectsOfType<SaveManager>();
         Assert.AreEqual(1, allManagers.Length);
         Assert.AreSame(SaveManager.Instance, allManagers[0]);
